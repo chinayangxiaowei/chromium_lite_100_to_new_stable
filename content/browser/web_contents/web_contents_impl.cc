@@ -97,6 +97,7 @@
 #include "content/browser/renderer_host/visible_time_request_trigger.h"
 #include "content/browser/screen_enumeration/screen_change_monitor.h"
 #include "content/browser/screen_orientation/screen_orientation_provider.h"
+#include "content/browser/shared_storage/shared_storage_budget_charger.h"
 #include "content/browser/site_instance_impl.h"
 #include "content/browser/starscan_load_observer.h"
 #include "content/browser/wake_lock/wake_lock_context_host.h"
@@ -977,6 +978,10 @@ WebContentsImpl::WebContentsImpl(BrowserContext* browser_context)
     AttributionHost::CreateForWebContents(this);
   }
 
+  if (base::FeatureList::IsEnabled(blink::features::kSharedStorageAPI)) {
+    SharedStorageBudgetCharger::CreateForWebContents(this);
+  }
+
 #if BUILDFLAG(USE_PARTITION_ALLOC_AS_MALLOC) && defined(PA_ALLOW_PCSCAN)
   // TODO(1231679): Remove or move to another place after finishing the PCScan
   // experiment.
@@ -1021,9 +1026,21 @@ WebContentsImpl::~WebContentsImpl() {
     outermost->SetAsFocusedWebContentsIfNecessary();
   }
 
-  if (mouse_lock_widget_)
+  if (mouse_lock_widget_) {
     mouse_lock_widget_->RejectMouseLockOrUnlockIfNecessary(
         blink::mojom::PointerLockResult::kElementDestroyed);
+
+    // Normally, the call above clears mouse_lock_widget_ pointers on the
+    // entire WebContents chain, since it results in calling LostMouseLock()
+    // when the mouse lock is already active. However, this doesn't work for
+    // <webview> guests if the mouse lock request is still pending while the
+    // <webview> is destroyed. Hence, ensure that all mouse lock widget
+    // pointers are cleared. See https://crbug.com/1346245.
+    for (WebContentsImpl* current = this; current;
+         current = current->GetOuterWebContents()) {
+      current->mouse_lock_widget_ = nullptr;
+    }
+  }
 
   for (RenderWidgetHostImpl* widget : created_widgets_)
     widget->DetachDelegate();
@@ -1294,6 +1311,10 @@ void WebContentsImpl::SetDelegate(WebContentsDelegate* delegate) {
 }
 
 RenderFrameHostImpl* WebContentsImpl::GetMainFrame() {
+  return GetPrimaryMainFrame();
+}
+
+RenderFrameHostImpl* WebContentsImpl::GetPrimaryMainFrame() {
   return primary_frame_tree_.root()->current_frame_host();
 }
 
@@ -3850,6 +3871,12 @@ FrameTree* WebContentsImpl::CreateNewWindow(
                "opener", opener, "params", params);
   DCHECK(opener);
 
+  // Give the content browser client a chance to intercept the request and open
+  // the URL with an external handler.
+  if (GetContentClient()->browser()->OpenExternally(opener, params.target_url,
+                                                    params.disposition))
+    return nullptr;
+
   int render_process_id = opener->GetProcess()->GetID();
 
   auto* source_site_instance =
@@ -4276,7 +4303,7 @@ void WebContentsImpl::RequestMediaAccessPermission(
     delegate_->RequestMediaAccessPermission(this, request, std::move(callback));
   } else {
     std::move(callback).Run(
-        blink::mojom::StreamDevices(),
+        blink::mojom::StreamDevicesSet(),
         blink::mojom::MediaStreamRequestResult::FAILED_DUE_TO_SHUTDOWN,
         std::unique_ptr<MediaStreamUI>());
   }

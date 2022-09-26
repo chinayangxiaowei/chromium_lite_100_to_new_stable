@@ -36,9 +36,6 @@ class EnrollmentRequisitionManager {
   static bool IsRemoraRequisition();
   static bool IsSharkRequisition();
 
-  // If the current device extends the CFM Overlay or has Remora bit set
-  static bool IsMeetDevice();
-
   // Gets/Sets the sub organization.
   static std::string GetSubOrganization();
   static void SetSubOrganization(const std::string& sub_organization);

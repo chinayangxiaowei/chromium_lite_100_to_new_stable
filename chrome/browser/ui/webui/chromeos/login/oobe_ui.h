@@ -40,10 +40,9 @@ class SigninScreenHandler;
 class OobeUI : public ui::MojoWebUIController {
  public:
   // List of known types of OobeUI. Type added as path in chrome://oobe url, for
-  // example chrome://oobe/login.
+  // example chrome://oobe/gaia-signin.
   static const char kAppLaunchSplashDisplay[];
   static const char kGaiaSigninDisplay[];
-  static const char kLockDisplay[];
   static const char kLoginDisplay[];
   static const char kOobeDisplay[];
 
@@ -86,9 +85,6 @@ class OobeUI : public ui::MojoWebUIController {
   // Shows or hides OOBE UI elements.
   void ShowOobeUI(bool show);
 
-  // Forwards an accelerator to the webui to be handled.
-  void ForwardAccelerator(std::string accelerator_name);
-
   gfx::NativeView GetNativeView();
 
   gfx::NativeWindow GetTopLevelNativeWindow();
@@ -115,9 +111,6 @@ class OobeUI : public ui::MojoWebUIController {
 
   // Re-evaluate OOBE display placement.
   void OnDisplayConfigurationChanged();
-
-  // Notify WebUI of the user count on the views login screen.
-  void SetLoginUserCount(int user_count);
 
   void OnSystemTrayBubbleShown();
 
@@ -176,10 +169,6 @@ class OobeUI : public ui::MojoWebUIController {
   // display type.
   void ConfigureOobeDisplay();
 
-  // Updates default scaling for CfM devices.
-  void UpScaleOobe();
-  bool ShouldUpScaleOobe();
-
   // Type of UI.
   std::string display_type_;
 
@@ -205,9 +194,6 @@ class OobeUI : public ui::MojoWebUIController {
 
   // Id of the previous oobe/login screen.
   OobeScreenId previous_screen_ = ash::OOBE_SCREEN_UNKNOWN;
-
-  // Id of display that was already scaled for CfM devices.
-  int64_t primary_display_id_ = -1;
 
   // Flag that indicates whether JS part is fully loaded and ready to accept
   // calls.

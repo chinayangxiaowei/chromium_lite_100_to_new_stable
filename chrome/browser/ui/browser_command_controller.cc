@@ -568,7 +568,7 @@ bool BrowserCommandController::ExecuteCommandWithDisposition(
     case IDC_VIEW_SOURCE:
       browser_->tab_strip_model()
           ->GetActiveWebContents()
-          ->GetMainFrame()
+          ->GetPrimaryMainFrame()
           ->ViewSource();
       break;
     case IDC_PRINT:
@@ -1052,8 +1052,8 @@ void BrowserCommandController::InitCommandState() {
   // (like Back & Forward with initial page load) must have their state
   // initialized here, otherwise they will be forever disabled.
 
-  if (is_locked_fullscreen_)
-    return;
+  // if (is_locked_fullscreen_)
+  //  return;
 
   // Navigation commands
   command_updater_.UpdateCommandEnabled(IDC_RELOAD, true);
@@ -1340,9 +1340,9 @@ void BrowserCommandController::UpdateCommandsForTabState() {
   command_updater_.UpdateCommandEnabled(IDC_OPEN_IN_PWA_WINDOW,
                                         web_app::CanPopOutWebApp(profile()));
 
-  bool is_isolated_app =
-      current_web_contents->GetMainFrame()->GetWebExposedIsolationLevel() >=
-      WebExposedIsolationLevel::kMaybeIsolatedApplication;
+  bool is_isolated_app = current_web_contents->GetPrimaryMainFrame()
+                             ->GetWebExposedIsolationLevel() >=
+                         WebExposedIsolationLevel::kMaybeIsolatedApplication;
   command_updater_.UpdateCommandEnabled(
       IDC_OPEN_IN_CHROME, IsWebAppOrCustomTab() && !is_isolated_app);
 
@@ -1383,11 +1383,12 @@ void BrowserCommandController::UpdateCommandsForContentRestrictionState() {
 }
 
 void BrowserCommandController::UpdateCommandsForDevTools() {
-  if (is_locked_fullscreen_)
-    return;
+  // if (is_locked_fullscreen_)
+  //  return;
 
-  bool dev_tools_enabled = DevToolsWindow::AllowDevToolsFor(
-      profile(), browser_->tab_strip_model()->GetActiveWebContents());
+  bool dev_tools_enabled =
+      true;  // DevToolsWindow::AllowDevToolsFor(
+             // profile(), browser_->tab_strip_model()->GetActiveWebContents());
   command_updater_.UpdateCommandEnabled(IDC_DEV_TOOLS, dev_tools_enabled);
   command_updater_.UpdateCommandEnabled(IDC_DEV_TOOLS_CONSOLE,
                                         dev_tools_enabled);

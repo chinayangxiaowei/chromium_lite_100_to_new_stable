@@ -106,6 +106,8 @@ class RenderProcessHostUserData : public base::SupportsUserData::Data {
   void RemoveFrame(content::RenderFrameHost* frame) { frames_.erase(frame); }
   const std::set<content::RenderFrameHost*>& frames() const { return frames_; }
 
+  const ExtensionIdSet& content_scripts() const { return content_scripts_; }
+
  private:
   explicit RenderProcessHostUserData(content::RenderProcessHost& process)
       : process_(process) {
@@ -332,8 +334,10 @@ bool DoContentScriptsMatch(const Extension& extension,
         owner_site_url.host_piece() == extension.id()) {
       WebViewContentScriptManager* script_manager =
           WebViewContentScriptManager::Get(frame->GetBrowserContext());
-      int embedder_process_id =
-          guest->owner_web_contents()->GetMainFrame()->GetProcess()->GetID();
+      int embedder_process_id = guest->owner_web_contents()
+                                    ->GetPrimaryMainFrame()
+                                    ->GetProcess()
+                                    ->GetID();
       std::set<std::string> script_ids = script_manager->GetContentScriptIDSet(
           embedder_process_id, guest->view_instance_id());
 
@@ -458,6 +462,18 @@ void StoreExtensionsInjectingContentScripts(
 }
 
 }  // namespace
+
+// static
+ExtensionIdSet ContentScriptTracker::GetExtensionsThatRanScriptsInProcess(
+    const content::RenderProcessHost& process) {
+  DCHECK_CURRENTLY_ON(content::BrowserThread::UI);
+
+  const auto* process_data = RenderProcessHostUserData::Get(process);
+  if (!process_data)
+    return {};
+
+  return process_data->content_scripts();
+}
 
 // static
 bool ContentScriptTracker::DidProcessRunContentScriptFromExtension(

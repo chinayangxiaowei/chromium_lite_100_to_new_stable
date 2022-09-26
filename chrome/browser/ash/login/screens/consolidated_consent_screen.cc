@@ -5,6 +5,7 @@
 #include "chrome/browser/ash/login/screens/consolidated_consent_screen.h"
 
 #include "ash/components/arc/arc_prefs.h"
+#include "ash/constants/ash_features.h"
 #include "ash/constants/ash_switches.h"
 #include "base/bind.h"
 #include "base/command_line.h"
@@ -35,6 +36,7 @@
 #include "chrome/common/url_constants.h"
 #include "chrome/grit/chromium_strings.h"
 #include "chrome/grit/generated_resources.h"
+#include "chromeos/ash/components/network/portal_detector/network_portal_detector.h"
 #include "components/consent_auditor/consent_auditor.h"
 #include "components/metrics/metrics_service.h"
 #include "components/prefs/pref_service.h"
@@ -119,6 +121,9 @@ void ConsolidatedConsentScreen::OnViewDestroyed(
 
 bool ConsolidatedConsentScreen::MaybeSkip(WizardContext* context) {
   if (context->skip_post_login_screens_for_tests) {
+    if (features::IsOobeConsolidatedConsentEnabled())
+      StartupUtils::MarkEulaAccepted();
+
     exit_callback_.Run(Result::NOT_APPLICABLE);
     return true;
   }
@@ -243,9 +248,10 @@ void ConsolidatedConsentScreen::OnOwnershipStatusCheckDone(
 
   // If the user is not the owner and the owner disabled metrics, the user
   // is not allowed to update the usage opt-in.
-  if (!is_owner_.value_or(false) &&
-      !ash::StatsReportingController::Get()->IsEnabled()) {
-    view_->HideUsageOptin();
+  if (view_) {
+    view_->SetUsageOptinOptinHidden(
+        !is_owner_.value_or(false) &&
+        !ash::StatsReportingController::Get()->IsEnabled());
   }
 
   const bool is_demo = arc::IsArcDemoModeSetupFlow();
@@ -282,9 +288,6 @@ void ConsolidatedConsentScreen::OnOwnershipStatusCheckDone(
 
     UpdateMetricsMode(is_enabled, is_managed);
   }
-
-  if (view_)
-    view_->SetIsDeviceOwner(is_owner_.value());
 }
 
 void ConsolidatedConsentScreen::RecordConsents(
@@ -404,6 +407,7 @@ void ConsolidatedConsentScreen::OnAccept(bool enable_stats_usage,
 
 void ConsolidatedConsentScreen::ExitScreenWithAcceptedResult() {
   StartupUtils::MarkEulaAccepted();
+  network_portal_detector::GetInstance()->Enable(/*start_detection=*/true);
 
   const DemoSetupController* const demo_setup_controller =
       WizardController::default_controller()->demo_setup_controller();

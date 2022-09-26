@@ -17,7 +17,6 @@
 #include "ash/public/cpp/resources/grit/ash_public_unscaled_resources.h"
 #include "ash/services/cellular_setup/public/mojom/esim_manager.mojom.h"
 #include "ash/services/multidevice_setup/multidevice_setup_service.h"
-#include "ash/shell.h"
 #include "base/bind.h"
 #include "base/command_line.h"
 #include "base/containers/contains.h"
@@ -136,8 +135,6 @@
 #include "ui/base/webui/web_ui_util.h"
 #include "ui/chromeos/resources/grit/ui_chromeos_resources.h"
 #include "ui/display/display.h"
-#include "ui/display/manager/display_manager.h"
-#include "ui/display/screen.h"
 #include "ui/events/devices/device_data_manager.h"
 #include "ui/events/devices/input_device.h"
 #include "ui/resources/grit/webui_generated_resources.h"
@@ -174,7 +171,8 @@ constexpr char kKeyboardUtilsForInjectionModulePath[] =
 constexpr char kLoginJSPath[] = "login.js";
 constexpr char kOobeJSPath[] = "oobe.js";
 constexpr char kProductLogoPath[] = "product-logo.png";
-// TODO(crbug.com/1261902): Remove.
+// TODO(crbug.com/1261902): Clean-up old implementation once feature is
+// launched.
 constexpr char kRecommendAppOldListViewJSPath[] =
     "recommend_app_old_list_view.js";
 constexpr char kRecommendAppListViewJSPath[] = "recommend_app_list_view.js";
@@ -247,8 +245,6 @@ void AddArcScreensResources(content::WebUIDataSource* source) {
 void AddAssistantScreensResources(content::WebUIDataSource* source) {
   source->AddResourcePaths(
       base::make_span(kAssistantOptinResources, kAssistantOptinResourcesSize));
-  source->AddResourcePath("voice_match_animation.json",
-                          IDR_ASSISTANT_VOICE_MATCH_ANIMATION);
   source->OverrideContentSecurityPolicy(
       network::mojom::CSPDirectiveName::WorkerSrc, "worker-src blob: 'self';");
 }
@@ -262,7 +258,7 @@ void AddMultiDeviceSetupResources(content::WebUIDataSource* source) {
       network::mojom::CSPDirectiveName::WorkerSrc, "worker-src blob: 'self';");
 }
 
-void AddDebuggerResources(content::WebUIDataSource* source) {
+void AddDebuggerResources(content::WebUIDataSource* source, bool use_poly3) {
   base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
   bool enable_debugger = command_line->HasSwitch(switches::kShowOobeDevOverlay);
   // Enable for ChromeOS-on-linux for developers and test images.
@@ -270,10 +266,10 @@ void AddDebuggerResources(content::WebUIDataSource* source) {
     LOG(WARNING) << "OOBE Debug overlay can only be used on test images";
     base::SysInfo::CrashIfChromeOSNonTestImage();
   }
-  const bool poly3_enabled = features::IsOobePolymer3Enabled();
+
   if (enable_debugger) {
     source->AddResourcePath(kDebuggerUtilJSPath, IDR_OOBE_DEBUGGER_UTIL_JS);
-    if (poly3_enabled) {
+    if (use_poly3) {
       source->AddResourcePath(kDebuggerMJSPath, IDR_OOBE_DEBUGGER_M_JS);
     } else {
       source->AddResourcePath(kDebuggerJSPath, IDR_OOBE_DEBUGGER_JS);
@@ -328,15 +324,22 @@ void AddLoginDisplayTypeDefaultResources(content::WebUIDataSource* source) {
   source->AddResourcePath(kLoginJSPath, IDR_OOBE_JS);
 }
 
+// Polymer3 could be turned on for both flows (OOBE & 'Add Person'), or just
+// for the 'Add Person' flow.
+bool ShouldUsePolymer3Resources(bool is_oobe_flow) {
+  const bool is_add_person_flow = !is_oobe_flow;
+  const bool poly3_enabled_for_both_flows = features::IsOobePolymer3Enabled();
+  const bool poly3_enabled_for_addperson_flow =
+      features::IsOobeAddPersonPolymer3Enabled();
+
+  return poly3_enabled_for_both_flows ||
+         (poly3_enabled_for_addperson_flow && is_add_person_flow);
+}
+
 // Creates a WebUIDataSource for chrome://oobe
 content::WebUIDataSource* CreateOobeUIDataSource(
     const base::Value::Dict& localized_strings,
     const std::string& display_type) {
-  // Cannot exist for the lock screen.
-  if (display_type == OobeUI::kLockDisplay) {
-    NOTREACHED();
-  }
-
   base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
 
   content::WebUIDataSource* source =
@@ -346,18 +349,20 @@ content::WebUIDataSource* CreateOobeUIDataSource(
 
   OobeUI::AddOobeComponents(source);
 
-  // First, configure default and non-shared resources for the current display
-  // type.
-  if (features::IsOobePolymer3Enabled()) {
+  // Determine whether this is the 'OOBE' or the 'Add Person' flow, and add
+  // either Polymer3 or Polymer2 default resources.
+  const bool is_oobe_flow = display_type == OobeUI::kOobeDisplay;
+  const bool use_polymer3_resources = ShouldUsePolymer3Resources(is_oobe_flow);
+  if (use_polymer3_resources) {
     source->SetDefaultResource(IDR_OOBE_POLY3_HTML);
     // Add boolean variables that are used by Polymer3 to add screens
-    // dynamically.
+    // dynamically depending on the flow type.
     source->AddBoolean("isOsInstallAllowed", switches::IsOsInstallAllowed());
-    source->AddBoolean("isOobeFlow", display_type == OobeUI::kOobeDisplay);
-  } else {
-    if (display_type == OobeUI::kOobeDisplay) {
+    source->AddBoolean("isOobeFlow", is_oobe_flow);
+  } else { /* Polymer 2 Resources */
+    if (is_oobe_flow) {
       AddOobeDisplayTypeDefaultResources(source);
-    } else {
+    } else /* is_add_person_flow */ {
       AddLoginDisplayTypeDefaultResources(source);
     }
   }
@@ -371,7 +376,7 @@ content::WebUIDataSource* CreateOobeUIDataSource(
   AddAssistantScreensResources(source);
   AddMultiDeviceSetupResources(source);
 
-  AddDebuggerResources(source);
+  AddDebuggerResources(source, use_polymer3_resources);
   AddTestAPIResources(source);
 
   source->AddResourcePath(kWebviewSamlInjectedJSPath,
@@ -407,18 +412,9 @@ std::string GetDisplayType(const GURL& url) {
 
 }  // namespace
 
-struct DisplayScaleFactor {
-  int longest_side;
-  float scale_factor;
-};
-
-const DisplayScaleFactor k4KDisplay = {3840, 1.5f},
-                         kMediumDisplay = {1440, 4.f / 3};
-
 // static
 const char OobeUI::kAppLaunchSplashDisplay[] = "app-launch-splash";
 const char OobeUI::kGaiaSigninDisplay[] = "gaia-signin";
-const char OobeUI::kLockDisplay[] = "lock";
 const char OobeUI::kLoginDisplay[] = "login";
 const char OobeUI::kOobeDisplay[] = "oobe";
 
@@ -574,9 +570,6 @@ void OobeUI::ConfigureOobeDisplay() {
   // // Handler for the oobe video assets which will be shown if available.
   content::URLDataSource::Add(profile,
                               std::make_unique<chromeos::VideoSource>());
-
-  if (ShouldUpScaleOobe())
-    UpScaleOobe();
 
   if (policy::EnrollmentRequisitionManager::IsRemoraRequisition())
     oobe_display_chooser_ = std::make_unique<OobeDisplayChooser>();
@@ -767,10 +760,6 @@ void OobeUI::ShowOobeUI(bool show) {
     oobe_display_chooser_->TryToPlaceUiOnTouchDisplay();
 }
 
-void OobeUI::ForwardAccelerator(std::string accelerator_name) {
-  core_handler_->ForwardAccelerator(accelerator_name);
-}
-
 gfx::NativeView OobeUI::GetNativeView() {
   return web_ui()->GetWebContents()->GetNativeView();
 }
@@ -791,39 +780,9 @@ void OobeUI::RemoveObserver(Observer* observer) {
   observer_list_.RemoveObserver(observer);
 }
 
-bool OobeUI::ShouldUpScaleOobe() {
-  const int64_t display_id =
-      display::Screen::GetScreen()->GetPrimaryDisplay().id();
-  return primary_display_id_ != display_id &&
-         ash::switches::ShouldScaleOobe() &&
-         policy::EnrollmentRequisitionManager::IsMeetDevice();
-}
-
-void OobeUI::UpScaleOobe() {
-  primary_display_id_ = display::Screen::GetScreen()->GetPrimaryDisplay().id();
-  display::DisplayManager* display_manager =
-      ash::Shell::Get()->display_manager();
-  const gfx::Size size =
-      display::Screen::GetScreen()->GetPrimaryDisplay().work_area_size();
-  const int longest_side = std::max(size.width(), size.height());
-  if (longest_side >= k4KDisplay.longest_side) {
-    display_manager->UpdateZoomFactor(primary_display_id_,
-                                      k4KDisplay.scale_factor);
-  } else if (longest_side >= kMediumDisplay.longest_side) {
-    display_manager->UpdateZoomFactor(primary_display_id_,
-                                      kMediumDisplay.scale_factor);
-  }
-}
-
 void OobeUI::OnDisplayConfigurationChanged() {
   if (oobe_display_chooser_)
     oobe_display_chooser_->TryToPlaceUiOnTouchDisplay();
-  if (ShouldUpScaleOobe())
-    UpScaleOobe();
-}
-
-void OobeUI::SetLoginUserCount(int user_count) {
-  core_handler_->SetLoginUserCount(user_count);
 }
 
 void OobeUI::OnSystemTrayBubbleShown() {

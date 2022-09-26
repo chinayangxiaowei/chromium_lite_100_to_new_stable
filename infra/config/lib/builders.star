@@ -136,6 +136,22 @@ goma = struct(
     ),
 )
 
+reclient = struct(
+    instance = struct(
+        DEFAULT_TRUSTED = "rbe-chromium-trusted",
+        TEST_TRUSTED = "rbe-chromium-trusted-test",
+        DEFAULT_UNTRUSTED = "rbe-chromium-untrusted",
+        TEST_UNTRUSTED = "rbe-chromium-untrusted-test",
+    ),
+    jobs = struct(
+        DEFAULT = 250,
+        LOW_JOBS_FOR_CI = 80,
+        HIGH_JOBS_FOR_CI = 500,
+        LOW_JOBS_FOR_CQ = 80,
+        HIGH_JOBS_FOR_CQ = 500,
+    ),
+)
+
 def _rotation(name):
     return branches.value({branches.MAIN: [name]})
 
@@ -167,8 +183,10 @@ xcode = struct(
     x12e262 = xcode_enum("12e262"),
     # Default Xcode 13 for chromium iOS.
     x13main = xcode_enum("13c100"),
-    # A newer Xcode version used on beta bots.
-    x13betabots = xcode_enum("13e113"),
+    # A newer Xcode 13 version used on beta bots.
+    x13betabots = xcode_enum("13f17a"),
+    # A newer Xcode 14 version used on beta bots.
+    x14betabots = xcode_enum("14a5228q"),
     # in use by ios-webkit-tot
     x13wk = xcode_enum("13a1030dwk"),
 )

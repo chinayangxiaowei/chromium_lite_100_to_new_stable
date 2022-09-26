@@ -14,6 +14,7 @@
 #include "ash/components/settings/cros_settings_provider.h"
 #include "ash/components/settings/timezone_settings.h"
 #include "ash/components/timezone/timezone_resolver.h"
+#include "ash/constants/ash_features.h"
 #include "ash/constants/ash_switches.h"
 #include "ash/public/cpp/locale_update_controller.h"
 #include "ash/public/cpp/login_accelerators.h"
@@ -53,6 +54,7 @@
 #include "chrome/browser/ash/net/delay_network_call.h"
 #include "chrome/browser/ash/policy/core/browser_policy_connector_ash.h"
 #include "chrome/browser/ash/policy/enrollment/enrollment_config.h"
+#include "chrome/browser/ash/policy/enrollment/enrollment_requisition_manager.h"
 #include "chrome/browser/ash/settings/cros_settings.h"
 #include "chrome/browser/ash/system/device_disabling_manager.h"
 #include "chrome/browser/ash/system/input_device_settings.h"
@@ -102,6 +104,7 @@
 #include "ui/compositor/layer_animation_observer.h"
 #include "ui/compositor/scoped_layer_animation_settings.h"
 #include "ui/display/display.h"
+#include "ui/display/manager/display_manager.h"
 #include "ui/display/screen.h"
 #include "ui/events/devices/device_data_manager.h"
 #include "ui/events/event_handler.h"
@@ -136,6 +139,14 @@ const int kCrashCountLimit = 5;
 
 // The default fade out animation time in ms.
 const int kDefaultFadeTimeMs = 200;
+
+struct DisplayScaleFactor {
+  int longest_side;
+  float scale_factor;
+};
+
+const DisplayScaleFactor k4KDisplay = {3840, 1.5f},
+                         kMediumDisplay = {1440, 4.f / 3};
 
 // A class to observe an implicit animation and invokes the callback after the
 // animation is completed.
@@ -596,6 +607,7 @@ void LoginDisplayHostWebUI::OnStartSignInScreen() {
         "ui", "StartSignInScreen",
         TRACE_ID_WITH_SCOPE(kShowLoginWebUIid, TRACE_ID_GLOBAL(1)));
     BootTimesRecorder::Get()->RecordCurrentStats("login-start-signin-screen");
+    CHECK(base::FeatureList::IsEnabled(features::kOobeLoginUrl));
     LoadURL(GURL(kLoginURL));
   }
 
@@ -711,11 +723,34 @@ void LoginDisplayHostWebUI::OnDisplayMetricsChanged(
     return;
   }
 
+  if (switches::ShouldScaleOobe() &&
+      policy::EnrollmentRequisitionManager::IsRemoraRequisition()) {
+    UpScaleOobe();
+  }
+
   if (GetOobeUI()) {
     GetOobeUI()->GetCoreOobeView()->UpdateClientAreaSize(
         primary_display.size());
     if (changed_metrics & DISPLAY_METRIC_PRIMARY)
       GetOobeUI()->OnDisplayConfigurationChanged();
+  }
+}
+
+void LoginDisplayHostWebUI::UpScaleOobe() {
+  const int64_t display_id =
+      display::Screen::GetScreen()->GetPrimaryDisplay().id();
+  if (primary_display_id_ == display_id) {
+    return;
+  }
+  primary_display_id_ = display_id;
+  auto* display_manager = Shell::Get()->display_manager();
+  const gfx::Size size =
+      display::Screen::GetScreen()->GetPrimaryDisplay().work_area_size();
+  const int longest_side = std::max(size.width(), size.height());
+  if (longest_side >= k4KDisplay.longest_side) {
+    display_manager->UpdateZoomFactor(display_id, k4KDisplay.scale_factor);
+  } else if (longest_side >= kMediumDisplay.longest_side) {
+    display_manager->UpdateZoomFactor(display_id, kMediumDisplay.scale_factor);
   }
 }
 

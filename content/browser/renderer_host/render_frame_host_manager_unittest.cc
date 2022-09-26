@@ -1506,14 +1506,8 @@ TEST_P(RenderFrameHostManagerTest, GuestNavigations) {
   if (SiteIsolationPolicy::IsSiteIsolationForGuestsEnabled()) {
     EXPECT_NE(first_instance, initial_instance);
     EXPECT_NE(host, initial_host);
-    // This test may run without strict site isolation, e.g. on Android.  In
-    // that case, the navigation will end up in a default SiteInstance.
-    if (AreAllSitesIsolatedForTesting()) {
-      EXPECT_EQ("http://google.com/",
-                first_instance->GetSiteInfo().site_url().spec());
-    } else {
-      EXPECT_TRUE(first_instance->IsDefaultSiteInstance());
-    }
+    EXPECT_EQ("http://google.com/",
+              first_instance->GetSiteInfo().site_url().spec());
   } else {
     EXPECT_EQ(first_instance, initial_instance);
     EXPECT_EQ(host, initial_host);
@@ -1528,9 +1522,9 @@ TEST_P(RenderFrameHostManagerTest, GuestNavigations) {
   EXPECT_TRUE(host->GetSiteInstance()->HasSite());
 
   // 2) Second navigation. ------------------------
-  // Navigate to a different site. If site isolation for guests is enabled, and
-  // strict site isolation is also enabled, this will swap processes.
-  // Otherwise, the guest will stay in the same process.
+  // Navigate to a different site. If site isolation for guests is enabled,
+  // this will swap processes. Otherwise, the guest will stay in the same
+  // process.
   const GURL kUrl2("http://www.chromium.org");
   const url::Origin kInitiatorOrigin =
       url::Origin::Create(GURL("https://initiator.example.com"));
@@ -1543,9 +1537,8 @@ TEST_P(RenderFrameHostManagerTest, GuestNavigations) {
   host = NavigateToEntry(manager, &entry2);
 
   // The first RenderFrameHost will be reused only when there's no site
-  // isolation for guests (or no site isolation between the two sites).
-  if (SiteIsolationPolicy::IsSiteIsolationForGuestsEnabled() &&
-      AreAllSitesIsolatedForTesting()) {
+  // isolation for guests.
+  if (SiteIsolationPolicy::IsSiteIsolationForGuestsEnabled()) {
     EXPECT_NE(host, manager->current_frame_host());
     EXPECT_TRUE(manager->speculative_frame_host());
   } else {
@@ -1560,8 +1553,7 @@ TEST_P(RenderFrameHostManagerTest, GuestNavigations) {
   EXPECT_TRUE(host->GetSiteInstance()->IsGuest());
 
   // We should swap SiteInstances with site isolation for guests.
-  if (SiteIsolationPolicy::IsSiteIsolationForGuestsEnabled() &&
-      AreAllSitesIsolatedForTesting()) {
+  if (SiteIsolationPolicy::IsSiteIsolationForGuestsEnabled()) {
     EXPECT_NE(host->GetSiteInstance(), first_instance);
     EXPECT_EQ("http://chromium.org/",
               host->GetSiteInstance()->GetSiteInfo().site_url().spec());
@@ -2032,11 +2024,9 @@ TEST_P(RenderFrameHostManagerTestWithSiteIsolation, DetachPendingChild) {
   EXPECT_TRUE(delete_watcher1.deleted());
   EXPECT_TRUE(delete_watcher2.deleted());
 
-  EXPECT_EQ(0U, site_instance->group()->active_frame_count());
-  EXPECT_EQ(nullptr, root_manager->current_frame_host()
-                         ->browsing_context_state()
-                         ->GetRenderFrameProxyHost(site_instance->group()))
-      << "Proxies should have been cleaned up";
+  // |site_instance| should no longer have a group, which means there are no
+  // active frames left, or any proxies for its group.
+  EXPECT_FALSE(site_instance->group());
   EXPECT_TRUE(site_instance->HasOneRef())
       << "This SiteInstance should be destroyable now.";
 }

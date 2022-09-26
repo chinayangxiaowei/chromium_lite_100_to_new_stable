@@ -334,6 +334,7 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
   const GURL& GetVisibleURL() override;
   const GURL& GetLastCommittedURL() override;
   RenderFrameHostImpl* GetMainFrame() override;
+  RenderFrameHostImpl* GetPrimaryMainFrame() override;
   PageImpl& GetPrimaryPage() override;
   RenderFrameHostImpl* GetFocusedFrame() override;
   bool IsPrerenderedFrame(int frame_tree_node_id) override;
@@ -1306,6 +1307,10 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
 
   void set_suppress_ime_events_for_testing(bool suppress) {
     suppress_ime_events_for_testing_ = suppress;
+  }
+
+  RenderWidgetHost* mouse_lock_widget_for_testing() {
+    return mouse_lock_widget_;
   }
 
  private:

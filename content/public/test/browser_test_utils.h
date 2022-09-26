@@ -1068,6 +1068,9 @@ void UiaGetPropertyValueVtArrayVtUnknownValidate(
 // Returns the RenderWidgetHost that holds the keyboard lock.
 RenderWidgetHost* GetKeyboardLockWidget(WebContents* web_contents);
 
+// Returns the RenderWidgetHost that holds the mouse lock.
+RenderWidgetHost* GetMouseLockWidget(WebContents* web_contents);
+
 // Allows tests to drive keyboard lock functionality without requiring access
 // to the RenderWidgetHostImpl header or setting up an HTTP test server.
 // |codes| represents the set of keys to lock.  If |codes| has no value, then
@@ -1275,6 +1278,9 @@ class DOMMessageQueue : public NotificationObserver,
   // If there is a message in the queue, then copies it to |message| and returns
   // true.  Otherwise (if the queue is empty), returns false.
   [[nodiscard]] bool PopMessage(std::string* message);
+
+  // Returns true if there are currently any messages in the queue.
+  bool HasMessages();
 
   // Overridden NotificationObserver methods.
   void Observe(int type,
@@ -1781,7 +1787,7 @@ class TestActivationManager : public WebContentsObserver {
 
   // Set when a matching navigation reaches kBeforeChecks and cleared when the
   // navigation is deleted/finished.
-  NavigationRequest* request_ = nullptr;
+  raw_ptr<NavigationRequest> request_ = nullptr;
 
   // If the navigation is paused in the first or last CommitDeferringCondition
   // (i.e. the one installed by this manager for testing), this will be the

@@ -669,7 +669,7 @@ void AppWindow::OSFullscreen() {
 }
 
 void AppWindow::ForcedFullscreen() {
-  SetFullscreen(FULLSCREEN_TYPE_FORCED, true);
+  SetFullscreen(FULLSCREEN_TYPE_OS, true);
 }
 
 void AppWindow::SetContentSizeConstraints(const gfx::Size& min_size,
@@ -930,7 +930,7 @@ void AppWindow::ToggleFullscreenModeForTab(content::WebContents* source,
 
   if (!IsExtensionWithPermissionOrSuggestInConsole(
           mojom::APIPermissionID::kFullscreen, extension,
-          source->GetMainFrame())) {
+          source->GetPrimaryMainFrame())) {
     return;
   }
 
