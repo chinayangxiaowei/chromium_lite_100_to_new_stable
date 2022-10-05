@@ -27,12 +27,12 @@
 #include "chrome/browser/supervised_user/supervised_user_service.h"
 #include "chrome/browser/ui/ui_features.h"
 #include "chrome/browser/ui/webui/chromeos/sync/os_sync_handler.h"
+#include "chrome/browser/ui/webui/settings/ash/search/search_tag_registry.h"
 #include "chrome/browser/ui/webui/settings/chromeos/account_manager_handler.h"
 #include "chrome/browser/ui/webui/settings/chromeos/fingerprint_handler.h"
 #include "chrome/browser/ui/webui/settings/chromeos/os_settings_features_util.h"
 #include "chrome/browser/ui/webui/settings/chromeos/parental_controls_handler.h"
 #include "chrome/browser/ui/webui/settings/chromeos/quick_unlock_handler.h"
-#include "chrome/browser/ui/webui/settings/chromeos/search/search_tag_registry.h"
 #include "chrome/browser/ui/webui/settings/people_handler.h"
 #include "chrome/browser/ui/webui/settings/profile_info_handler.h"
 #include "chrome/browser/ui/webui/settings/shared_settings_localized_strings_provider.h"
@@ -398,6 +398,7 @@ void AddFingerprintResources(content::WebUIDataSource* html_source,
           IDS_SETTINGS_ADD_FINGERPRINT_DIALOG_INSTRUCTION_LOCATE_SCANNER_LEFT_SIDE_ARIA_LABEL;
       aria_label_includes_device = true;
       break;
+    case FingerprintLocation::LEFT_OF_POWER_BUTTON_TOP_RIGHT:
     case FingerprintLocation::UNKNOWN:
       instruction_id =
           IDS_SETTINGS_ADD_FINGERPRINT_DIALOG_INSTRUCTION_LOCATE_SCANNER_KEYBOARD;

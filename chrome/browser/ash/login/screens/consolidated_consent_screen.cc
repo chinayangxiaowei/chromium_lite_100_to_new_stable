@@ -407,7 +407,7 @@ void ConsolidatedConsentScreen::OnAccept(bool enable_stats_usage,
 
 void ConsolidatedConsentScreen::ExitScreenWithAcceptedResult() {
   StartupUtils::MarkEulaAccepted();
-  network_portal_detector::GetInstance()->Enable(/*start_detection=*/true);
+  network_portal_detector::GetInstance()->Enable();
 
   const DemoSetupController* const demo_setup_controller =
       WizardController::default_controller()->demo_setup_controller();

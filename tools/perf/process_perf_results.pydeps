@@ -523,7 +523,6 @@ contrib/cluster_telemetry/multipage_skpicture_printer.py
 contrib/cluster_telemetry/page_set.py
 contrib/cluster_telemetry/rasterize_and_record_micro_ct.py
 contrib/cluster_telemetry/rendering_ct.py
-contrib/cluster_telemetry/repaint.py
 contrib/cluster_telemetry/repaint_helpers.py
 contrib/cluster_telemetry/screenshot.py
 contrib/cluster_telemetry/screenshot_ct.py
@@ -541,8 +540,6 @@ contrib/memory_extras/memory_extras.py
 contrib/orderfile/__init__.py
 contrib/orderfile/orderfile.py
 contrib/orderfile/orderfile_unittest.py
-contrib/privacy_budget_perf/__init__.py
-contrib/privacy_budget_perf/privacy_budget_perf.py
 contrib/system_health_scroll_jank/__init__.py
 contrib/system_health_scroll_jank/janky_story_set.py
 contrib/system_health_scroll_jank/system_health_scroll_jank.py

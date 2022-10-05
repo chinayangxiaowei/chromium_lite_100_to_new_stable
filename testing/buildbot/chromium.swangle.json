@@ -11,7 +11,8 @@
           "--passthrough",
           "-v",
           "--extra-browser-args=--enable-logging=stderr --js-flags=--expose-gc --use-gl=angle --use-angle=swiftshader --use-cmd-decoder=passthrough",
-          "--xvfb"
+          "--xvfb",
+          "--jobs=4"
         ],
         "isolate_name": "telemetry_gpu_integration_test",
         "isolate_profile_data": true,
@@ -904,7 +905,8 @@
           "--passthrough",
           "-v",
           "--extra-browser-args=--enable-logging=stderr --js-flags=--expose-gc --use-gl=angle --use-angle=swiftshader --use-cmd-decoder=passthrough",
-          "--xvfb"
+          "--xvfb",
+          "--jobs=4"
         ],
         "isolate_name": "telemetry_gpu_integration_test",
         "merge": {
@@ -924,7 +926,7 @@
               "cpu": "x86-64",
               "display_attached": "1",
               "gpu": "8086:3e9b",
-              "os": "Mac-11.5.2|Mac-12.4"
+              "os": "Mac-12.4|Mac-12.5"
             }
           ],
           "idempotent": false,
@@ -944,7 +946,8 @@
           "--passthrough",
           "-v",
           "--extra-browser-args=--enable-logging=stderr --js-flags=--expose-gc --use-gl=angle --use-angle=swiftshader --use-cmd-decoder=passthrough",
-          "--xvfb"
+          "--xvfb",
+          "--jobs=4"
         ],
         "isolate_name": "telemetry_gpu_integration_test",
         "merge": {

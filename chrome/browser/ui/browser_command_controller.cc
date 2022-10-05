@@ -42,6 +42,7 @@
 #include "chrome/browser/ui/page_info/page_info_dialog.h"
 #include "chrome/browser/ui/singleton_tabs.h"
 #include "chrome/browser/ui/tabs/tab_strip_model.h"
+#include "chrome/browser/ui/tabs/tab_strip_user_gesture_details.h"
 #include "chrome/browser/ui/ui_features.h"
 #include "chrome/browser/ui/web_applications/app_browser_controller.h"
 #include "chrome/browser/ui/web_applications/web_app_dialog_utils.h"
@@ -95,10 +96,8 @@
 #include "components/user_manager/user_manager.h"
 #endif
 
-// TODO(crbug.com/1052397): Revisit the macro expression once build flag switch
-// of lacros-chrome is complete.
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS_LACROS)
-#include "ui/base/ime/linux/text_edit_key_bindings_delegate_auralinux.h"
+#if BUILDFLAG(IS_LINUX)
+#include "ui/linux/linux_ui.h"
 #endif
 
 #if defined(USE_OZONE)
@@ -286,15 +285,14 @@ bool BrowserCommandController::IsReservedCommandOrKey(
 #endif
   }
 
-// TODO(crbug.com/1052397): Revisit the macro expression once build flag switch
-// of lacros-chrome is complete.
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS_LACROS)
+#if BUILDFLAG(IS_LINUX)
   // If this key was registered by the user as a content editing hotkey, then
   // it is not reserved.
-  ui::TextEditKeyBindingsDelegateAuraLinux* delegate =
-      ui::GetTextEditKeyBindingsDelegate();
-  if (delegate && event.os_event && delegate->MatchEvent(*event.os_event, NULL))
+  auto* linux_ui = ui::LinuxUi::instance();
+  if (linux_ui && event.os_event &&
+      linux_ui->GetTextEditCommandsForEvent(*event.os_event, nullptr)) {
     return false;
+  }
 #endif
 
   return command_id == IDC_CLOSE_TAB || command_id == IDC_CLOSE_WINDOW ||
@@ -458,13 +456,17 @@ bool BrowserCommandController::ExecuteCommandWithDisposition(
       break;
     case IDC_SELECT_NEXT_TAB:
       base::RecordAction(base::UserMetricsAction("Accel_SelectNextTab"));
-      SelectNextTab(browser_,
-                    {TabStripModel::GestureType::kKeyboard, time_stamp});
+      SelectNextTab(
+          browser_,
+          TabStripUserGestureDetails(
+              TabStripUserGestureDetails::GestureType::kKeyboard, time_stamp));
       break;
     case IDC_SELECT_PREVIOUS_TAB:
       base::RecordAction(base::UserMetricsAction("Accel_SelectPreviousTab"));
-      SelectPreviousTab(browser_,
-                        {TabStripModel::GestureType::kKeyboard, time_stamp});
+      SelectPreviousTab(
+          browser_,
+          TabStripUserGestureDetails(
+              TabStripUserGestureDetails::GestureType::kKeyboard, time_stamp));
       break;
     case IDC_MOVE_TAB_NEXT:
       MoveTabNext(browser_);
@@ -481,13 +483,17 @@ bool BrowserCommandController::ExecuteCommandWithDisposition(
     case IDC_SELECT_TAB_6:
     case IDC_SELECT_TAB_7:
       base::RecordAction(base::UserMetricsAction("Accel_SelectNumberedTab"));
-      SelectNumberedTab(browser_, id - IDC_SELECT_TAB_0,
-                        {TabStripModel::GestureType::kKeyboard, time_stamp});
+      SelectNumberedTab(
+          browser_, id - IDC_SELECT_TAB_0,
+          TabStripUserGestureDetails(
+              TabStripUserGestureDetails::GestureType::kKeyboard, time_stamp));
       break;
     case IDC_SELECT_LAST_TAB:
       base::RecordAction(base::UserMetricsAction("Accel_SelectNumberedTab"));
-      SelectLastTab(browser_,
-                    {TabStripModel::GestureType::kKeyboard, time_stamp});
+      SelectLastTab(
+          browser_,
+          TabStripUserGestureDetails(
+              TabStripUserGestureDetails::GestureType::kKeyboard, time_stamp));
       break;
     case IDC_DUPLICATE_TAB:
       DuplicateTab(browser_);
@@ -1052,8 +1058,8 @@ void BrowserCommandController::InitCommandState() {
   // (like Back & Forward with initial page load) must have their state
   // initialized here, otherwise they will be forever disabled.
 
-  // if (is_locked_fullscreen_)
-  //  return;
+  if (is_locked_fullscreen_)
+    return;
 
   // Navigation commands
   command_updater_.UpdateCommandEnabled(IDC_RELOAD, true);
@@ -1383,12 +1389,11 @@ void BrowserCommandController::UpdateCommandsForContentRestrictionState() {
 }
 
 void BrowserCommandController::UpdateCommandsForDevTools() {
-  // if (is_locked_fullscreen_)
-  //  return;
+  if (is_locked_fullscreen_)
+    return;
 
-  bool dev_tools_enabled =
-      true;  // DevToolsWindow::AllowDevToolsFor(
-             // profile(), browser_->tab_strip_model()->GetActiveWebContents());
+  bool dev_tools_enabled = DevToolsWindow::AllowDevToolsFor(
+      profile(), browser_->tab_strip_model()->GetActiveWebContents());
   command_updater_.UpdateCommandEnabled(IDC_DEV_TOOLS, dev_tools_enabled);
   command_updater_.UpdateCommandEnabled(IDC_DEV_TOOLS_CONSOLE,
                                         dev_tools_enabled);

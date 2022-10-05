@@ -8,6 +8,7 @@
 #import "ios/chrome/browser/ui/toolbar/buttons/toolbar_configuration.h"
 #import "ios/chrome/browser/ui/toolbar/public/toolbar_constants.h"
 #import "ios/chrome/browser/ui/util/uikit_ui_util.h"
+#import "ios/chrome/browser/ui/util/util_swift.h"
 #import "ios/chrome/common/ui/util/constraints_ui_util.h"
 
 #if !defined(__has_feature) || !__has_feature(objc_arc)
@@ -158,6 +159,11 @@ const CGFloat kSpotlightCornerRadius = 7;
     NamedGuide* guide = [NamedGuide guideWithName:self.guideName view:self];
     if (guide.constrainedView != self)
       guide.constrainedView = self;
+
+    // [M105 Only]: This breaks the NTP in various ways when building M105 with
+    // Xcode 13.2.1. For 105 only, skip this call. See crbug.com/1350976
+    // for details.
+    // [self.layoutGuideCenter referenceView:self underName:self.guideName];
   }
 }
 

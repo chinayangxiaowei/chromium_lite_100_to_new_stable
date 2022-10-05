@@ -1512,7 +1512,7 @@ IN_PROC_BROWSER_TEST_F(WebViewInteractiveTest,
   content::RenderFrameDeletedObserver observer(
       guest_web_contents->GetPrimaryMainFrame());
   EXPECT_TRUE(content::ExecuteScript(
-      guest_web_contents,
+      guest_web_contents, 
       "document.querySelector('div').requestPointerLock()"));
   observer.WaitUntilDeleted();
 
