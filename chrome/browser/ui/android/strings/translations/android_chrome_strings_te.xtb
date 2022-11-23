@@ -454,6 +454,7 @@
 <translation id="3435465986463792564">చాలా విండోలు ఉన్నాయా? మీరు వాటిని ఇక్కడ నుండి మేనేజ్ చేయవచ్చు</translation>
 <translation id="3443221991560634068">ప్రస్తుత పేజీని మళ్లీ లోడ్ చేయండి</translation>
 <translation id="3444179773590444986">సైట్‌ల కోసం ముదురు రంగు రూపం గురించిన ఫీడ్‌బ్యాక్‌ను షేర్ చేయాలా?</translation>
+<translation id="3452832259067974318">మీ గోప్యతను సంరక్షించడానికి, Chrome ఈ ఫీల్డ్‌లో మీ పాస్‌వర్డ్‌ను ఆటోఫిల్ చేయదు.</translation>
 <translation id="3469665409713263828">{FILE_COUNT,plural, =1{1 డౌన్‌లోడ్ షెడ్యూల్ చేయబడింది}other{# డౌన్‌లోడ్‌లు షెడ్యూల్ చేయబడ్డాయి}}</translation>
 <translation id="3474624961160222204"><ph name="NAME" /> లాగా కొనసాగించు</translation>
 <translation id="3478363558367712427">మీరు మీ సెర్చ్ ఇంజిన్‌ను ఎంచుకోవచ్చు</translation>
@@ -679,6 +680,7 @@
 <translation id="4763480195061959176">వీడియో</translation>
 <translation id="4766313118839197559">పాస్‌వర్డ్‌లు ఈ పరికరంలోని పాస్‌వర్డ్ మేనేజర్‌లో సేవ్ చేయబడతాయి</translation>
 <translation id="4766678251456904326">పరికరానికి మరొక ఖాతాను జోడించండి</translation>
+<translation id="4787736314074622408">మీరు <ph name="ITEM_TITLE" />‌ను తొలగించాలనుకుంటున్నారా?</translation>
 <translation id="4791358705705538979">వెబ్ అంతటా చెక్అవుట్ వంటి టాస్క్‌లను పూర్తి చేయడానికి మీకు సహాయపడుతుంది</translation>
 <translation id="4794291718671962615">(<ph name="MEGABYTES" />) <ph name="URL" /></translation>
 <translation id="4802417911091824046">Google Payకి సంబంధించిన పేమెంట్ ఆప్షన్‌లు మరియు అడ్రస్‌లు రహస్య పదబంధం ఎన్‌క్రిప్షన్‌లో ఉండవు.
@@ -748,6 +750,7 @@
 <translation id="5091199029769593641">త్వరలో, మీరు కొత్త ట్యాబ్‌ను తెరిచినప్పుడు మీరు <ph name="SITE_NAME" /> నుండి కథనాలను చూస్తారు. మీరు ఫాలో అయ్యే సైట్‌లు మీ Google ఖాతాలో సేవ్ చేయబడతాయి. మీరు వాటిని Discover సెట్టింగ్‌లలో మేనేజ్ చేయవచ్చు.</translation>
 <translation id="5091249083535528968">పొడిగించిన డేటా వినియోగం</translation>
 <translation id="509429900233858213">ఒక ఎర్రర్ ఏర్పడింది.</translation>
+<translation id="5099845111805573968">మీరు ఒకసారి డెస్క్‌టాప్ సైట్‌ని ఎంచుకున్నప్పుడు, మీరు సందర్శించిన ప్రతిసారీ సైట్‌కి సెట్టింగ్ వర్తించబడుతుంది</translation>
 <translation id="5102401324271069229">ఏదైనా సైట్ మీ పాస్‌వర్డ్‌ను దొంగిలించే ప్రయత్నం చేసినా, లేదంటే ఏదైనా హానికరమైన ఫైల్‌ను మీరు డౌన్‌లోడ్ చేసినా, సదరు URLలను, ఆయా పేజీల కంటెంట్‌లోని కొన్ని భాగాలను Chrome, 'సురక్షిత బ్రౌజింగ్'కు పంపవచ్చు</translation>
 <translation id="510275257476243843">1 గంట మిగిలి ఉంది</translation>
 <translation id="5115811374190515607"><ph name="PRODUCT_NAME" />కు</translation>
@@ -907,6 +910,7 @@
 <translation id="5958275228015807058">డౌన్‌లోడ్‌లలో మీ ఫైళ్లు మరియు పేజీలను కనుగొనండి</translation>
 <translation id="5962718611393537961">కుదించడానికి నొక్కండి</translation>
 <translation id="5964869237734432770">ఇమేజ్ వివరణలను ఆపివేయి</translation>
+<translation id="5966233851250124270">Chrome మీ ఎంపికను గుర్తుంచుకుంటుంది</translation>
 <translation id="5979084224081478209">పాస్‌వర్డ్‌లను చెక్ చేయండి</translation>
 <translation id="5995726099713306770">పేజీని మళ్లీ డౌన్‌లోడ్ చేయాలనుకుంటున్నారా?</translation>
 <translation id="6000066717592683814">Googleని ఉంచు</translation>
@@ -946,6 +950,7 @@
 <translation id="6192907950379606605">ఇమేజ్ వివరణలను పొందండి</translation>
 <translation id="6196315980958524839">పాస్‌వర్డ్‌లు ఈ పరికరంలోని Google Password Managerలో సేవ్ చేయబడతాయి</translation>
 <translation id="620197886010707372">Google Playలో <ph name="APPNAME" /> యాప్‌ను తెరవాలా?</translation>
+<translation id="6202812185118613467">సింక్‌ను ప్రారంభించడం కోసం తిరిగి సైన్ ఇన్ చేయండి</translation>
 <translation id="6203593061661911168">Wi-Fi ఆన్ చేసినప్పుడు, డౌన్‌లోడ్ ప్రారంభమవుతుంది</translation>
 <translation id="6210748933810148297"><ph name="EMAIL" /> కాదా?</translation>
 <translation id="6211386937064921208">ఈ పేజీని ప్రివ్యూ చేస్తోంది</translation>
@@ -1083,6 +1088,7 @@
 <translation id="6820686453637990663">CVC</translation>
 <translation id="6824899148643461612"><ph name="TAB_TITLE" />, ట్యాబ్‌ను ఎంచుకున్నారు</translation>
 <translation id="6828070228333235514">ధరను ట్రాక్ చేయడాన్ని ఆపివేయండి</translation>
+<translation id="6830728435402077660">సురక్షితం కాదు</translation>
 <translation id="6833996806551876956">గోప్యతా శాండ్‌బాక్స్ ట్రయల్</translation>
 <translation id="6836206421467243968"><ph name="TITLE_OF_GROUP" /> ట్యాబ్ గ్రూప్‌ను కొత్త బ్యాక్‌గ్రౌండ్ ట్యాబ్ గ్రూప్‌గా రీస్టోర్ చేయండి.</translation>
 <translation id="6846298663435243399">లోడ్ చేస్తున్నాము…</translation>

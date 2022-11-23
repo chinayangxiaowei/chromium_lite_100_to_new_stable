@@ -1,4 +1,4 @@
-// Copyright (c) 2012 The Chromium Authors. All rights reserved.
+// Copyright 2012 The Chromium Authors
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -103,6 +103,7 @@ void CaptivePortalDetector::StartProbe(
   simple_loader_->SetAllowHttpErrorResults(true);
   network::SimpleURLLoader::BodyAsStringCallback callback = base::BindOnce(
       &CaptivePortalDetector::OnSimpleLoaderComplete, base::Unretained(this));
+  state_ = State::kProbe;
   simple_loader_->DownloadToStringOfUnboundedSizeUntilCrashAndDie(
       loader_factory_, std::move(callback));
 }
@@ -114,13 +115,15 @@ void CaptivePortalDetector::Cancel() {
   // Cancel any pending calls to StartProbe().
   weak_factory_.InvalidateWeakPtrs();
 #endif
+  state_ = State::kCancelled;
 }
 
 void CaptivePortalDetector::OnSimpleLoaderComplete(
     std::unique_ptr<std::string> response_body) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
-  DCHECK(FetchingURL());
-  DCHECK(!detection_callback_.is_null());
+  CHECK_EQ(state_, State::kProbe);
+  CHECK(FetchingURL());
+  CHECK(!detection_callback_.is_null());
 
   int response_code = 0;
   net::HttpResponseHeaders* headers = nullptr;
@@ -129,6 +132,7 @@ void CaptivePortalDetector::OnSimpleLoaderComplete(
     headers = simple_loader_->ResponseInfo()->headers.get();
     response_code = simple_loader_->ResponseInfo()->headers->response_code();
   }
+  state_ = State::kCompleted;
   OnSimpleLoaderCompleteInternal(simple_loader_->NetError(), response_code,
                                  simple_loader_->GetFinalURL(), headers);
 }

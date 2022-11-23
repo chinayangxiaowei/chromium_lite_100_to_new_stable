@@ -1,4 +1,4 @@
-# Copyright 2021 The Chromium Authors. All rights reserved.
+# Copyright 2021 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 """Definitions of builders in the tryserver.chromium.mac builder group."""
@@ -103,6 +103,7 @@ try_.orchestrator_builder(
     experiments = {
         "remove_src_checkout_experiment": 100,
         "enable_weetbix_queries": 100,
+        "weetbix.retry_weak_exonerations": 100,
     },
     # TODO(crbug.com/1372179): Use orchestrator pool once overloaded test pools
     # are addressed
@@ -276,9 +277,6 @@ ios_builder(
 
 ios_builder(
     name = "ios-catalyst",
-
-    # TODO(crbug.com/1350126): Move ios-catalyst to xcode.x14main when fixed.
-    xcode = xcode.x13main,
     mirrors = [
         "ci/ios-catalyst",
     ],
@@ -381,6 +379,7 @@ ios_builder(
     tryjob = try_.job(
         location_filters = [
             "ios/.+",
+            "testing/variations/fieldtrial_testing_config.json",
         ],
     ),
 )

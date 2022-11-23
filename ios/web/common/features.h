@@ -1,4 +1,4 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2017 The Chromium Authors
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -39,12 +39,9 @@ extern const base::Feature kPreserveScrollViewProperties;
 // generate PDF when Page Snapshot is taken just to record PDF size.
 extern const base::Feature kRecordSnapshotSize;
 
-// When enabled, the |attribution| property of NSMutableURLRequests passed to
+// When enabled, the `attribution` property of NSMutableURLRequests passed to
 // WKWebView is set as NSURLRequestAttributionUser on iOS 15.
 extern const base::Feature kSetRequestAttribution;
-
-// Disables the screenshots of non-HTML pages on iOS15.
-extern const base::Feature kDisableNonHTMLScreenshotOnIOS15;
 
 // Feature flag that enable Shared Highlighting color change in iOS.
 extern const base::Feature kIOSSharedHighlightingColorChange;
@@ -72,8 +69,10 @@ extern const base::Feature kUseLoadSimulatedRequestForOfflinePage;
 // Feature flag that enable web page detected intents annotations.
 extern const base::Feature kEnableWebPageAnnotations;
 
-// When true, screenshots of non-HTML (e.g. PDF) pages should be taken.
-bool ShouldTakeScreenshotOnNonHTMLContent();
+// When enabled, CRWWebViewScrollViewProxy's `scrollEnabled` state is not
+// restored if the new instance already has the same `scrollEnabled` state as
+// the old one.
+extern const base::Feature kScrollViewProxyScrollEnabledWorkaround;
 
 // When true, user control for camera and/or microphone access should be
 // enabled.

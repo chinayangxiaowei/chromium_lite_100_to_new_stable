@@ -1,4 +1,4 @@
-// Copyright 2014 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Chromium Authors
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -28,6 +28,7 @@
 #include "base/strings/string_number_conversions.h"
 #include "base/strings/string_util.h"
 #include "base/task/sequenced_task_runner.h"
+#include "base/task/task_runner_util.h"
 #include "base/threading/sequenced_task_runner_handle.h"
 #include "base/time/time.h"
 #include "components/services/storage/public/cpp/buckets/bucket_locator.h"
@@ -733,10 +734,12 @@ void CacheStorageManager::GetStorageKeys(
       usage_tuples;
 
   // Note that we don't want `GetStorageKeysAndLastModifiedOnTaskRunner()` to
-  // call `QuotaManagerProxy::UpdateOrCreateBucket()` because this method is
-  // sometimes used by the QuotaManager to bootstrap the quota database (and
-  // a call to `UpdateOrCreateBucket` could create a deadlock). We don't need
-  // the bucket ID to build a list of StorageKeys anyway.
+  // call `QuotaManagerProxy::UpdateOrCreateBucket()` because doing so creates
+  // a deadlock. Specifically, `GetStorageKeys()` would wait for the bucket
+  // information to be returned and the QuotaManager won't respond with
+  // bucket information until the `GetStorageKeys()` call finishes (as part of
+  // the QuotaDatabase bootstrapping process). We don't need the bucket ID to
+  // build a list of StorageKeys anyway.
   cache_task_runner_->PostTask(
       FROM_HERE,
       base::BindOnce(
@@ -804,9 +807,6 @@ void CacheStorageManager::DeleteStorageKeyDataGotAllBucketInfo(
   }
 }
 
-// TODO(https://crbug.com/1218097): Delete this method in favor of the one that
-// takes in a `BucketLocator` once `StoragePolicyUpdate` uses more than just
-// origin. Note: This only deletes data associated with the default bucket.
 void CacheStorageManager::DeleteStorageKeyData(
     const blink::StorageKey& storage_key,
     storage::mojom::CacheStorageOwner owner,
@@ -923,9 +923,6 @@ void CacheStorageManager::DeleteBucketDataDidGetExists(
                      std::move(callback), base::WrapUnique(cache_storage)));
 }
 
-// TODO(https://crbug.com/1218097): Delete this method in favor of the one that
-// takes in a `BucketLocator` if we can convert `StoragePolicyUpdate` to
-// provide enough info to reconstruct a `storage::BucketLocator`.
 // Note: This only deletes data associated with the default bucket for a given
 // `blink::StorageKey`.
 void CacheStorageManager::DeleteStorageKeyData(

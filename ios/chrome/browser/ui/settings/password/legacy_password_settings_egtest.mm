@@ -1,4 +1,4 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2017 The Chromium Authors
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -1817,8 +1817,7 @@ id<GREYMatcher> EditDoneButton() {
 }
 
 // Tests the add password flow.
-// (crbug.com/1377079#c6) Flaky, please re-enable once fixed.
-- (void)DISABLED_testAddNewPasswordCredential {
+- (void)testAddNewPasswordCredential {
   OpenPasswordSettings();
 
   // Press "Add".
@@ -1864,8 +1863,7 @@ id<GREYMatcher> EditDoneButton() {
 // Tests that when a new credential is saved or an existing one is updated via
 // the add credential flow, the VC auto scrolls to the newly created or the
 // updated entry.
-// (crbug.com/1377079#c6) Flaky, please re-enable once fixed.
-- (void)DISABLED_testAutoScroll {
+- (void)testAutoScroll {
   for (int i = 0; i < 20; i++) {
     NSString* username = [NSString stringWithFormat:@"username %d", i];
     NSString* password = [NSString stringWithFormat:@"password %d", i];
@@ -1911,10 +1909,6 @@ id<GREYMatcher> EditDoneButton() {
 // matches with an existing credential results in showing a section alert for
 // the existing credential.
 - (void)testAddNewDuplicatedPasswordCredential {
-  // TODO(crbug.com/1351802): Re-enable when flake fixed.
-  if (@available(iOS 16, *)) {
-    EARL_GREY_TEST_DISABLED(@"Test consistently failing to tap save.");
-  }
   SaveExamplePasswordForm();
 
   OpenPasswordSettings();
@@ -1973,13 +1967,7 @@ id<GREYMatcher> EditDoneButton() {
 // Tests that the duplicate credential section alert is shown when the user adds
 // a credential that has the same website as that of an existing credential
 // (does not contain username).
-// (crbug.com/1377079#c6) Flaky, please re-enable once fixed.
-- (void)DISABLED_testDuplicatedCredentialWithNoUsername {
-  // TODO(crbug.com/1351802): Re-enable when flake fixed.
-  if (@available(iOS 16, *)) {
-    EARL_GREY_TEST_DISABLED(@"Test consistently failing to tap save.");
-  }
-
+- (void)testDuplicatedCredentialWithNoUsername {
   OpenPasswordSettings();
 
   [[EarlGrey selectElementWithMatcher:AddPasswordButton()]

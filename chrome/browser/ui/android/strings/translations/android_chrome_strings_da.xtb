@@ -454,6 +454,7 @@ Når du sletter din browserhistorik – det hele eller for et specifikt website 
 <translation id="3435465986463792564">Har du mange åbne vinduer? Du kan administrere dem herfra</translation>
 <translation id="3443221991560634068">Genindlæs den aktuelle side</translation>
 <translation id="3444179773590444986">Vil du dele feedback om Mørkt tema på websites?</translation>
+<translation id="3452832259067974318">Af hensyn til beskyttelsen af dine personlige oplysninger udfylder Chrome ikke din adgangskode automatisk i dette felt.</translation>
 <translation id="3469665409713263828">{FILE_COUNT,plural, =1{1 planlagt download.}one{# planlagt download.}other{# planlagte downloads.}}</translation>
 <translation id="3474624961160222204">Fortsæt som <ph name="NAME" /></translation>
 <translation id="3478363558367712427">Du kan vælge din søgemaskine</translation>
@@ -679,6 +680,7 @@ Din Google-konto kan have andre former for browserhistorik, f.eks. søgninger og
 <translation id="4763480195061959176">video</translation>
 <translation id="4766313118839197559">Adgangskoder gemmes i Adgangskodeadministrator på denne enhed</translation>
 <translation id="4766678251456904326">Føj konto til enhed</translation>
+<translation id="4787736314074622408">Vil du slette <ph name="ITEM_TITLE" />?</translation>
 <translation id="4791358705705538979">Hjælper dig med at udføre opgaver som f.eks. betaling overalt på nettet</translation>
 <translation id="4794291718671962615">(<ph name="MEGABYTES" />) <ph name="URL" /></translation>
 <translation id="4802417911091824046">Kryptering med adgangssætning omfatter ikke betalingsmetoder og adresser fra Google Pay.
@@ -748,6 +750,7 @@ Hvis du vil ændre denne indstilling, skal du <ph name="BEGIN_LINK" />nulstille 
 <translation id="5091199029769593641">Du får snart vist historier fra <ph name="SITE_NAME" />, når du åbner en ny fane. De websites, du følger, gemmes på din Google-konto. Du kan administrere dem i indstillingerne for Discover.</translation>
 <translation id="5091249083535528968">Udvidede brugsdata</translation>
 <translation id="509429900233858213">Der opstod en fejl.</translation>
+<translation id="5099845111805573968">Når du vælger et computerwebsite én gang, anvendes indstillingen på websitet, hver gang du besøger det</translation>
 <translation id="5102401324271069229">Hvis et website forsøger at stjæle din adgangskode, eller hvis du downloader en skadelig fil, sender Chrome muligvis også webadresser, bl.a. mindre mængder sideindhold, til Beskyttet browsing</translation>
 <translation id="510275257476243843">1 time tilbage</translation>
 <translation id="5115811374190515607">til <ph name="PRODUCT_NAME" /></translation>
@@ -907,6 +910,7 @@ Hvis du vil ændre denne indstilling, skal du <ph name="BEGIN_LINK" />nulstille 
 <translation id="5958275228015807058">Find dine filer og sider i Downloads</translation>
 <translation id="5962718611393537961">Tryk for at skjule</translation>
 <translation id="5964869237734432770">Stop billedbeskrivelser</translation>
+<translation id="5966233851250124270">Chrome husker dit valg</translation>
 <translation id="5979084224081478209">Tjek adgangskoder</translation>
 <translation id="5995726099713306770">Vil du downloade siden igen?</translation>
 <translation id="6000066717592683814">Behold Google</translation>
@@ -946,6 +950,7 @@ Prøveperioder til Privacy Sandbox er stadig under udvikling og kan anvendes i u
 <translation id="6192907950379606605">Få billedbeskrivelser</translation>
 <translation id="6196315980958524839">Adgangskoder gemmes i Google Adgangskodeadministrator på denne enhed</translation>
 <translation id="620197886010707372">Vil du åbne appen for <ph name="APPNAME" /> med Google Play?</translation>
+<translation id="6202812185118613467">Log ind igen for at synkronisere</translation>
 <translation id="6203593061661911168">Downloaden starter, så snart der er Wi-Fi-forbindelse</translation>
 <translation id="6210748933810148297">Ikke <ph name="EMAIL" />?</translation>
 <translation id="6211386937064921208">Forhåndsvisning af denne side</translation>
@@ -1083,6 +1088,7 @@ Trust tokens forbedrer beskyttelsen af personlige oplysninger på nettet og kan 
 <translation id="6820686453637990663">CVC</translation>
 <translation id="6824899148643461612"><ph name="TAB_TITLE" />, fane, valgt</translation>
 <translation id="6828070228333235514">Stop med at holde øje med prisen</translation>
+<translation id="6830728435402077660">Ikke sikker</translation>
 <translation id="6833996806551876956">Prøveperiode til Privacy Sandbox</translation>
 <translation id="6836206421467243968">Gendan fanegruppen <ph name="TITLE_OF_GROUP" /> som en ny fanegruppe i baggrunden.</translation>
 <translation id="6846298663435243399">Indlæser…</translation>

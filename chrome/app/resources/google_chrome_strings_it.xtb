@@ -29,6 +29,7 @@
 <translation id="1587223624401073077">Google Chrome sta utilizzando la videocamera.</translation>
 <translation id="1587325591171447154"><ph name="FILE_NAME" /> è pericoloso, pertanto è stato bloccato da Chrome.</translation>
 <translation id="1597911401261118146">Per controllare che le tue password siano protette da violazioni dei dati e altri problemi di sicurezza, <ph name="BEGIN_LINK" />accedi a Chrome<ph name="END_LINK" />.</translation>
+<translation id="1599904803480101533">Chrome ha bloccato questo file di archivio perché potrebbe nascondere malware</translation>
 <translation id="1619887657840448962">Per rendere Chrome più sicuro, abbiamo disattivato la seguente estensione non presente nel <ph name="IDS_EXTENSION_WEB_STORE_TITLE" /> che potrebbe essere stata aggiunta a tua insaputa.</translation>
 <translation id="1627304841979541023"><ph name="BEGIN_BOLD" />Come puoi gestire i tuoi dati:<ph name="END_BOLD" /> per tutelare la tua privacy, eliminiamo automaticamente i tuoi interessi risalenti a più di 4 settimane prima della data corrente. Mentre continui a navigare, un interesse potrebbe essere nuovamente visualizzato nell'elenco. Puoi anche rimuovere gli interessi che non vuoi che Chrome prenda in considerazione.</translation>
 <translation id="1628000112320670027">Ricevi assistenza per Chrome</translation>
@@ -56,6 +57,7 @@
 <translation id="2094648590148273905">Termini di ChromeOS Flex</translation>
 <translation id="2094919256425865063">Vuoi chiudere comunque Chrome?</translation>
 <translation id="2106831557840787829">La realizzazione di ChromeOS Flex è stata possibile grazie a un <ph name="BEGIN_LINK_CROS_OSS" />software open source<ph name="END_LINK_CROS_OSS" /> aggiuntivo, noto come <ph name="BEGIN_LINK_LINUX_OSS" />ambiente di sviluppo Linux<ph name="END_LINK_LINUX_OSS" />.</translation>
+<translation id="2112742052114331084">Quando questa impostazione è attiva, Chrome recupera memoria dalle schede che non utilizzi attivamente. Questo consente di liberare risorse del computer da usare per altre attività e di fare in modo che Chrome sia sempre veloce. Le schede non attive appaiono vuote e vengono ricaricate automaticamente quando ci fai clic sopra. <ph name="BEGIN_LINK" />Scopri di più<ph name="END_LINK" /> o <ph name="BEGIN_LINK_2" />invia feedback<ph name="END_LINK_2" /></translation>
 <translation id="2120620239521071941">Verranno eliminati <ph name="ITEMS_COUNT" /> elementi da questo dispositivo. Per recuperare i dati in un secondo momento, accedi a Chrome come <ph name="USER_EMAIL" />.</translation>
 <translation id="2121284319307530122">Riavvia per aggiornare &amp;Chrome</translation>
 <translation id="2123055963409958220">Contribuisci a migliorare Chrome indicando le <ph name="BEGIN_LINK" />impostazioni attuali<ph name="END_LINK" /></translation>
@@ -172,6 +174,7 @@
 <translation id="4262915912852657291"><ph name="BEGIN_BOLD" />Quali dati vengono utilizzati:<ph name="END_BOLD" /> la cronologia di navigazione, ossia un record dei siti visitati da Chrome sul dispositivo in uso.</translation>
 <translation id="4281844954008187215">Termini di servizio</translation>
 <translation id="4293420128516039005">Accedi per sincronizzare e personalizzare Chrome sui tuoi dispositivi</translation>
+<translation id="430327780270213103">Consenti all'estensione di mostrare le richieste di accesso nella barra degli strumenti di Chrome</translation>
 <translation id="4328355335528187361">Google Chrome Dev (mDNS-In)</translation>
 <translation id="4334294535648607276">Download completato.</translation>
 <translation id="4335235004908507846">Chrome può contribuire a proteggerti da violazioni dei dati, estensioni non valide e non solo</translation>
@@ -269,6 +272,7 @@
 <translation id="6735387454586646204">Sistema ChromeOS Flex</translation>
 <translation id="6739177684496155661">Vuoi continuare con un nuovo profilo Chrome?</translation>
 <translation id="6750954913813541382">Per correggere gli errori ortografici, Chrome invia a Google il testo che digiti nel browser</translation>
+<translation id="6756581345161130259">Se necessario, Chrome recupera memoria dalle schede che non utilizzi attivamente. Puoi modificare questa preferenza in qualsiasi momento nelle Impostazioni.</translation>
 <translation id="677276454032249905">Vuoi uscire comunque da Chrome?</translation>
 <translation id="6785872064505734160">L'Assistente Google in Chrome può completare azioni per te su vari siti web</translation>
 <translation id="683440813066116847">Regola inbound per consentire il traffico mDNS in Google Chrome Canary.</translation>

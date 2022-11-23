@@ -1,4 +1,4 @@
-// Copyright 2014 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Chromium Authors
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -927,14 +927,12 @@ class CacheStorageManagerStorageKeyAndBucketTestP
       case (StorageKeyAndBucketTestCase::kThirdPartyDefault):
       case (StorageKeyAndBucketTestCase::kThirdPartyNamed):
         // Recreate storage keys and buckets.
-        storage_key1_ =
-            blink::StorageKey(url::Origin::Create(GURL("http://example1.com")),
-
-                              url::Origin::Create(GURL("http://example3.com")));
-        storage_key2_ =
-            blink::StorageKey(url::Origin::Create(GURL("http://example2.com")),
-
-                              url::Origin::Create(GURL("http://example3.com")));
+        storage_key1_ = blink::StorageKey::CreateForTesting(
+            url::Origin::Create(GURL("http://example1.com")),
+            url::Origin::Create(GURL("http://example3.com")));
+        storage_key2_ = blink::StorageKey::CreateForTesting(
+            url::Origin::Create(GURL("http://example2.com")),
+            url::Origin::Create(GURL("http://example3.com")));
 
         bucket_locator1_ = GetOrCreateBucket(storage_key1_, bucket_name);
         bucket_locator2_ = GetOrCreateBucket(storage_key2_, bucket_name);
@@ -1840,12 +1838,6 @@ TEST_P(CacheStorageManagerStorageKeyAndBucketTestP,
   EXPECT_TRUE(
       CachePut(callback_cache_handle_.value(), GURL("http://example.com/foo")));
 
-  // TODO(awillia): GetAllStorageKeysUsage() won't work for third-party storage
-  // keys until a later CL, so skip for now.
-  if (storage_key1_.IsThirdPartyContext()) {
-    return;
-  }
-
   auto usage = GetAllStorageKeysUsage();
   ASSERT_EQ(1ULL, usage.size());
   int64_t unpadded_size = usage[0]->total_size_bytes;
@@ -2080,10 +2072,8 @@ TEST_P(CacheStorageManagerTestP, GetStorageKeysIgnoresKeysFromNamedBuckets) {
 
     auto storage_key3 = blink::StorageKey(test_origin);
 
-    auto storage_key4 =
-        blink::StorageKey(test_origin,
-
-                          url::Origin::Create(GURL("http://example5.com")));
+    auto storage_key4 = blink::StorageKey::CreateForTesting(
+        test_origin, url::Origin::Create(GURL("http://example5.com")));
 
     const storage::BucketLocator bucket_locator3 =
         GetOrCreateBucket(storage_key3, "non-default");
@@ -2722,10 +2712,9 @@ TEST_P(CacheStorageManagerTestP, DeleteStorageKeyData) {
   const auto named_bucket_locator1 =
       GetOrCreateBucket(storage_key1_, "non-default");
 
-  const auto partitioned_storage_key1 =
-      blink::StorageKey(url::Origin::Create(GURL("http://example1.com")),
-
-                        url::Origin::Create(GURL("http://example3.com")));
+  const auto partitioned_storage_key1 = blink::StorageKey::CreateForTesting(
+      url::Origin::Create(GURL("http://example1.com")),
+      url::Origin::Create(GURL("http://example3.com")));
 
   const auto partitioned_default_bucket_locator1 =
       GetOrCreateBucket(partitioned_storage_key1, storage::kDefaultBucketName);
