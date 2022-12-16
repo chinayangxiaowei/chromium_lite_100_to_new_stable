@@ -94,8 +94,8 @@ const base::Feature kEnableOpenInNewTabFromStartSurfaceFeed{
     base::FEATURE_DISABLED_BY_DEFAULT};
 
 const base::Feature kWebUiFeed{"FeedWebUi", base::FEATURE_DISABLED_BY_DEFAULT};
-const base::FeatureParam<std::string> kWebUiScriptFetchUrl{
-    &kWebUiFeed, "scripturl", "chrome-untrusted://feed/feed.js"};
+const base::FeatureParam<std::string> kWebUiFeedUrl{
+    &kWebUiFeed, "feedurl", "https://www.google.com/feed-api/following"};
 const base::FeatureParam<bool> kWebUiDisableContentSecurityPolicy{
     &kWebUiFeed, "disableCsp", false};
 
@@ -109,7 +109,7 @@ std::string GetFeedReferrerUrl() {
 }
 
 const base::Feature kPersonalizeFeedUnsignedUsers{
-    "PersonalizeFeedUnsignedUsers", base::FEATURE_ENABLED_BY_DEFAULT};
+    "PersonalizeFeedUnsignedUsers", base::FEATURE_DISABLED_BY_DEFAULT};
 
 const base::Feature kPersonalizeFeedNonSyncUsers{
     "PersonalizeFeedNonSyncUsers", base::FEATURE_DISABLED_BY_DEFAULT};
@@ -117,18 +117,6 @@ const base::Feature kPersonalizeFeedNonSyncUsers{
 signin::ConsentLevel GetConsentLevelNeededForPersonalizedFeed() {
   if (!base::FeatureList::IsEnabled(kPersonalizeFeedNonSyncUsers))
     return signin::ConsentLevel::kSync;
-
-#if BUILDFLAG(IS_ANDROID)
-  // When this flag is enabled, the wording of the sync promo card
-  // shows that enabling sync may get the user more relevant content but does
-  // not imply that a signed-in user must enable sync to get personalized
-  // content. Therefore we can request a signed-in feed for users who are
-  // signed in but not syncing.
-  // TODO(crbug/1205923): When this wording is fully launched, use kSignin
-  // only.
-  if (!base::FeatureList::IsEnabled(syncer::kSyncAndroidPromosWithTitle))
-    return signin::ConsentLevel::kSync;
-#endif  // BUILDFLAG(IS_ANDROID)
   return signin::ConsentLevel::kSignin;
 }
 
@@ -147,5 +135,12 @@ const base::FeatureParam<int> kFeedCloseRefreshDelayMinutes{
     &kFeedCloseRefresh, "delay_minutes", 30};
 const base::FeatureParam<bool> kFeedCloseRefreshRequireInteraction{
     &kFeedCloseRefresh, "require_interaction", false};
+
+const base::Feature kFeedNoViewCache{"FeedNoViewCache",
+                                     base::FEATURE_ENABLED_BY_DEFAULT};
+const base::Feature kFeedReplaceAll{"FeedReplaceAll",
+                                    base::FEATURE_DISABLED_BY_DEFAULT};
+const base::Feature kFeedVideoInlinePlayback{"FeedVideoInlinePlayback",
+                                             base::FEATURE_DISABLED_BY_DEFAULT};
 
 }  // namespace feed

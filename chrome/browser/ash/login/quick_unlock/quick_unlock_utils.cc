@@ -240,6 +240,11 @@ bool IsFingerprintSupported() {
          command_line->HasSwitch(switches::kFingerprintSensorLocation);
 }
 
+bool IsLeftOfPowerButtonTopRightFingerprint() {
+  return GetFingerprintLocation() ==
+         FingerprintLocation::LEFT_OF_POWER_BUTTON_TOP_RIGHT;
+}
+
 bool IsFingerprintEnabled(Profile* profile, Purpose purpose) {
   // Don't need to check these when using flags to control fingerprint behavior
   // in tests.

@@ -132,6 +132,8 @@ FingerprintLocation GetFingerprintLocation();
 // screen and the settings.
 void AddFingerprintResources(content::WebUIDataSource* html_source);
 
+bool IsLeftOfPowerButtonTopRightFingerprint();
+
 }  // namespace quick_unlock
 }  // namespace ash
 

@@ -4,10 +4,10 @@
 
 #import "ios/chrome/browser/ui/tab_switcher/tab_grid/tab_grid_top_toolbar.h"
 
+#import "base/check_op.h"
 #import "base/feature_list.h"
 #import "base/ios/ios_util.h"
 #import "ios/chrome/browser/ui/icons/chrome_symbol.h"
-#import "ios/chrome/browser/ui/tab_switcher/tab_grid/features.h"
 #import "ios/chrome/browser/ui/tab_switcher/tab_grid/tab_grid_constants.h"
 #import "ios/chrome/browser/ui/tab_switcher/tab_grid/tab_grid_page_control.h"
 #import "ios/chrome/browser/ui/thumb_strip/thumb_strip_feature.h"
@@ -89,7 +89,7 @@ bool ShouldUseToolbarBlurFix() {
   if (_mode == mode)
     return;
   // Reset search state when exiting search mode.
-  if (IsTabsSearchEnabled() && _mode == TabGridModeSearch) {
+  if (_mode == TabGridModeSearch) {
     _searchBar.text = @"";
     [_searchBar resignFirstResponder];
   }
@@ -338,7 +338,7 @@ bool ShouldUseToolbarBlurFix() {
   UIBarButtonItem* trailingButton = _doneButton;
   _selectionModeFixedSpace.width = 0;
   if ([self shouldUseCompactLayout:traitCollection]) {
-    if (IsTabsSearchEnabled() && _mode == TabGridModeNormal) {
+    if (_mode == TabGridModeNormal) {
       _leadingButton = _searchButton;
     } else {
       _leadingButton = _spaceItem;
@@ -385,7 +385,7 @@ bool ShouldUseToolbarBlurFix() {
 
   [items addObject:_leadingButton];
 
-  if (IsTabsSearchEnabled() && _mode == TabGridModeNormal) {
+  if (_mode == TabGridModeNormal) {
     animated = YES;
     [items
         addObjectsFromArray:@[ _iconButtonAdditionalSpaceItem, _searchButton ]];
@@ -399,7 +399,7 @@ bool ShouldUseToolbarBlurFix() {
     // cases, there is a floating new tab button on the bottom.
     [items
         addObjectsFromArray:@[ _newTabButton, _iconButtonAdditionalSpaceItem ]];
-  } else if (!IsTabsSearchEnabled() || _mode != TabGridModeNormal) {
+  } else if (_mode != TabGridModeNormal) {
     [items addObject:_selectionModeFixedSpace];
   }
 
@@ -482,46 +482,42 @@ bool ShouldUseToolbarBlurFix() {
   }
                                    forState:UIControlStateDisabled];
 
-  if (IsTabsSearchEnabled()) {
-    if (UseSymbols()) {
-      UIImage* searchImage = DefaultSymbolWithPointSize(
-          kSearchSymbol, kSymbolSearchImagePointSize);
-      _searchButton =
-          [[UIBarButtonItem alloc] initWithImage:searchImage
-                                           style:UIBarButtonItemStylePlain
-                                          target:nil
-                                          action:nil];
-    } else {
-      _searchButton = [[UIBarButtonItem alloc]
-          initWithBarButtonSystemItem:UIBarButtonSystemItemSearch
-                               target:nil
-                               action:nil];
-    }
-
-    _searchButton.tintColor = UIColorFromRGB(kTabGridToolbarTextButtonColor);
-    _searchButton.accessibilityIdentifier = kTabGridSearchButtonIdentifier;
-
-    _searchBar = [[UISearchBar alloc] init];
-    _searchBar.placeholder =
-        l10n_util::GetNSString(IDS_IOS_TAB_GRID_SEARCHBAR_PLACEHOLDER);
-    _searchBar.accessibilityIdentifier = kTabGridSearchBarIdentifier;
-    // Cancel Button for the searchbar doesn't appear in ipadOS. Disable it and
-    // create a custom cancel button.
-    _searchBar.showsCancelButton = NO;
-    _cancelSearchButton = [[UIBarButtonItem alloc] init];
-    _cancelSearchButton.style = UIBarButtonItemStylePlain;
-    _cancelSearchButton.tintColor =
-        UIColorFromRGB(kTabGridToolbarTextButtonColor);
-    _cancelSearchButton.accessibilityIdentifier =
-        kTabGridCancelButtonIdentifier;
-    _cancelSearchButton.title =
-        l10n_util::GetNSString(IDS_IOS_TAB_GRID_CANCEL_BUTTON);
-    _searchBarView = [[UIView alloc] initWithFrame:_searchBar.frame];
-    [_searchBarView addSubview:_searchBar];
-    [_searchBarView sizeToFit];
-    _searchBarItem =
-        [[UIBarButtonItem alloc] initWithCustomView:_searchBarView];
+  if (UseSymbols()) {
+    UIImage* searchImage =
+        DefaultSymbolWithPointSize(kSearchSymbol, kSymbolSearchImagePointSize);
+    _searchButton =
+        [[UIBarButtonItem alloc] initWithImage:searchImage
+                                         style:UIBarButtonItemStylePlain
+                                        target:nil
+                                        action:nil];
+  } else {
+    _searchButton = [[UIBarButtonItem alloc]
+        initWithBarButtonSystemItem:UIBarButtonSystemItemSearch
+                             target:nil
+                             action:nil];
   }
+
+  _searchButton.tintColor = UIColorFromRGB(kTabGridToolbarTextButtonColor);
+  _searchButton.accessibilityIdentifier = kTabGridSearchButtonIdentifier;
+
+  _searchBar = [[UISearchBar alloc] init];
+  _searchBar.placeholder =
+      l10n_util::GetNSString(IDS_IOS_TAB_GRID_SEARCHBAR_PLACEHOLDER);
+  _searchBar.accessibilityIdentifier = kTabGridSearchBarIdentifier;
+  // Cancel Button for the searchbar doesn't appear in ipadOS. Disable it and
+  // create a custom cancel button.
+  _searchBar.showsCancelButton = NO;
+  _cancelSearchButton = [[UIBarButtonItem alloc] init];
+  _cancelSearchButton.style = UIBarButtonItemStylePlain;
+  _cancelSearchButton.tintColor =
+      UIColorFromRGB(kTabGridToolbarTextButtonColor);
+  _cancelSearchButton.accessibilityIdentifier = kTabGridCancelButtonIdentifier;
+  _cancelSearchButton.title =
+      l10n_util::GetNSString(IDS_IOS_TAB_GRID_CANCEL_BUTTON);
+  _searchBarView = [[UIView alloc] initWithFrame:_searchBar.frame];
+  [_searchBarView addSubview:_searchBar];
+  [_searchBarView sizeToFit];
+  _searchBarItem = [[UIBarButtonItem alloc] initWithCustomView:_searchBarView];
 
   _newTabButton = [[UIBarButtonItem alloc]
       initWithBarButtonSystemItem:UIBarButtonSystemItemAdd

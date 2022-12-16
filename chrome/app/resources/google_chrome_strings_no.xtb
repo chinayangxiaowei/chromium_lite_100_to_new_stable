@@ -3,7 +3,7 @@
 <translationbundle lang="no">
 <translation id="1001534784610492198">Installasjonsarkivet er ødelagt. Last ned Google Chrome på nytt.</translation>
 <translation id="1026101648481255140">Fortsett installasjonen</translation>
-<translation id="102763973188675173">Tilpass og kontrollér Google Chrome. Oppdatering er tilgjengelig.</translation>
+<translation id="102763973188675173">Tilpass og kontroller Google Chrome. Oppdatering er tilgjengelig.</translation>
 <translation id="1051826050538111504">Det finnes skadelig programvare på datamaskinen din. Chrome kan fjerne den, gjenopprette innstillingene dine og deaktivere utvidelser for å få nettleseren til å fungere som normalt igjen.</translation>
 <translation id="1065672644894730302">Kan ikke lese innstillingene. Enkelte funksjoner kan være utilgjengelige, og endringer av innstillingene blir ikke lagret.</translation>
 <translation id="1088300314857992706"><ph name="USER_EMAIL_ADDRESS" /> brukte Chrome tidligere</translation>
@@ -12,8 +12,6 @@
 <translation id="1142745911746664600">Kan ikke oppdatere Chrome</translation>
 <translation id="1152920704813762236">Om ChromeOS</translation>
 <translation id="1154147086299354128">&amp;Åpne i Chrome</translation>
-<translation id="1178374936842835197">Hvis en innstilling ikke vises på denne siden, kan du se i <ph name="LINK_BEGIN" />
-        innstillingene for ChromeOS Flex<ph name="LINK_END" /></translation>
 <translation id="1203500561924088507">Installasjonen er fullført. Start nettleseren på nytt før du tar i bruk <ph name="BUNDLE_NAME" />.</translation>
 <translation id="1278833599417554002">Start på nytt for å oppdatere &amp;Chrome</translation>
 <translation id="1302523850133262269">Vent mens Chrome installerer de nyeste systemoppdateringene.</translation>
@@ -119,7 +117,6 @@
 <translation id="3080151273017101988">Fortsett kjøringen av bakgrunnsprogrammer når Google Chrome er lukket</translation>
 <translation id="3089968997497233615">En ny, sikrere versjon av Google Chrome er tilgjengelig</translation>
 <translation id="3100998948628680988">Gi navn til Chrome-profilen din</translation>
-<translation id="3103390129666310801">For å se om enheten er oppdatert, gå til <ph name="LINK_BEGIN" />Innstillinger for ChromeOS Flex<ph name="LINK_END" /></translation>
 <translation id="3114643501466072395">For å sjekke om de andre passordene dine er trygge mot databrudd og andre sikkerhetsproblemer, <ph name="BEGIN_LINK" />logg på Chrome<ph name="END_LINK" />.</translation>
 <translation id="3140883423282498090">Endringene dine trer i kraft neste gang du starter Google Chrome.</translation>
 <translation id="3149510190863420837">Chrome-apper</translation>
@@ -160,7 +157,7 @@
 <translation id="3999683152997576765">Du kan se og fjerne interesseemnene som nettsteder bruker for å vise deg annonser. Chrome anslår interessene dine basert på den nylige nettleserloggen din.</translation>
 <translation id="4035053306113201399">ChromeOS må startes på nytt for at oppdateringen skal tas i bruk.</translation>
 <translation id="4050175100176540509">Viktige sikkerhetsforbedringer og nye funksjoner er tilgjengelige i den nyeste versjonen.</translation>
-<translation id="4053720452172726777">Tilpass og kontrollér Google Chrome</translation>
+<translation id="4053720452172726777">Tilpass og kontroller Google Chrome</translation>
 <translation id="4106587138345390261">Chrome utforsker nye funksjoner som gjør det mulig for nettsteder å bruke mindre av informasjonen din og likevel gi deg den samme nettlesingsopplevelsen</translation>
 <translation id="4110895483821904099">Konfigurer den nye Chrome-profilen din</translation>
 <translation id="4147555960264124640">Du er i ferd med å logge deg på med en administrert konto og gir administratoren kontroll over Chrome-profilen din. Chrome-dataene dine, som apper, bokmerker, loggen, passord og andre innstillinger, blir permanent knyttet til <ph name="USER_NAME" />. Du kan slette disse dataene via kontooversikten for Google, men du kan ikke knytte disse dataene til en annen konto. <ph name="LEARN_MORE" /></translation>
@@ -211,7 +208,6 @@
 <translation id="4990567037958725628">Google Chrome Canary</translation>
 <translation id="5037581483200764584">For å få fremtidige Google Chrome-oppdateringer må du ha macOS 10.13 eller nyere. Denne datamaskinen bruker OS X 10.11.</translation>
 <translation id="5098668839038261629">Når dette er på, blir du også logget av Chrome</translation>
-<translation id="5112116809696021727">For å se om enheten er oppdatert, gå til <ph name="LINK_BEGIN" />ChromeOS-innstillingene<ph name="LINK_END" /></translation>
 <translation id="5132929315877954718">Oppdag flotte apper, spill, utvidelser og temaer for Google Chrome.</translation>
 <translation id="5139423532931106058">Tilpass Chrome-profilen din</translation>
 <translation id="5163087008893166964">Velkommen til Chrome – et nytt nettleservindu er åpnet</translation>
@@ -231,7 +227,7 @@
 <translation id="5566025111015594046">Google Chrome (mDNS-Inn)</translation>
 <translation id="565744775970812598"><ph name="FILE_NAME" /> kan være farlig, så Chrome har blokkert den.</translation>
 <translation id="5678190148303298925">{COUNT,plural, =0{Administratoren din ber deg om å starte Chrome på nytt for å ta i bruk denne oppdateringen}=1{Administratoren din ber deg om å starte Chrome på nytt for å ta i bruk denne oppdateringen. Inkognitovinduet ditt blir ikke gjenåpnet.}other{Administratoren din ber deg om å starte Chrome på nytt for å ta i bruk denne oppdateringen. De # inkognitovinduene dine blir ikke gjenåpnet.}}</translation>
-<translation id="5686916850681061684">Tilpass og kontrollér Google Chrome. Det er noe du må se på – klikk for mer informasjon.</translation>
+<translation id="5686916850681061684">Tilpass og kontroller Google Chrome. Det er noe du må se på – klikk for mer informasjon.</translation>
 <translation id="5690427481109656848">Google LLC</translation>
 <translation id="5715063361988620182">{SECONDS,plural, =1{Google Chrome startes på nytt om 1 sekund}other{Google Chrome startes på nytt om # sekunder}}</translation>
 <translation id="5727531838415286053">Hvis Chrome har plassert deg tilfeldig i et aktivt prøveprosjekt, påvirker nettleserloggen din annonsene du ser, og interessene som er anslått nedenfor. For å beskytte personvernet ditt sletter Chrome interessene dine på rullerende basis hver måned. Interessene fornyes med mindre du fjerner dem.</translation>
@@ -247,8 +243,6 @@
 <translation id="5940385492829620908">Her finner du nettinnholdet, bokmerkene og de andre Chrome-tingene dine.</translation>
 <translation id="5941711191222866238">Minimer</translation>
 <translation id="5941830788786076944">Gjør Google Chrome til standardleser</translation>
-<translation id="5959292945051687759">Hvis en innstilling ikke vises på denne siden, kan du se i <ph name="LINK_BEGIN" />
-        ChromeOS-innstillingene<ph name="LINK_END" /></translation>
 <translation id="6003112304606738118">Laster ned … <ph name="HOURS" /> time(r) igjen</translation>
 <translation id="6040143037577758943">Lukk</translation>
 <translation id="6070348360322141662">Google Chrome krypterer dataene dine for å øke sikkerheten</translation>

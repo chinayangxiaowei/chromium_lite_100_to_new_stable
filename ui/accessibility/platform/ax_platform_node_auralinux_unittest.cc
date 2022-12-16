@@ -1029,8 +1029,9 @@ TEST_F(AXPlatformNodeAuraLinuxTest, TestAtkActionGetNActionsNoActions) {
 
   gint number_of_actions = atk_action_get_n_actions(ATK_ACTION(root_obj));
 
-  // The only action exposed would be the context menu action.
-  EXPECT_EQ(1, number_of_actions);
+  // In absence of any other actions, we would expose the default and the
+  // context menu actions.
+  EXPECT_EQ(2, number_of_actions);
 
   g_object_unref(root_obj);
 }
@@ -1261,6 +1262,38 @@ TEST_F(AXPlatformNodeAuraLinuxTest, TestAtkHyperlink) {
   g_free(uri);
 
   g_object_unref(hyperlink);
+  g_object_unref(root_obj);
+}
+
+TEST_F(AXPlatformNodeAuraLinuxTest, TestAtkHyperlinkActions) {
+  AXNodeData root;
+  root.id = 1;
+  root.role = ax::mojom::Role::kLink;
+  root.AddStringAttribute(ax::mojom::StringAttribute::kUrl, "http://foo.com");
+  root.SetDefaultActionVerb(ax::mojom::DefaultActionVerb::kClick);
+  Init(root);
+
+  AtkObject* root_obj(GetRootAtkObject());
+  ASSERT_TRUE(ATK_IS_OBJECT(root_obj));
+  ASSERT_TRUE(ATK_IS_HYPERLINK_IMPL(root_obj));
+  ASSERT_TRUE(ATK_IS_ACTION(root_obj));
+  g_object_ref(root_obj);
+  auto* root_node = GetRootAsAXNode();
+
+  gint number_of_actions = atk_action_get_n_actions(ATK_ACTION(root_obj));
+  EXPECT_EQ(2, number_of_actions);
+
+  // The index 0 is reserved for the default action, and the index 1 to the
+  // context menu action. The rest of actions are presented in the order they
+  // were added.
+  const gchar* action_name = atk_action_get_name(ATK_ACTION(root_obj), 0);
+  EXPECT_STREQ("click", action_name);
+  action_name = atk_action_get_name(ATK_ACTION(root_obj), 1);
+  EXPECT_STREQ("showContextMenu", action_name);
+
+  EXPECT_TRUE(atk_action_do_action(ATK_ACTION(root_obj), 0));
+  EXPECT_EQ(root_node, TestAXNodeWrapper::GetNodeFromLastDefaultAction());
+
   g_object_unref(root_obj);
 }
 

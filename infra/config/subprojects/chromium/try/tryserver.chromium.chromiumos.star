@@ -43,9 +43,9 @@ try_.builder(
     ],
     main_list_view = "try",
     tryjob = try_.job(
-        location_regexp = [
-            ".+/[+]/content/gpu/.+",
-            ".+/[+]/media/.+",
+        location_filters = [
+            "content/gpu/.+",
+            "media/.+",
         ],
     ),
 )
@@ -59,8 +59,11 @@ try_.orchestrator_builder(
     tryjob = try_.job(),
     experiments = {
         "remove_src_checkout_experiment": 100,
+        "enable_weetbix_queries": 100,
     },
-    use_orchestrator_pool = True,
+    # TODO(crbug.com/1372179): Use orchestrator pool once overloaded test pools
+    # are addressed
+    # use_orchestrator_pool = True,
 )
 
 try_.compilator_builder(
@@ -84,6 +87,9 @@ try_.builder(
     builderless = not settings.is_main,
     main_list_view = "try",
     tryjob = try_.job(),
+    experiments = {
+        "enable_weetbix_queries": 100,
+    },
 )
 
 try_.builder(
@@ -101,11 +107,17 @@ try_.builder(
     builderless = not settings.is_main,
     main_list_view = "try",
     tryjob = try_.job(),
+    experiments = {
+        "enable_weetbix_queries": 100,
+    },
 )
 
 try_.builder(
     name = "chromeos-amd64-generic-lacros-dbg",
     branch_selector = branches.STANDARD_MILESTONE,
+    mirrors = [
+        "ci/chromeos-amd64-generic-lacros-dbg",
+    ],
 )
 
 try_.builder(
@@ -117,6 +129,9 @@ try_.builder(
     builderless = not settings.is_main,
     main_list_view = "try",
     tryjob = try_.job(),
+    experiments = {
+        "enable_weetbix_queries": 100,
+    },
 )
 
 try_.builder(
@@ -171,10 +186,10 @@ try_.builder(
     ],
     main_list_view = "try",
     tryjob = try_.job(
-        location_regexp = [
-            ".+/[+]/build/chromeos/.+",
-            ".+/[+]/build/config/chromeos/.*",
-            ".+/[+]/chromeos/CHROMEOS_LKGM",
+        location_filters = [
+            "build/chromeos/.+",
+            "build/config/chromeos/.*",
+            "chromeos/CHROMEOS_LKGM",
         ],
     ),
 )
@@ -206,8 +221,11 @@ try_.orchestrator_builder(
     tryjob = try_.job(),
     experiments = {
         "remove_src_checkout_experiment": 100,
+        "enable_weetbix_queries": 100,
     },
-    use_orchestrator_pool = True,
+    # TODO(crbug.com/1372179): Use orchestrator pool once overloaded test pools
+    # are addressed
+    # use_orchestrator_pool = True,
 )
 
 try_.compilator_builder(
@@ -239,11 +257,15 @@ try_.builder(
     ],
     branch_selector = branches.STANDARD_MILESTONE,
     builderless = not settings.is_main,
+    check_for_flakiness = True,
     cores = 16,
     ssd = True,
     goma_jobs = goma.jobs.J300,
     main_list_view = "try",
     tryjob = try_.job(),
+    experiments = {
+        "enable_weetbix_queries": 100,
+    },
 )
 
 try_.builder(
@@ -266,14 +288,14 @@ try_.builder(
         "ci/linux-cfm-rel",
     ],
     tryjob = try_.job(
-        location_regexp = [
-            ".+/[+]/chromeos/ash/components/chromebox_for_meetings/.+",
-            ".+/[+]/chromeos/ash/components/dbus/chromebox_for_meetings/.+",
-            ".+/[+]/ash/services/chromebox_for_meetings/.+",
-            ".+/[+]/chrome/browser/ash/chromebox_for_meetings/.+",
-            ".+/[+]/chrome/browser/resources/chromeos/chromebox_for_meetings/.+",
-            ".+/[+]/chrome/browser/ui/webui/chromeos/chromebox_for_meetings/.+",
-            ".+/[+]/chrome/test/data/webui/chromeos/chromebox_for_meetings/.+",
+        location_filters = [
+            "chromeos/ash/components/chromebox_for_meetings/.+",
+            "chromeos/ash/components/dbus/chromebox_for_meetings/.+",
+            "ash/services/chromebox_for_meetings/.+",
+            "chrome/browser/ash/chromebox_for_meetings/.+",
+            "chrome/browser/resources/chromeos/chromebox_for_meetings/.+",
+            "chrome/browser/ui/webui/chromeos/chromebox_for_meetings/.+",
+            "chrome/test/data/webui/chromeos/chromebox_for_meetings/.+",
         ],
     ),
 )

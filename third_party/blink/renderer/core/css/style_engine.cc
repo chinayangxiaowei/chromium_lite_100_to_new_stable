@@ -77,6 +77,7 @@
 #include "third_party/blink/renderer/core/dom/node_computed_style.h"
 #include "third_party/blink/renderer/core/dom/nth_index_cache.h"
 #include "third_party/blink/renderer/core/dom/processing_instruction.h"
+#include "third_party/blink/renderer/core/dom/scriptable_document_parser.h"
 #include "third_party/blink/renderer/core/dom/shadow_root.h"
 #include "third_party/blink/renderer/core/dom/text.h"
 #include "third_party/blink/renderer/core/frame/settings.h"
@@ -819,7 +820,10 @@ CSSStyleSheet* StyleEngine::ParseSheet(
   style_sheet = CSSStyleSheet::CreateInline(element, NullURL(), start_position,
                                             GetDocument().Encoding());
   style_sheet->Contents()->SetRenderBlocking(render_blocking_behavior);
-  style_sheet->Contents()->ParseString(text);
+  std::unique_ptr<CachedCSSTokenizer> tokenizer;
+  if (auto* parser = GetDocument().GetScriptableDocumentParser())
+    tokenizer = parser->TakeCSSTokenizer(text);
+  style_sheet->Contents()->ParseString(text, true, std::move(tokenizer));
   return style_sheet;
 }
 
@@ -878,9 +882,19 @@ void SetNeedsStyleRecalcForViewportUnits(TreeScope& tree_scope,
 void StyleEngine::InvalidateViewportUnitStylesIfNeeded() {
   if (!viewport_unit_dirty_flags_)
     return;
-  SetNeedsStyleRecalcForViewportUnits(GetDocument(),
-                                      viewport_unit_dirty_flags_);
-  viewport_unit_dirty_flags_ = 0;
+  unsigned dirty_flags = 0;
+  std::swap(viewport_unit_dirty_flags_, dirty_flags);
+
+  // If there are registered custom properties which depend on the invalidated
+  // viewport units, it can potentially affect every element.
+  if (initial_data_ && (initial_data_->GetViewportUnitFlags() & dirty_flags)) {
+    InvalidateInitialData();
+    MarkAllElementsForStyleRecalc(StyleChangeReasonForTracing::Create(
+        style_change_reason::kViewportUnits));
+    return;
+  }
+
+  SetNeedsStyleRecalcForViewportUnits(GetDocument(), dirty_flags);
 }
 
 void StyleEngine::InvalidateStyleAndLayoutForFontUpdates() {
@@ -1033,9 +1047,7 @@ void StyleEngine::InvalidateElementAffectedByHas(Element& element,
   if (for_pseudo_change && !element.AffectedByPseudoInHas())
     return;
 
-  const ComputedStyle* style = element.GetComputedStyle();
-
-  if (style && style->AffectedBySubjectHas()) {
+  if (element.AffectedBySubjectHas()) {
     // TODO(blee@igalia.com) Need filtering for irrelevant elements.
     // e.g. When we have '.a:has(.b) {}', '.c:has(.d) {}', mutation of class
     // value 'd' can invalidate ancestor with class value 'a' because we
@@ -1700,6 +1712,12 @@ void StyleEngine::InvalidateSlottedElements(HTMLSlotElement& slot) {
                                     style_change_reason::kStyleSheetChange));
     }
   }
+}
+
+bool StyleEngine::HasViewportDependentPropertyRegistrations() {
+  UpdateActiveStyle();
+  const PropertyRegistry* registry = GetDocument().GetPropertyRegistry();
+  return registry && registry->GetViewportUnitFlags();
 }
 
 void StyleEngine::ScheduleInvalidationsForRuleSets(
@@ -2658,7 +2676,7 @@ scoped_refptr<StyleInitialData> StyleEngine::MaybeCreateAndGetInitialData() {
     return initial_data_;
   if (const PropertyRegistry* registry = document_->GetPropertyRegistry()) {
     if (!registry->IsEmpty())
-      initial_data_ = StyleInitialData::Create(*registry);
+      initial_data_ = StyleInitialData::Create(GetDocument(), *registry);
   }
   return initial_data_;
 }
@@ -2746,8 +2764,19 @@ void StyleEngine::UpdateStyleAndLayoutTreeForContainer(
         return;
       break;
     case ContainerQueryEvaluator::Change::kNearestContainer:
-      change = change.ForceRecalcContainer();
-      break;
+      if (!IsShadowHost(container)) {
+        change = change.ForceRecalcContainer();
+        break;
+      }
+      // Since the nearest container is found in shadow-including ancestors and
+      // not in flat tree ancestors, and style recalc traversal happens in flat
+      // tree order, we need to invalidate inside flat tree descendant
+      // containers if such containers are inside shadow trees.
+      //
+      // See also StyleRecalcChange::FlagsForChildren where we turn
+      // kRecalcContainer into kRecalcDescendantContainers when traversing past
+      // a shadow host.
+      [[fallthrough]];
     case ContainerQueryEvaluator::Change::kDescendantContainers:
       change = change.ForceRecalcDescendantContainers();
       break;
@@ -2808,6 +2837,7 @@ void StyleEngine::RecalcStyle(StyleRecalcChange change,
                               const StyleRecalcContext& style_recalc_context) {
   DCHECK(GetDocument().documentElement());
   ScriptForbiddenScope forbid_script;
+  SkipStyleRecalcScope skip_scope(*this);
   CheckPseudoHasCacheScope check_pseudo_has_cache_scope(&GetDocument());
   Element& root_element = style_recalc_root_.RootElement();
   Element* parent = FlatTreeTraversal::ParentElement(root_element);
@@ -3416,7 +3446,7 @@ void StyleEngine::MarkForLayoutTreeChangesAfterDetach() {
 }
 
 void StyleEngine::ReportUseOfLegacyLayoutWithContainerQueries() {
-  DCHECK(!RuntimeEnabledFeatures::LayoutNGTableFragmentationEnabled());
+  DCHECK(!RuntimeEnabledFeatures::LayoutNGPrintingEnabled());
 
   // Only report once.
   if (legacy_layout_query_container_)
@@ -3431,6 +3461,19 @@ void StyleEngine::ReportUseOfLegacyLayoutWithContainerQueries() {
           "Using container queries or units with printing, or in combination "
           "with tables inside multicol will not work correctly."));
   GetDocument().AddConsoleMessage(console_message);
+}
+
+bool StyleEngine::AllowSkipStyleRecalcForScope() const {
+  if (InContainerQueryStyleRecalc())
+    return true;
+  if (LocalFrameView* view = GetDocument().View()) {
+    // Existing layout roots before starting style recalc may end up being
+    // inside skipped subtrees if we allowed skipping. If we start out with an
+    // empty list, any added ones will be a result of an element style recalc,
+    // which means the will not be inside a skipped subtree.
+    return !view->IsSubtreeLayout();
+  }
+  return true;
 }
 
 }  // namespace blink

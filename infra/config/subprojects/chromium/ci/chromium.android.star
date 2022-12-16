@@ -44,7 +44,6 @@ ci.builder(
             config = "chromium",
             apply_configs = [
                 "android",
-                "enable_reclient",
             ],
         ),
         chromium_config = builder_config.chromium_config(
@@ -223,7 +222,6 @@ ci.builder(
             config = "chromium",
             apply_configs = [
                 "android",
-                "enable_reclient",
             ],
         ),
         chromium_config = builder_config.chromium_config(
@@ -258,7 +256,6 @@ ci.builder(
             config = "chromium",
             apply_configs = [
                 "android",
-                "enable_reclient",
             ],
         ),
         chromium_config = builder_config.chromium_config(
@@ -306,7 +303,6 @@ ci.builder(
             config = "chromium",
             apply_configs = [
                 "android",
-                "enable_reclient",
             ],
         ),
         chromium_config = builder_config.chromium_config(
@@ -342,7 +338,6 @@ ci.builder(
             config = "chromium",
             apply_configs = [
                 "android",
-                "enable_reclient",
             ],
         ),
         chromium_config = builder_config.chromium_config(
@@ -372,7 +367,6 @@ ci.builder(
             config = "chromium",
             apply_configs = [
                 "android",
-                "enable_reclient",
             ],
         ),
         chromium_config = builder_config.chromium_config(
@@ -403,7 +397,6 @@ ci.builder(
             config = "chromium",
             apply_configs = [
                 "android",
-                "enable_reclient",
             ],
         ),
         chromium_config = builder_config.chromium_config(
@@ -462,7 +455,6 @@ ci.builder(
             config = "chromium",
             apply_configs = [
                 "android",
-                "enable_reclient",
             ],
         ),
         chromium_config = builder_config.chromium_config(
@@ -659,7 +651,6 @@ ci.builder(
             apply_configs = [
                 "android",
                 "enable_wpr_tests",
-                "enable_reclient",
             ],
         ),
         chromium_config = builder_config.chromium_config(
@@ -684,13 +675,47 @@ ci.builder(
 )
 
 ci.builder(
+    name = "android-12l-x86-rel",
+    builder_spec = builder_config.builder_spec(
+        execution_mode = builder_config.execution_mode.TEST,
+        gclient_config = builder_config.gclient_config(
+            config = "chromium",
+            apply_configs = [
+                "android",
+            ],
+        ),
+        chromium_config = builder_config.chromium_config(
+            config = "android",
+            apply_configs = [
+                "download_vr_test_apks",
+            ],
+            build_config = builder_config.build_config.RELEASE,
+            target_bits = 32,
+            target_platform = builder_config.target_platform.ANDROID,
+        ),
+        android_config = builder_config.android_config(
+            config = "main_builder_mb",
+        ),
+        build_gs_bucket = "chromium-android-archive",
+        run_tests_serially = True,
+    ),
+    console_view_entry = consoles.console_view_entry(
+        category = "tester|tablet",
+        short_name = "12L",
+    ),
+    # TODO: This can be reduced when builder works.
+    execution_timeout = 4 * time.hour,
+    sheriff_rotations = args.ignore_default(None),
+    triggered_by = ["ci/Android arm Builder (dbg)"],
+)
+
+ci.builder(
     name = "android-arm64-proguard-rel",
     builder_spec = builder_config.builder_spec(
         gclient_config = builder_config.gclient_config(
             config = "chromium",
             apply_configs = [
                 "android",
-                "enable_reclient",
             ],
         ),
         chromium_config = builder_config.chromium_config(
@@ -713,6 +738,11 @@ ci.builder(
         short_name = "M proguard",
     ),
     execution_timeout = 6 * time.hour,
+    # TODO(b/234140184) Once reproxy is fixed, remove the goma and reclient
+    # values
+    goma_backend = goma.backend.RBE_PROD,
+    goma_jobs = goma.jobs.MANY_JOBS_FOR_CI,
+    reclient_instance = None,
 )
 
 ci.builder(
@@ -722,7 +752,6 @@ ci.builder(
             config = "chromium",
             apply_configs = [
                 "android",
-                "enable_reclient",
             ],
         ),
         chromium_config = builder_config.chromium_config(
@@ -767,7 +796,6 @@ ci.builder(
             config = "chromium",
             apply_configs = [
                 "android",
-                "enable_reclient",
             ],
         ),
         chromium_config = builder_config.chromium_config(
@@ -801,7 +829,6 @@ ci.builder(
             config = "chromium",
             apply_configs = [
                 "android",
-                "enable_reclient",
             ],
         ),
         chromium_config = builder_config.chromium_config(
@@ -882,7 +909,6 @@ ci.builder(
             config = "chromium",
             apply_configs = [
                 "android",
-                "enable_reclient",
             ],
         ),
         chromium_config = builder_config.chromium_config(
@@ -916,7 +942,6 @@ ci.thin_tester(
             config = "chromium",
             apply_configs = [
                 "android",
-                "enable_reclient",
             ],
         ),
         chromium_config = builder_config.chromium_config(
@@ -951,7 +976,6 @@ ci.thin_tester(
             config = "chromium",
             apply_configs = [
                 "android",
-                "enable_reclient",
             ],
         ),
         chromium_config = builder_config.chromium_config(
@@ -986,7 +1010,6 @@ ci.thin_tester(
             config = "chromium",
             apply_configs = [
                 "android",
-                "enable_reclient",
             ],
         ),
         chromium_config = builder_config.chromium_config(
@@ -1021,7 +1044,6 @@ ci.thin_tester(
             config = "chromium",
             apply_configs = [
                 "android",
-                "enable_reclient",
             ],
         ),
         chromium_config = builder_config.chromium_config(
@@ -1057,7 +1079,6 @@ ci.thin_tester(
             config = "chromium",
             apply_configs = [
                 "android",
-                "enable_reclient",
             ],
         ),
         chromium_config = builder_config.chromium_config(
@@ -1092,7 +1113,6 @@ ci.thin_tester(
             config = "chromium",
             apply_configs = [
                 "android",
-                "enable_reclient",
             ],
         ),
         chromium_config = builder_config.chromium_config(
@@ -1147,7 +1167,6 @@ ci.builder(
             config = "chromium",
             apply_configs = [
                 "android",
-                "enable_reclient",
             ],
         ),
         chromium_config = builder_config.chromium_config(
@@ -1170,9 +1189,11 @@ ci.builder(
         category = "on_cq",
         short_name = "M",
     ),
+    cores = 16,
     cq_mirrors_console_view = "mirrors",
     execution_timeout = 4 * time.hour,
     tree_closing = True,
+    ssd = True,
 )
 
 ci.builder(
@@ -1181,11 +1202,7 @@ ci.builder(
     builder_spec = builder_config.builder_spec(
         gclient_config = builder_config.gclient_config(
             config = "chromium",
-            apply_configs = [
-                "android",
-                "enable_wpr_tests",
-                "enable_reclient",
-            ],
+            apply_configs = ["android", "enable_wpr_tests"],
         ),
         chromium_config = builder_config.chromium_config(
             config = "android",
@@ -1217,7 +1234,6 @@ ci.builder(
             apply_configs = [
                 "android",
                 "enable_wpr_tests",
-                "enable_reclient",
             ],
         ),
         chromium_config = builder_config.chromium_config(
@@ -1292,7 +1308,6 @@ ci.builder(
             config = "chromium",
             apply_configs = [
                 "android",
-                "enable_reclient",
             ],
         ),
         chromium_config = builder_config.chromium_config(
@@ -1325,7 +1340,6 @@ ci.builder(
             config = "chromium",
             apply_configs = [
                 "android",
-                "enable_reclient",
             ],
         ),
         chromium_config = builder_config.chromium_config(
@@ -1346,6 +1360,8 @@ ci.builder(
         category = "builder_tester|x86",
         short_name = "P",
     ),
+    cores = 16,
+    ssd = True,
 )
 
 # TODO(crbug.com/1137474): Update the console view config once on CQ
@@ -1356,7 +1372,6 @@ ci.builder(
             config = "chromium",
             apply_configs = [
                 "android",
-                "enable_reclient",
             ],
         ),
         chromium_config = builder_config.chromium_config(
@@ -1390,7 +1405,6 @@ ci.builder(
             config = "chromium",
             apply_configs = [
                 "android",
-                "enable_reclient",
             ],
         ),
         chromium_config = builder_config.chromium_config(
@@ -1552,7 +1566,6 @@ ci.builder(
             config = "chromium",
             apply_configs = [
                 "android",
-                "enable_reclient",
             ],
         ),
         chromium_config = builder_config.chromium_config(
@@ -1585,7 +1598,6 @@ ci.builder(
             config = "chromium",
             apply_configs = [
                 "android",
-                "enable_reclient",
             ],
         ),
         chromium_config = builder_config.chromium_config(

@@ -14,8 +14,6 @@ Eginbide batzuk agian dira erabilgarri egongo eta hobespenei egindako aldaketak 
 <translation id="1142745911746664600">Ezin da eguneratu Chrome</translation>
 <translation id="1152920704813762236">Chrome OS-ri buruz</translation>
 <translation id="1154147086299354128">&amp;Ireki Chrome-n</translation>
-<translation id="1178374936842835197">Ezarpenen bat orri honetan agertzen ez bada, bila ezazu <ph name="LINK_BEGIN" />
-        ChromeOS Flex-en ezarpenetan<ph name="LINK_END" /></translation>
 <translation id="1203500561924088507">Eskerrik asko instalatzeagatik. <ph name="BUNDLE_NAME" /> erabiltzeko, arakatzailea berrabiarazi behar duzu.</translation>
 <translation id="1278833599417554002">Abiaraz ezazu berriro &amp;Chrome eguneratzeko</translation>
 <translation id="1302523850133262269">Itxaron Chrome-k sistemaren azken eguneratzeak instalatu arte.</translation>
@@ -26,7 +24,7 @@ Eginbide batzuk agian dira erabilgarri egongo eta hobespenei egindako aldaketak 
 <translation id="139993653570221430">Iritziz aldatzen bazara, joan Chrome-ren ezarpenetara. Iragarkiak eskaintzeko darabilgun modua aplikatu bitartean egiten dira probak; beraz, aldaketak ez dituzu berehala ikusiko.</translation>
 <translation id="1434626383986940139">Chrome Canary aplikazioak</translation>
 <translation id="1507198376417198979">Pertsonalizatu Chrome-ko profil berria</translation>
-<translation id="1516530951338665275">Google Chrome-k Bluetooth-a erabiltzeko baimena behar du parekatzen jarraitzeko. <ph name="IDS_BLUETOOTH_DEVICE_CHOOSER_AUTHORIZE_BLUETOOTH_LINK" /></translation>
+<translation id="1516530951338665275">Google Chrome-k Bluetootha erabiltzeko baimena behar du parekatzen jarraitzeko. <ph name="IDS_BLUETOOTH_DEVICE_CHOOSER_AUTHORIZE_BLUETOOTH_LINK" /></translation>
 <translation id="1547295885616600893"><ph name="BEGIN_LINK_CROS_OSS" />Kode irekiko software<ph name="END_LINK_CROS_OSS" /> gehigarriari esker da posible Chrome OS.</translation>
 <translation id="1553358976309200471">Eguneratu Chrome</translation>
 <translation id="1583073672411044740"><ph name="EXISTING_USER" /> erabiltzaileak Chrome-ko profil honetan hasi du saioa dagoeneko. Chrome-ko beste profil bat sortuko da <ph name="USER_EMAIL_ADDRESS" /> helbiderako.</translation>
@@ -91,7 +89,7 @@ Eginbide batzuk agian dira erabilgarri egongo eta hobespenei egindako aldaketak 
 <translation id="2586406160782125153">Gailuko arakatze-datuak ezabatuko dira. Geroago datuak eskuratu nahi izanez gero, hasi saioa Chrome-n <ph name="USER_EMAIL" /> gisa.</translation>
 <translation id="2597976513418770460">Lortu Chrome arakatzailean dituzun gauzak <ph name="ACCOUNT_EMAIL" /> bidez</translation>
 <translation id="2622559029861875898">Chrome-k ezin ditu bilatu eguneratzeak. Egiaztatu Internetera konektatuta zaudela.</translation>
-<translation id="2645435784669275700">Chrome OS</translation>
+<translation id="2645435784669275700">ChromeOS</translation>
 <translation id="2652691236519827073">Ireki esteka Chrome-ko beste &amp;fitxa batean</translation>
 <translation id="2665296953892887393">Lagundu Google Chrome hobetzen hutsegite-txostenak eta <ph name="UMA_LINK" /> Google-ri bidalita</translation>
 <translation id="2689103672227170538">Luzapenak aldatu egin du Chrome abiarazten duzunean agertzen den orria.</translation>
@@ -123,7 +121,6 @@ Eginbide batzuk agian dira erabilgarri egongo eta hobespenei egindako aldaketak 
 <translation id="3080151273017101988">Mantendu atzeko planoko aplikazioak abian Google Chrome ixten denean</translation>
 <translation id="3089968997497233615">Google Chrome-ren bertsio berriagoa eta seguruagoa erabilgarri dago.</translation>
 <translation id="3100998948628680988">Eman izen bat Chrome-ko profilari</translation>
-<translation id="3103390129666310801">Gailua eguneratuta dagoen ikusteko, joan <ph name="LINK_BEGIN" />ChromeOS Flex-en ezarpenetara<ph name="LINK_END" /></translation>
 <translation id="3114643501466072395">Gainerako pasahitzak datuen isilpekotasunaren urratzeen eta beste segurtasun-arazoen aurka babestuta dauden egiaztatzeko, <ph name="BEGIN_LINK" />hasi saioa Chrome-n<ph name="END_LINK" />.</translation>
 <translation id="3140883423282498090">Aldaketek Google Chrome abiarazten duzun hurrengo aldian izango dute eragina.</translation>
 <translation id="3149510190863420837">Chrome-ren aplikazioak</translation>
@@ -198,7 +195,7 @@ Eginbide batzuk agian dira erabilgarri egongo eta hobespenei egindako aldaketak 
 <translation id="4680828127924988555">Utzi instalazioa bertan behera</translation>
 <translation id="469553575393225953">Iturburu ezezagunetatik datozen luzapenek, aplikazioek eta gaiek gailua kalte dezakete. Halakoek Chrome Web Store-tik bakarrik instalatzea gomendatzen du Chrome-k.</translation>
 <translation id="4728575227883772061">Instalazioak huts egin du zehaztu gabeko errore batengatik. Google Chrome abian bada, itxi ezazu eta saiatu berriro.</translation>
-<translation id="4747730611090640388">Chrome-k gutxi gorabehera igar ditzake zure interesak.  Beranduago, bisitatzen duzun webgune batek zure interesak ikusteko eska diezaioke Chrome-ri, agertzen zaizkizun iragarkiak pertsonalizatze aldera.</translation>
+<translation id="4747730611090640388">Chrome-k zure interesak estima ditzake.  Beranduago, bisitatzen duzun webgune batek zure interesak ikusteko eska diezaioke Chrome-ri, agertzen zaizkizun iragarkiak pertsonalizatze aldera.</translation>
 <translation id="4754614261631455953">Google Chrome Canary (mDNS-In)</translation>
 <translation id="4771048833395599659">Baliteke fitxategia arriskutsua izatea; horregatik, blokeatu egin du Chrome-k.</translation>
 <translation id="479167709087336770">Google Bilaketa zerbitzuan erabiltzen den ortografia-zuzentzaile bera erabiltzen da. Arakatzailean idazten duzun testua Google-ri bidaltzen zaio. Aukera horiek aldatzeko, joan ezarpenetara.</translation>
@@ -215,7 +212,6 @@ Eginbide batzuk agian dira erabilgarri egongo eta hobespenei egindako aldaketak 
 <translation id="4990567037958725628">Google Chrome Canary</translation>
 <translation id="5037581483200764584">Etorkizunean Google Chrome-ren eguneratzeak eskuratzeko, macOS 10.13 edo berriago bat beharko duzu. Ordenagailu hau OS X 10.11 erabiltzen ari da.</translation>
 <translation id="5098668839038261629">Aktibatuta dagoenean, Chrome-ko saioa ere amaituko da</translation>
-<translation id="5112116809696021727">Gailua eguneratuta dagoen ikusteko, joan <ph name="LINK_BEGIN" />Chrome OS-ren ezarpenetara<ph name="LINK_END" /></translation>
 <translation id="5132929315877954718">Ezagutu Google Chrome-rako aplikazio, joko, luzapen eta gai bikainak.</translation>
 <translation id="5139423532931106058">Pertsonalizatu Chrome-ko profila</translation>
 <translation id="5163087008893166964">Ongi etorri Chrome-ra; beste leiho bat ireki da arakatzailean</translation>
@@ -255,7 +251,6 @@ Google Chrome-k ezin ditu berreskuratu zure ezarpenak.</translation>
 <translation id="5940385492829620908">Zure weba, laster-markak eta Chrome-n dituzun beste gauzak hemen bizi dira.</translation>
 <translation id="5941711191222866238">Minimizatu</translation>
 <translation id="5941830788786076944">Ezarri Google Chrome arakatzaile lehenetsi gisa</translation>
-<translation id="5959292945051687759">Ezarpenen bat orri honetan agertzen ez bada, bila ezazu <ph name="LINK_BEGIN" />Chrome OS-ren ezarpenetan<ph name="LINK_END" /></translation>
 <translation id="6003112304606738118">Deskargatzen… <ph name="HOURS" /> ordu geratzen dira.</translation>
 <translation id="6040143037577758943">Itxi</translation>
 <translation id="6070348360322141662">Segurtasun gehiago izateko, Google Chrome-k datuak enkriptatuko ditu</translation>
@@ -363,7 +358,7 @@ Baliteke webguneei eta aplikazioei emandako baimenak kontu honi aplikatzea. Goog
 <translation id="8342675569599923794">Fitxategia arriskutsua da; horregatik, blokeatu egin du Chrome-k.</translation>
 <translation id="8349795646647783032"><ph name="BEGIN_BOLD" />Nola erabiltzen ditugu datu horiek?<ph name="END_BOLD" /> Webguneek zure interesei buruzko informazioa gorde dezakete Chrome-n; esaterako, webgune batera joaten bazara maratoi baterako oinetakoak erostera, baliteke webgune horrek "maratoiak" definitzea interes gisa. Ondorioz, beranduago beste webgune batera joaten bazara lasterketa batean izena emateko, litekeena da webgune horrek lasterketetarako oinetakoekin erlazionatutako iragarki bat erakustea zure interesetan oinarrituta.</translation>
 <translation id="8370517070665726704">Copyright <ph name="YEAR" /> Google LLC. Eskubide guztiak erreserbatuta.</translation>
-<translation id="8383226135083126309"><ph name="BEGIN_BOLD" />Nola erabiltzen ditugu datu horiek?<ph name="END_BOLD" /> Chrome-k gutxi gorabehera igar ditzake zure interesak. Beranduago, bisitatzen duzun webgune batek zure interesak ikusteko eska diezaioke Chrome-ri, agertzen zaizkizun iragarkiak pertsonalizatze aldera.</translation>
+<translation id="8383226135083126309"><ph name="BEGIN_BOLD" />Nola erabiltzen ditugu datu horiek?<ph name="END_BOLD" /> Chrome-k zure interesak estima ditzake. Beranduago, bisitatzen duzun webgune batek zure interesak ikusteko eska diezaioke Chrome-ri, agertzen zaizkizun iragarkiak pertsonalizatze aldera.</translation>
 <translation id="8394720698884623075">URLak Chrome-n gordetako webgune ez-seguruen zerrendan dauden ala ez egiaztatzen du.</translation>
 <translation id="840084489713044809">Google Chrome-k pasahitzak esportatu nahi ditu.</translation>
 <translation id="8416347857511542594">Lortu Chrome-ko iragarkiak pertsonalizatzeari buruzko informazio gehiago</translation>
@@ -405,7 +400,7 @@ Baliteke webguneei eta aplikazioei emandako baimenak kontu honi aplikatzea. Goog
 <translation id="9067395829937117663">Windows 7 edo sistema berriagoa behar da Google Chrome erabiltzeko.</translation>
 <translation id="911206726377975832">Arakatze-datuak ere ezabatu nahi dituzu?</translation>
 <translation id="9138603949443464873">Aldaketak aplikatzeko, berrabiarazi Chrome</translation>
-<translation id="9195993889682885387">Azken asteetako arakatze-historian oinarrituta igar ditzake gutxi gorabehera zure interesak Chrome-k. Informazio hori gailuan gelditzen da.</translation>
+<translation id="9195993889682885387">Azken asteetako arakatze-historian oinarrituta estima ditzake gutxi gorabehera zure interesak Chrome-k. Informazio hori gailuan gelditzen da.</translation>
 <translation id="919706545465235479">Eguneratu Chrome sinkronizatzen hasteko</translation>
 <translation id="922152298093051471">Pertsonalizatu Chrome</translation>
 <translation id="93760716455950538">Berrabiarazi ChromeOS Flex</translation>

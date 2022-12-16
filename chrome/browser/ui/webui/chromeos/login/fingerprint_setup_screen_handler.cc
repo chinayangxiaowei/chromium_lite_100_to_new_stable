@@ -14,13 +14,8 @@
 
 namespace chromeos {
 
-constexpr StaticOobeScreenId FingerprintSetupScreenView::kScreenId;
-
 FingerprintSetupScreenHandler::FingerprintSetupScreenHandler()
-    : BaseScreenHandler(kScreenId) {
-  set_user_acted_method_path_deprecated(
-      "login.FingerprintSetupScreen.userActed");
-}
+    : BaseScreenHandler(kScreenId) {}
 
 FingerprintSetupScreenHandler::~FingerprintSetupScreenHandler() = default;
 
@@ -106,6 +101,11 @@ void FingerprintSetupScreenHandler::DeclareLocalizedValues(
       aria_label_includes_device = true;
       break;
     case quick_unlock::FingerprintLocation::LEFT_OF_POWER_BUTTON_TOP_RIGHT:
+      description_id =
+          IDS_OOBE_FINGERPINT_SETUP_SCREEN_SENSOR_LEFT_OF_POWER_BUTTON_TOP_RIGHT;
+      description_id_for_child =
+          IDS_OOBE_FINGERPINT_SETUP_SCREEN_SENSOR_LEFT_OF_POWER_BUTTON_TOP_RIGHT_CHILD;
+      break;
     case quick_unlock::FingerprintLocation::UNKNOWN:
       description_id =
           IDS_OOBE_FINGERPINT_SETUP_SCREEN_SENSOR_GENERAL_DESCRIPTION;
@@ -121,21 +121,15 @@ void FingerprintSetupScreenHandler::DeclareLocalizedValues(
   builder->AddF("setupFingerprintScreenDescriptionForChild",
                 description_id_for_child, ui::GetChromeOSDeviceName());
 
+  if (ash::quick_unlock::IsLeftOfPowerButtonTopRightFingerprint())
+    return;
+
   if (aria_label_includes_device) {
     builder->AddF("setupFingerprintScreenAriaLabel", aria_label_id,
                   ui::GetChromeOSDeviceName());
   } else {
     builder->Add("setupFingerprintScreenAriaLabel", aria_label_id);
   }
-}
-
-void FingerprintSetupScreenHandler::RegisterMessages() {
-  BaseScreenHandler::RegisterMessages();
-}
-
-void FingerprintSetupScreenHandler::Bind(FingerprintSetupScreen* screen) {
-  screen_ = screen;
-  BaseScreenHandler::SetBaseScreenDeprecated(screen);
 }
 
 void FingerprintSetupScreenHandler::Show() {
@@ -145,21 +139,16 @@ void FingerprintSetupScreenHandler::Show() {
   ShowInWebUI(std::move(data));
 }
 
-void FingerprintSetupScreenHandler::Hide() {}
-
-void FingerprintSetupScreenHandler::InitializeDeprecated() {}
-
 void FingerprintSetupScreenHandler::OnEnrollScanDone(
     device::mojom::ScanResult scan_result,
     bool enroll_session_complete,
     int percent_complete) {
-  CallJS("login.FingerprintSetupScreen.onEnrollScanDone",
-         static_cast<int>(scan_result), enroll_session_complete,
-         percent_complete);
+  CallExternalAPI("onEnrollScanDone", static_cast<int>(scan_result),
+                  enroll_session_complete, percent_complete);
 }
 
 void FingerprintSetupScreenHandler::EnableAddAnotherFinger(bool enable) {
-  CallJS("login.FingerprintSetupScreen.enableAddAnotherFinger", enable);
+  CallExternalAPI("enableAddAnotherFinger", enable);
 }
 
 }  // namespace chromeos

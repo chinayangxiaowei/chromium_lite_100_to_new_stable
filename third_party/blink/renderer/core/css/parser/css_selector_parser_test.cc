@@ -923,6 +923,31 @@ TEST(CSSSelectorParserTest, ImplicitShadowCrossingCombinators) {
   }
 }
 
+TEST(CSSSelectorParserTest, WebKitScrollbarPseudoParsing) {
+  const char* test_cases[] = {"::-webkit-resizer",
+                              "::-webkit-scrollbar",
+                              "::-webkit-scrollbar-button",
+                              "::-webkit-scrollbar-corner",
+                              "::-webkit-scrollbar-thumb",
+                              "::-webkit-scrollbar-track",
+                              "::-webkit-scrollbar-track-piece"};
+  bool enabled_states[] = {false, true};
+  for (auto state : enabled_states) {
+    ScopedWebKitScrollbarStylingForTest scoped_feature(state);
+    for (auto* test_case : test_cases) {
+      CSSTokenizer tokenizer(test_case);
+      const auto tokens = tokenizer.TokenizeToEOF();
+      CSSParserTokenRange range(tokens);
+      CSSSelectorVector vector = CSSSelectorParser::ParseSelector(
+          range,
+          MakeGarbageCollected<CSSParserContext>(
+              kHTMLStandardMode, SecureContextMode::kInsecureContext),
+          nullptr);
+      EXPECT_EQ(vector.size(), state ? 1u : 0u);
+    }
+  }
+}
+
 // TODO(blee@igalia.com) Workaround to make :has() unforgiving to avoid
 // JQuery :has() issue: https://github.com/w3c/csswg-drafts/issues/7676
 // :has() should be valid after all arguments are dropped.

@@ -24,6 +24,7 @@ consoles.list_view(
 )
 
 def blink_mac_builder(*, name, **kwargs):
+    kwargs.setdefault("branch_selector", branches.STANDARD_MILESTONE)
     kwargs.setdefault("builderless", True)
     kwargs.setdefault("cores", None)
     kwargs.setdefault("goma_backend", goma.backend.RBE_PROD)
@@ -63,17 +64,35 @@ try_.builder(
     main_list_view = "try",
     os = os.LINUX_DEFAULT,
     tryjob = try_.job(
-        location_regexp = [
-            ".+/[+]/cc/.+",
-            ".+/[+]/third_party/blink/renderer/core/paint/.+",
-            ".+/[+]/third_party/blink/renderer/core/svg/.+",
-            ".+/[+]/third_party/blink/renderer/platform/graphics/.+",
+        location_filters = [
+            "cc/.+",
+            "third_party/blink/renderer/core/paint/.+",
+            "third_party/blink/renderer/core/svg/.+",
+            "third_party/blink/renderer/platform/graphics/.+",
         ],
     ),
 )
 
 try_.builder(
     name = "win10.20h2-blink-rel",
+    branch_selector = branches.STANDARD_MILESTONE,
+    builder_spec = builder_config.builder_spec(
+        gclient_config = builder_config.gclient_config(
+            config = "chromium",
+        ),
+        chromium_config = builder_config.chromium_config(
+            config = "chromium",
+            apply_configs = [
+                "mb",
+            ],
+            build_config = builder_config.build_config.RELEASE,
+            target_bits = 32,
+        ),
+        build_gs_bucket = "chromium-fyi-archive",
+    ),
+    try_settings = builder_config.try_settings(
+        retry_failed_shards = False,
+    ),
     goma_backend = goma.backend.RBE_PROD,
     os = os.WINDOWS_ANY,
     builderless = True,
@@ -81,6 +100,7 @@ try_.builder(
 
 try_.builder(
     name = "win11-blink-rel",
+    branch_selector = branches.STANDARD_MILESTONE,
     builder_spec = builder_config.builder_spec(
         gclient_config = builder_config.gclient_config(
             config = "chromium",

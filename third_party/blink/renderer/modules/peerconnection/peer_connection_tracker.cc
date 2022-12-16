@@ -636,7 +636,7 @@ PeerConnectionTracker& PeerConnectionTracker::From(LocalDOMWindow& window) {
       Supplement<LocalDOMWindow>::From<PeerConnectionTracker>(window);
   if (!tracker) {
     tracker = MakeGarbageCollected<PeerConnectionTracker>(
-        window, Thread::MainThread()->GetTaskRunner(),
+        window, Thread::MainThread()->GetDeprecatedTaskRunner(),
         base::PassKey<PeerConnectionTracker>());
     ProvideTo(window, tracker);
   }
@@ -669,16 +669,20 @@ PeerConnectionTracker::PeerConnectionTracker(
     scoped_refptr<base::SingleThreadTaskRunner> main_thread_task_runner,
     base::PassKey<PeerConnectionTracker>)
     : Supplement<LocalDOMWindow>(window),
+      receiver_(this, &window),
       main_thread_task_runner_(std::move(main_thread_task_runner)) {
   window.GetBrowserInterfaceBroker().GetInterface(
       peer_connection_tracker_host_.BindNewPipeAndPassReceiver());
 }
 
+// Constructor used for testing. Note that receiver_ doesn't have a context
+// notifier in this case.
 PeerConnectionTracker::PeerConnectionTracker(
     mojo::Remote<blink::mojom::blink::PeerConnectionTrackerHost> host,
     scoped_refptr<base::SingleThreadTaskRunner> main_thread_task_runner)
     : Supplement(nullptr),
       peer_connection_tracker_host_(std::move(host)),
+      receiver_(this, nullptr),
       main_thread_task_runner_(std::move(main_thread_task_runner)) {}
 
 PeerConnectionTracker::~PeerConnectionTracker() {}
@@ -787,11 +791,8 @@ void PeerConnectionTracker::RegisterPeerConnection(
   auto info = blink::mojom::blink::PeerConnectionInfo::New();
 
   info->lid = GetNextLocalID();
-  bool usesInsertableStreams =
-      pc_handler->force_encoded_audio_insertable_streams() &&
-      pc_handler->force_encoded_video_insertable_streams();
   info->rtc_configuration =
-      SerializeConfiguration(config, usesInsertableStreams);
+      SerializeConfiguration(config, pc_handler->encoded_insertable_streams());
 
   info->constraints = SerializePeerConnectionMediaConstraints(config);
   if (frame)
@@ -882,12 +883,9 @@ void PeerConnectionTracker::TrackSetConfiguration(
   if (id == -1)
     return;
 
-  bool usesInsertableStreams =
-      pc_handler->force_encoded_audio_insertable_streams() &&
-      pc_handler->force_encoded_video_insertable_streams();
   SendPeerConnectionUpdate(
       id, "setConfiguration",
-      SerializeConfiguration(config, usesInsertableStreams));
+      SerializeConfiguration(config, pc_handler->encoded_insertable_streams()));
 }
 
 void PeerConnectionTracker::TrackAddIceCandidate(

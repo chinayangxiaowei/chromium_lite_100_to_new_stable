@@ -1419,6 +1419,8 @@ Page::PrerenderFinalStatus PrerenderFinalStatusToProtocol(
       return Page::PrerenderFinalStatusEnum::CrossOriginNavigation;
     case PrerenderHost::FinalStatus::kCrossOriginRedirect:
       return Page::PrerenderFinalStatusEnum::CrossOriginRedirect;
+    case PrerenderHost::FinalStatus::kDataSaverEnabled:
+      return Page::PrerenderFinalStatusEnum::DataSaverEnabled;
     case PrerenderHost::FinalStatus::kDestroyed:
       return Page::PrerenderFinalStatusEnum::Destroyed;
     case PrerenderHost::FinalStatus::kDidFailLoad:
@@ -1428,11 +1430,11 @@ Page::PrerenderFinalStatus PrerenderFinalStatusToProtocol(
     case PrerenderHost::FinalStatus::kEmbedderTriggeredAndCrossOriginRedirected:
       return Page::PrerenderFinalStatusEnum::
           EmbedderTriggeredAndCrossOriginRedirected;
-    case PrerenderHost::FinalStatus::kEmbedderTriggeredAndDestroyed:
-      return Page::PrerenderFinalStatusEnum::EmbedderTriggeredAndDestroyed;
     case PrerenderHost::FinalStatus::kEmbedderTriggeredAndSameOriginRedirected:
       return Page::PrerenderFinalStatusEnum::
           EmbedderTriggeredAndSameOriginRedirected;
+    case PrerenderHost::FinalStatus::kFailToGetMemoryUsage:
+      return Page::PrerenderFinalStatusEnum::FailToGetMemoryUsage;
     case PrerenderHost::FinalStatus::kInProgressNavigation:
       return Page::PrerenderFinalStatusEnum::InProgressNavigation;
     case PrerenderHost::FinalStatus::kInvalidSchemeNavigation:
@@ -1447,6 +1449,8 @@ Page::PrerenderFinalStatus PrerenderFinalStatusToProtocol(
       return Page::PrerenderFinalStatusEnum::MainFrameNavigation;
     case PrerenderHost::FinalStatus::kMaxNumOfRunningPrerendersExceeded:
       return Page::PrerenderFinalStatusEnum::MaxNumOfRunningPrerendersExceeded;
+    case PrerenderHost::FinalStatus::kMemoryLimitExceeded:
+      return Page::PrerenderFinalStatusEnum::MemoryLimitExceeded;
     case PrerenderHost::FinalStatus::kMixedContent:
       return Page::PrerenderFinalStatusEnum::MixedContent;
     case PrerenderHost::FinalStatus::kMojoBinderPolicy:
@@ -1945,13 +1949,17 @@ void PageHandler::DidActivatePrerender(const NavigationRequest& nav_request) {
 
 void PageHandler::DidCancelPrerender(const GURL& prerendering_url,
                                      const std::string& initiating_frame_id,
-                                     PrerenderHost::FinalStatus status) {
+                                     PrerenderHost::FinalStatus status,
+                                     const std::string& reason_details) {
   if (!enabled_)
     return;
   DCHECK_NE(status, PrerenderHost::FinalStatus::kActivated);
-  frontend_->PrerenderAttemptCompleted(initiating_frame_id,
-                                       prerendering_url.spec(),
-                                       PrerenderFinalStatusToProtocol(status));
+  Maybe<std::string> opt_reason = reason_details.empty()
+                                      ? Maybe<std::string>()
+                                      : Maybe<std::string>(reason_details);
+  frontend_->PrerenderAttemptCompleted(
+      initiating_frame_id, prerendering_url.spec(),
+      PrerenderFinalStatusToProtocol(status), std::move(opt_reason));
 }
 
 bool PageHandler::ShouldBypassCSP() {

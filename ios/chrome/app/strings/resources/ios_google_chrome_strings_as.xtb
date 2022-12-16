@@ -28,6 +28,7 @@
 <translation id="2576431527583832481">Chrome অধিক উৎকৃষ্ট হ'ল! এটা নতুন সংস্কৰণ আছে।</translation>
 <translation id="257708665678654955">ইয়াৰ পাছত আপুনি Google Chromeএ এই ছাইটটোৰ পৰা <ph name="LANGUAGE_NAME" /> পৃষ্ঠা অনুবাদ কৰাৰ সুবিধাটো প্ৰদান কৰাটো বিচাৰেনে?</translation>
 <translation id="2671426118752779020">আপুনি অন্য এপত Google পাছৱৰ্ড পৰিচালকত ছেভ কৰি থোৱা পাছৱৰ্ডসমূহ নিজৰ iPhoneত ব্যৱহাৰ কৰিব পাৰে।</translation>
+<translation id="2689064829982324496">আটাইবোৰ ৱেবছাইটত আপোনাৰ Google একাউণ্টৰ পৰা ছাইন আউট কৰিবলৈ <ph name="BEGIN_LINK" />Chromeৰ পৰা ছাইন আউট কৰক<ph name="END_LINK" />।</translation>
 <translation id="2695886661449553974">Chromeএ আপডে’টৰ বাবে পৰীক্ষা কৰিব নোৱাৰিলে। পাছত পুনৰ চেষ্টা কৰক।</translation>
 <translation id="2732745070297234559">Chromeএ সকলো পাছৱৰ্ড পৰীক্ষা কৰিব নোৱাৰিলে। কাইলৈ পুনৰ চেষ্টা কৰক।</translation>
 <translation id="2869959624320573933">Chromeত ছাইন-ইন কৰক</translation>
@@ -39,7 +40,6 @@
 <translation id="3196546062792660320">আপোনাৰ একাউণ্টসমূহ ৱেবলৈ আনি Chromeএ আপোনাৰ সময় ৰাহি কৰে। আপুনি ছেটিংসমূহ-ত একাউন্ট যোগ দিব বা আঁতৰাব পাৰে।</translation>
 <translation id="3282568296779691940">Chromeত ছাইন-ইন কৰক</translation>
 <translation id="3345341804167540816">সকলোতে Chrome ব্যৱহাৰ কৰক</translation>
-<translation id="3428998300753080128">এইটো ছাইট, আপোনাৰ Google একাউণ্ট আৰু Chromeত ছাইন ইন কৰক।</translation>
 <translation id="3522659714780527202">আপুনি Chrome ব্যৱহাৰ কৰা সকলো ডিভাইচৰ পৰা নিজৰ টেবসমূহ চাবলৈ ছিংক অন কৰক</translation>
 <translation id="3533694711092285624">ছেভ কৰা কোনো পাছৱৰ্ড নাই। আপুনি আপোনাৰ পাছৱর্ডসমূহ ছেভ কৰিলে Chromeএ সেইবোৰ পৰীক্ষা কৰিব পাৰে।</translation>
 <translation id="3641179212828090796">দ্ৰুতভাৱে ছাইন ইন কৰিবলৈ আপুনি Chromeত ছেভ কৰি থোৱা পাছৱৰ্ডটো ব্যৱহাৰ কৰক</translation>
@@ -74,7 +74,7 @@
 <translation id="5690427481109656848">Google LLC</translation>
 <translation id="571296537125272375">অফলাইন হৈ থাকিলে Chromeএ আপডে’টৰ বাবে পৰীক্ষা কৰিব নোৱাৰে</translation>
 <translation id="5716154293141027663">আপুনি অন্য এপত লিংকসমূহত টিপিলে যিকোনো সময়তে Chrome খোলক</translation>
-<translation id="5854621639439811139">Chrome ব্যৱহাৰৰ কীটিপ। Back, Forward আৰু Search দৰে কিছুমান বুটাম এতিয়া আপোনাৰ স্ক্ৰীণত আছে।</translation>
+<translation id="5854621639439811139">Chrome ব্যৱহাৰৰ কীটিপ। Back, Forward আৰু Search দৰে কিছুমান বুটাম এতিয়া আপোনাৰ স্ক্ৰীনত আছে।</translation>
 <translation id="5998675059699164418">Chrome ব্যৱহাৰ কৰিবলৈ আপোনাৰ প্ৰতিষ্ঠানৰ বাবে আপুনি ছাইন ইন কৰাৰ আৱশ্যক।</translation>
 <translation id="6054613632208573261">ডিফ’ল্ট হিচাপে Chrome ব্যৱহাৰ কৰক</translation>
 <translation id="6063091872902370735">Chromeত ছাইন ইন কৰিবলৈ দিয়ক</translation>

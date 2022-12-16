@@ -4532,39 +4532,39 @@ bool GLES2DecoderImpl::InitializeShaderTranslator() {
     resources.HashFunction = nullptr;
   }
 
-  ShCompileOptions driver_bug_workarounds = 0;
+  ShCompileOptions driver_bug_workarounds{};
   if (workarounds().init_gl_position_in_vertex_shader)
-    driver_bug_workarounds |= SH_INIT_GL_POSITION;
+    driver_bug_workarounds.initGLPosition = true;
   if (workarounds().unfold_short_circuit_as_ternary_operation)
-    driver_bug_workarounds |= SH_UNFOLD_SHORT_CIRCUIT;
+    driver_bug_workarounds.unfoldShortCircuit = true;
   if (workarounds().scalarize_vec_and_mat_constructor_args)
-    driver_bug_workarounds |= SH_SCALARIZE_VEC_AND_MAT_CONSTRUCTOR_ARGS;
+    driver_bug_workarounds.scalarizeVecAndMatConstructorArgs = true;
   if (workarounds().regenerate_struct_names)
-    driver_bug_workarounds |= SH_REGENERATE_STRUCT_NAMES;
+    driver_bug_workarounds.regenerateStructNames = true;
   if (workarounds().emulate_abs_int_function)
-    driver_bug_workarounds |= SH_EMULATE_ABS_INT_FUNCTION;
+    driver_bug_workarounds.emulateAbsIntFunction = true;
   if (workarounds().rewrite_texelfetchoffset_to_texelfetch)
-    driver_bug_workarounds |= SH_REWRITE_TEXELFETCHOFFSET_TO_TEXELFETCH;
+    driver_bug_workarounds.rewriteTexelFetchOffsetToTexelFetch = true;
   if (workarounds().add_and_true_to_loop_condition)
-    driver_bug_workarounds |= SH_ADD_AND_TRUE_TO_LOOP_CONDITION;
+    driver_bug_workarounds.addAndTrueToLoopCondition = true;
   if (workarounds().rewrite_do_while_loops)
-    driver_bug_workarounds |= SH_REWRITE_DO_WHILE_LOOPS;
+    driver_bug_workarounds.rewriteDoWhileLoops = true;
   if (workarounds().emulate_isnan_on_float)
-    driver_bug_workarounds |= SH_EMULATE_ISNAN_FLOAT_FUNCTION;
+    driver_bug_workarounds.emulateIsnanFloatFunction = true;
   if (workarounds().use_unused_standard_shared_blocks)
-    driver_bug_workarounds |= SH_USE_UNUSED_STANDARD_SHARED_BLOCKS;
+    driver_bug_workarounds.useUnusedStandardSharedBlocks = true;
   if (workarounds().remove_invariant_and_centroid_for_essl3)
-    driver_bug_workarounds |= SH_REMOVE_INVARIANT_AND_CENTROID_FOR_ESSL3;
+    driver_bug_workarounds.removeInvariantAndCentroidForESSL3 = true;
   if (workarounds().rewrite_float_unary_minus_operator)
-    driver_bug_workarounds |= SH_REWRITE_FLOAT_UNARY_MINUS_OPERATOR;
+    driver_bug_workarounds.rewriteFloatUnaryMinusOperator = true;
   if (workarounds().dont_use_loops_to_initialize_variables)
-    driver_bug_workarounds |= SH_DONT_USE_LOOPS_TO_INITIALIZE_VARIABLES;
+    driver_bug_workarounds.dontUseLoopsToInitializeVariables = true;
   if (workarounds().remove_dynamic_indexing_of_swizzled_vector)
-    driver_bug_workarounds |= SH_REMOVE_DYNAMIC_INDEXING_OF_SWIZZLED_VECTOR;
+    driver_bug_workarounds.removeDynamicIndexingOfSwizzledVector = true;
 
   // Initialize uninitialized locals by default
   if (!workarounds().dont_initialize_uninitialized_locals)
-    driver_bug_workarounds |= SH_INITIALIZE_UNINITIALIZED_LOCALS;
+    driver_bug_workarounds.initializeUninitializedLocals = true;
 
   ShShaderOutput shader_output_language =
       ShaderTranslator::GetShaderOutputLanguageForContext(gl_version_info());
@@ -8594,10 +8594,18 @@ void GLES2DecoderImpl::DoFramebufferTexture2DCommon(
     service_id = texture_ref->service_id();
   }
 
+  bool valid_target = false;
+  if (texture_ref) {
+    valid_target = texture_manager()->ValidForTextureTarget(
+        texture_ref->texture(), level, 0, 0, 1);
+  } else {
+    valid_target = texture_manager()->ValidForTarget(textarget, level, 0, 0, 1);
+  }
+
   if ((level > 0 && !feature_info_->IsWebGL2OrES3Context() &&
        !(fbo_render_mipmap_explicitly_enabled_ &&
          feature_info_->feature_flags().oes_fbo_render_mipmap)) ||
-      !texture_manager()->ValidForTarget(textarget, level, 0, 0, 1)) {
+      !valid_target) {
     LOCAL_SET_GL_ERROR(
         GL_INVALID_VALUE,
         name, "level out of range");
@@ -8669,8 +8677,8 @@ void GLES2DecoderImpl::DoFramebufferTextureLayer(
             "texture is neither TEXTURE_3D nor TEXTURE_2D_ARRAY");
         return;
     }
-    if (!texture_manager()->ValidForTarget(texture_target, level,
-                                           0, 0, layer)) {
+    if (!texture_manager()->ValidForTextureTarget(texture_ref->texture(), level,
+                                                  0, 0, layer)) {
       LOCAL_SET_GL_ERROR(
           GL_INVALID_VALUE, function_name, "invalid level or layer");
       return;
@@ -9784,7 +9792,6 @@ void GLES2DecoderImpl::DoLineWidth(GLfloat width) {
 
 void GLES2DecoderImpl::DoLinkProgram(GLuint program_id) {
   TRACE_EVENT0("gpu", "GLES2DecoderImpl::DoLinkProgram");
-  SCOPED_UMA_HISTOGRAM_TIMER("GPU.DoLinkProgramTime");
   Program* program = GetProgramInfoNotShader(
       program_id, "glLinkProgram");
   if (!program) {
@@ -14723,11 +14730,6 @@ error::Error GLES2DecoderImpl::DoCompressedTexImage(
     LOCAL_SET_GL_ERROR(GL_INVALID_VALUE, func_name, "imageSize < 0");
     return error::kNoError;
   }
-  if (!texture_manager()->ValidForTarget(target, level, width, height, depth) ||
-      border != 0) {
-    LOCAL_SET_GL_ERROR(GL_INVALID_VALUE, func_name, "dimensions out of range");
-    return error::kNoError;
-  }
   TextureRef* texture_ref = texture_manager()->GetTextureInfoForTarget(
       &state_, target);
   if (!texture_ref) {
@@ -14736,6 +14738,12 @@ error::Error GLES2DecoderImpl::DoCompressedTexImage(
     return error::kNoError;
   }
   Texture* texture = texture_ref->texture();
+  if (!texture_manager()->ValidForTextureTarget(texture, level, width, height,
+                                                depth) ||
+      border != 0) {
+    LOCAL_SET_GL_ERROR(GL_INVALID_VALUE, func_name, "dimensions out of range");
+    return error::kNoError;
+  }
   if (texture->IsImmutable()) {
     LOCAL_SET_GL_ERROR(GL_INVALID_OPERATION, func_name, "texture is immutable");
     return error::kNoError;
@@ -15105,10 +15113,6 @@ error::Error GLES2DecoderImpl::DoCompressedTexSubImage(
     LOCAL_SET_GL_ERROR(GL_INVALID_VALUE, func_name, "imageSize < 0");
     return error::kNoError;
   }
-  if (!texture_manager()->ValidForTarget(target, level, width, height, depth)) {
-    LOCAL_SET_GL_ERROR(GL_INVALID_VALUE, func_name, "dimensions out of range");
-    return error::kNoError;
-  }
   TextureRef* texture_ref = texture_manager()->GetTextureInfoForTarget(
       &state_, target);
   if (!texture_ref) {
@@ -15116,7 +15120,14 @@ error::Error GLES2DecoderImpl::DoCompressedTexSubImage(
         GL_INVALID_OPERATION, func_name, "no texture bound at target");
     return error::kNoError;
   }
+
   Texture* texture = texture_ref->texture();
+  if (!texture_manager()->ValidForTextureTarget(texture, level, width, height,
+                                                depth)) {
+    LOCAL_SET_GL_ERROR(GL_INVALID_VALUE, func_name, "dimensions out of range");
+    return error::kNoError;
+  }
+
   GLenum type = 0;
   GLenum internal_format = 0;
   if (!texture->GetLevelType(target, level, &type, &internal_format)) {
@@ -15241,7 +15252,8 @@ void GLES2DecoderImpl::DoCopyTexImage2D(
         GL_INVALID_OPERATION, func_name, "texture is immutable");
     return;
   }
-  if (!texture_manager()->ValidForTarget(target, level, width, height, 1) ||
+  if (!texture_manager()->ValidForTextureTarget(texture, level, width, height,
+                                                1) ||
       border != 0) {
     LOCAL_SET_GL_ERROR(
         GL_INVALID_VALUE, func_name, "dimensions out of range");
@@ -17814,8 +17826,8 @@ void GLES2DecoderImpl::DoCopyTextureCHROMIUM(
     }
 
     // Check that this type of texture is allowed.
-    if (!texture_manager()->ValidForTarget(source_target, source_level,
-                                           source_width, source_height, 1)) {
+    if (!texture_manager()->ValidForTextureTarget(
+            source_texture, source_level, source_width, source_height, 1)) {
       LOCAL_SET_GL_ERROR(GL_INVALID_VALUE, kFunctionName, "Bad dimensions");
       return;
     }
@@ -17982,8 +17994,8 @@ void GLES2DecoderImpl::CopySubTextureHelper(const char* function_name,
     }
 
     // Check that this type of texture is allowed.
-    if (!texture_manager()->ValidForTarget(source_target, source_level,
-                                           source_width, source_height, 1)) {
+    if (!texture_manager()->ValidForTextureTarget(
+            source_texture, source_level, source_width, source_height, 1)) {
       LOCAL_SET_GL_ERROR(GL_INVALID_VALUE, function_name,
                          "source texture bad dimensions");
       return;
@@ -18223,11 +18235,20 @@ void GLES2DecoderImpl::TexStorageImpl(GLenum target,
       return;
     }
   }
+  TextureRef* texture_ref =
+      texture_manager()->GetTextureInfoForTarget(&state_, target);
+  if (!texture_ref) {
+    LOCAL_SET_GL_ERROR(GL_INVALID_OPERATION, function_name,
+                       "unknown texture for target");
+    return;
+  }
+  Texture* texture = texture_ref->texture();
   // The glTexStorage entry points require width, height, and depth to be
   // at least 1, but the other texture entry points (those which use
-  // ValidForTarget) do not. So we have to add an extra check here.
+  // ValidForTextureTarget) do not. So we have to add an extra check here.
   bool is_invalid_texstorage_size = width < 1 || height < 1 || depth < 1;
-  if (!texture_manager()->ValidForTarget(target, 0, width, height, depth) ||
+  if (!texture_manager()->ValidForTextureTarget(texture, 0, width, height,
+                                                depth) ||
       is_invalid_texstorage_size) {
     LOCAL_SET_GL_ERROR(
         GL_INVALID_VALUE, function_name, "dimensions out of range");
@@ -18240,14 +18261,6 @@ void GLES2DecoderImpl::TexStorageImpl(GLenum target,
     LOCAL_SET_GL_ERROR(GL_INVALID_OPERATION, function_name, "too many levels");
     return;
   }
-  TextureRef* texture_ref = texture_manager()->GetTextureInfoForTarget(
-      &state_, target);
-  if (!texture_ref) {
-    LOCAL_SET_GL_ERROR(
-        GL_INVALID_OPERATION, function_name, "unknown texture for target");
-    return;
-  }
-  Texture* texture = texture_ref->texture();
   if (texture->IsAttachedToFramebuffer()) {
     framebuffer_state_.clear_state_dirty = true;
   }

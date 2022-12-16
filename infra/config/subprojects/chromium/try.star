@@ -202,7 +202,7 @@ branches.cq_tryjob_verifier(
     cq_group = "cq",
     experiment_percentage = 100,
     includable_only = False,
-    location_regexp = [".+/[+]/third_party/nearby/README.chromium"],
+    location_filters = [cq.location_filter(path_regexp = "third_party/nearby/README.chromium")],
     owner_whitelist = [
         "googlers",
         "project-chromium-robot-committers",
@@ -256,6 +256,10 @@ chrome_internal_verifier(
 
 chrome_internal_verifier(
     builder = "lacros-arm-generic-chrome-skylab",
+)
+
+chrome_internal_verifier(
+    builder = "lacros-arm64-generic-chrome-skylab",
 )
 
 chrome_internal_verifier(

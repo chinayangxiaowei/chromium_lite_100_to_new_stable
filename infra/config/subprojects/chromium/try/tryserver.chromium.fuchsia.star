@@ -34,8 +34,8 @@ try_.builder(
     branch_selector = branches.FUCHSIA_LTS_MILESTONE,
     main_list_view = "try",
     tryjob = try_.job(
-        location_regexp = [
-            ".+/[+]/chromecast/.+",
+        location_filters = [
+            "chromecast/.+",
         ],
     ),
     mirrors = [
@@ -60,18 +60,16 @@ try_.builder(
             ],
         },
     },
-    tryjob = try_.job(
-        experiment_percentage = 20,
-    ),
+    tryjob = try_.job(),
 )
 
 try_.builder(
     name = "fuchsia-compile-x64-dbg",
     tryjob = try_.job(
-        location_regexp = [
-            ".+/[+]/base/fuchsia/.+",
-            ".+/[+]/fuchsia/.+",
-            ".+/[+]/media/fuchsia/.+",
+        location_filters = [
+            "base/fuchsia/.+",
+            "fuchsia/.+",
+            "media/fuchsia/.+",
         ],
     ),
     mirrors = [
@@ -107,6 +105,9 @@ try_.builder(
     mirrors = [
         "ci/fuchsia-x64-cast",
     ],
+    experiments = {
+        "enable_weetbix_queries": 100,
+    },
 )
 
 try_.builder(
@@ -118,6 +119,9 @@ try_.builder(
     mirrors = [
         "ci/Fuchsia ARM64",
     ],
+    experiments = {
+        "enable_weetbix_queries": 100,
+    },
 )
 
 try_.builder(
@@ -129,4 +133,7 @@ try_.builder(
     mirrors = [
         "ci/Fuchsia x64",
     ],
+    experiments = {
+        "enable_weetbix_queries": 100,
+    },
 )

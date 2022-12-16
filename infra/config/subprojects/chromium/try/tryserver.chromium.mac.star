@@ -27,7 +27,7 @@ def ios_builder(*, name, **kwargs):
     kwargs.setdefault("builderless", False)
     kwargs.setdefault("os", os.MAC_DEFAULT)
     kwargs.setdefault("ssd", None)
-    kwargs.setdefault("xcode", xcode.x13main)
+    kwargs.setdefault("xcode", xcode.x14main)
     return try_.builder(name = name, **kwargs)
 
 consoles.list_view(
@@ -48,9 +48,10 @@ try_.builder(
 try_.builder(
     name = "mac-osxbeta-rel",
     mirrors = [
-        "ci/Mac Builder",
+        "ci/Mac Builder (dbg)",
         "ci/mac-osxbeta-rel",
     ],
+    builderless = False,
     os = os.MAC_DEFAULT,
 )
 
@@ -101,8 +102,11 @@ try_.orchestrator_builder(
     tryjob = try_.job(),
     experiments = {
         "remove_src_checkout_experiment": 100,
+        "enable_weetbix_queries": 100,
     },
-    use_orchestrator_pool = True,
+    # TODO(crbug.com/1372179): Use orchestrator pool once overloaded test pools
+    # are addressed
+    # use_orchestrator_pool = True,
 )
 
 try_.compilator_builder(
@@ -111,6 +115,9 @@ try_.compilator_builder(
     branch_selector = branches.DESKTOP_EXTENDED_STABLE_MILESTONE,
     main_list_view = "try",
     os = os.MAC_DEFAULT,
+    experiments = {
+        "luci.buildbucket.omit_python2": 100,
+    },
 )
 
 try_.builder(
@@ -144,6 +151,9 @@ try_.compilator_builder(
     os = os.MAC_12,
     # TODO (crbug.com/1245171): Revert when root issue is fixed
     grace_period = 4 * time.minute,
+    experiments = {
+        "luci.buildbucket.omit_python2": 100,
+    },
 )
 
 # NOTE: the following trybots aren't sensitive to Mac version on which
@@ -266,6 +276,9 @@ ios_builder(
 
 ios_builder(
     name = "ios-catalyst",
+
+    # TODO(crbug.com/1350126): Move ios-catalyst to xcode.x14main when fixed.
+    xcode = xcode.x13main,
     mirrors = [
         "ci/ios-catalyst",
     ],
@@ -317,7 +330,9 @@ try_.orchestrator_builder(
         "weetbix.retry_weak_exonerations": 100,
         "weetbix.enable_weetbix_exonerations": 100,
     },
-    use_orchestrator_pool = True,
+    # TODO(crbug.com/1372179): Use orchestrator pool once overloaded test pools
+    # are addressed
+    # use_orchestrator_pool = True,
 )
 
 try_.compilator_builder(
@@ -331,7 +346,7 @@ try_.compilator_builder(
     },
     os = os.MAC_DEFAULT,
     ssd = None,
-    xcode = xcode.x13main,
+    xcode = xcode.x14main,
 )
 
 ios_builder(
@@ -343,13 +358,11 @@ ios_builder(
     check_for_flakiness = True,
     main_list_view = "try",
     tryjob = try_.job(
-        location_regexp = [
-            ".+/[+]/components/cronet/.+",
-            ".+/[+]/components/grpc_support/.+",
-            ".+/[+]/ios/.+",
-        ],
-        location_regexp_exclude = [
-            ".+/[+]/components/cronet/android/.+",
+        location_filters = [
+            "components/cronet/.+",
+            "components/grpc_support/.+",
+            "ios/.+",
+            cq.location_filter(path_regexp = "components/cronet/android/.+", exclude = True),
         ],
     ),
 )
@@ -366,8 +379,8 @@ ios_builder(
     coverage_exclude_sources = "ios_test_files_and_test_utils",
     coverage_test_types = ["overall", "unit"],
     tryjob = try_.job(
-        location_regexp = [
-            ".+/[+]/ios/.+",
+        location_filters = [
+            "ios/.+",
         ],
     ),
 )
@@ -386,10 +399,9 @@ ios_builder(
     mirrors = [
         "ci/ios-simulator-noncq",
     ],
-    xcode = xcode.x13main,
     tryjob = try_.job(
-        location_regexp = [
-            ".+/[+]/third_party/crashpad/crashpad/.+",
+        location_filters = [
+            "third_party/crashpad/crashpad/.+",
         ],
     ),
 )
@@ -400,7 +412,6 @@ ios_builder(
 
 ios_builder(
     name = "ios15-sdk-simulator",
-    xcode = xcode.x13betabots,
     os = os.MAC_12,
 )
 
@@ -444,29 +455,29 @@ try_.gpu.optional_tests_builder(
     main_list_view = "try",
     ssd = None,
     tryjob = try_.job(
-        location_regexp = [
-            ".+/[+]/chrome/browser/vr/.+",
-            ".+/[+]/content/browser/xr/.+",
-            ".+/[+]/content/test/gpu/.+",
-            ".+/[+]/gpu/.+",
-            ".+/[+]/media/audio/.+",
-            ".+/[+]/media/base/.+",
-            ".+/[+]/media/capture/.+",
-            ".+/[+]/media/filters/.+",
-            ".+/[+]/media/gpu/.+",
-            ".+/[+]/media/mojo/.+",
-            ".+/[+]/media/renderers/.+",
-            ".+/[+]/media/video/.+",
-            ".+/[+]/services/shape_detection/.+",
-            ".+/[+]/testing/buildbot/tryserver.chromium.mac.json",
-            ".+/[+]/testing/trigger_scripts/.+",
-            ".+/[+]/third_party/blink/renderer/modules/mediastream/.+",
-            ".+/[+]/third_party/blink/renderer/modules/webcodecs/.+",
-            ".+/[+]/third_party/blink/renderer/modules/webgl/.+",
-            ".+/[+]/third_party/blink/renderer/platform/graphics/gpu/.+",
-            ".+/[+]/tools/clang/scripts/update.py",
-            ".+/[+]/tools/mb/mb_config_expectations/tryserver.chromium.mac.json",
-            ".+/[+]/ui/gl/.+",
+        location_filters = [
+            "chrome/browser/vr/.+",
+            "content/browser/xr/.+",
+            "content/test/gpu/.+",
+            "gpu/.+",
+            "media/audio/.+",
+            "media/base/.+",
+            "media/capture/.+",
+            "media/filters/.+",
+            "media/gpu/.+",
+            "media/mojo/.+",
+            "media/renderers/.+",
+            "media/video/.+",
+            "services/shape_detection/.+",
+            "testing/buildbot/tryserver.chromium.mac.json",
+            "testing/trigger_scripts/.+",
+            "third_party/blink/renderer/modules/mediastream/.+",
+            "third_party/blink/renderer/modules/webcodecs/.+",
+            "third_party/blink/renderer/modules/webgl/.+",
+            "third_party/blink/renderer/platform/graphics/gpu/.+",
+            "tools/clang/scripts/update.py",
+            "tools/mb/mb_config_expectations/tryserver.chromium.mac.json",
+            "ui/gl/.+",
         ],
     ),
 )

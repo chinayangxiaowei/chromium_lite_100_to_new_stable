@@ -26,6 +26,7 @@
 #include "content/public/test/content_browser_test_utils.h"
 #include "content/public/test/test_utils.h"
 #include "content/shell/browser/shell.h"
+#include "net/base/features.h"
 #include "net/dns/mock_host_resolver.h"
 #include "net/test/embedded_test_server/embedded_test_server.h"
 #include "third_party/blink/public/common/service_worker/service_worker_status_code.h"
@@ -583,8 +584,15 @@ IN_PROC_BROWSER_TEST_F(ServiceWorkerInternalsUIBrowserTest,
   TearDownWindow(sw_internal_ui_window);
 }
 
+// The test is flaky on Mac. crbug.com/1324856
+#if BUILDFLAG(IS_MAC)
+#define MAYBE_StopStartSWReflectedOnInternalUI \
+  DISABLED_StopStartSWReflectedOnInternalUI
+#else
+#define MAYBE_StopStartSWReflectedOnInternalUI StopStartSWReflectedOnInternalUI
+#endif
 IN_PROC_BROWSER_TEST_F(ServiceWorkerInternalsUIBrowserTest,
-                       StopStartSWReflectedOnInternalUI) {
+                       MAYBE_StopStartSWReflectedOnInternalUI) {
   Shell* sw_internal_ui_window = CreateNewWindow();
   NavigateToServiceWorkerInternalUI();
 
@@ -707,7 +715,7 @@ class ServiceWorkerInternalsUIBrowserTestWithStoragePartitioning
  public:
   ServiceWorkerInternalsUIBrowserTestWithStoragePartitioning() {
     scoped_feature_list_.InitAndEnableFeature(
-        blink::features::kThirdPartyStoragePartitioning);
+        net::features::kThirdPartyStoragePartitioning);
   }
 
  private:

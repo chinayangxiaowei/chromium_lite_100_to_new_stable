@@ -10,7 +10,7 @@ load("//lib/branches.star", "branches")
 load("//project.star", "settings")
 
 lucicfg.check_version(
-    min = "1.31.1",
+    min = "1.33.7",
     message = "Update depot_tools",
 )
 
@@ -96,6 +96,18 @@ luci.project(
         luci.binding(
             roles = "role/configs.validator",
             groups = "project-chromium-try-task-accounts",
+        ),
+        luci.binding(
+            roles = "role/weetbix.reader",
+            groups = "all",
+        ),
+        luci.binding(
+            roles = "role/weetbix.queryUser",
+            groups = "authenticated-users",
+        ),
+        luci.binding(
+            roles = "role/weetbix.editor",
+            groups = "project-chromium-committers",
         ),
     ],
 )
@@ -191,6 +203,7 @@ branches.exec("//subprojects/findit/subproject.star")
 branches.exec("//subprojects/flakiness/subproject.star")
 branches.exec("//subprojects/goma/subproject.star")
 branches.exec("//subprojects/reclient/subproject.star")
+branches.exec("//subprojects/reviver/subproject.star")
 branches.exec("//subprojects/webrtc/subproject.star")
 
 exec("//generators/cq-usage.star")
