@@ -7,7 +7,7 @@
             "builder_id": {
               "bucket": "ci",
               "builder": "fuchsia-official",
-              "project": "chromium-m110"
+              "project": "chromium-m111"
             },
             "builder_spec": {
               "builder_group": "chromium",
@@ -22,7 +22,8 @@
               },
               "legacy_gclient_config": {
                 "apply_configs": [
-                  "fuchsia_x64"
+                  "fuchsia_x64",
+                  "checkout_pgo_profiles"
                 ],
                 "config": "chromium"
               }
@@ -34,7 +35,7 @@
         {
           "bucket": "ci",
           "builder": "fuchsia-official",
-          "project": "chromium-m110"
+          "project": "chromium-m111"
         }
       ],
       "mirroring_builder_group_and_names": [
@@ -60,6 +61,6 @@
   "builder_group": "chromium",
   "recipe": "chromium",
   "sheriff_rotations": [
-    "fuchsia"
+    "chrome_browser_release"
   ]
 }
