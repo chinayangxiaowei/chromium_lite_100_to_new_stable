@@ -116,6 +116,7 @@ swangle_windows_builder(
     ),
     pool = "luci.chromium.swangle.chromium.win.x86.try",
     execution_timeout = 6 * time.hour,
+    goma_backend = None,
 )
 
 swangle_windows_builder(
@@ -127,6 +128,7 @@ swangle_windows_builder(
         retry_failed_shards = False,
     ),
     pool = "luci.chromium.swangle.win.x64.try",
+    goma_backend = None,
 )
 
 swangle_windows_builder(
@@ -138,6 +140,7 @@ swangle_windows_builder(
         retry_failed_shards = False,
     ),
     pool = "luci.chromium.swangle.sws.win.x86.try",
+    goma_backend = None,
 )
 
 swangle_windows_builder(
@@ -150,6 +153,7 @@ swangle_windows_builder(
         retry_failed_shards = False,
     ),
     pool = "luci.chromium.swangle.win.x64.try",
+    goma_backend = None,
 )
 
 swangle_windows_builder(
@@ -162,4 +166,5 @@ swangle_windows_builder(
         retry_failed_shards = False,
     ),
     pool = "luci.chromium.swangle.deps.win.x86.try",
+    goma_backend = None,
 )

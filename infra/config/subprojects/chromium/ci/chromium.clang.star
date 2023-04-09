@@ -3,7 +3,6 @@
 # found in the LICENSE file.
 """Definitions of builders in the chromium.clang builder group."""
 
-load("//lib/args.star", "args")
 load("//lib/builders.star", "builders", "os", "reclient", "sheriff_rotations", "xcode")
 load("//lib/branches.star", "branches")
 load("//lib/ci.star", "ci")
@@ -136,7 +135,6 @@ ci.builder(
 
 ci.builder(
     name = "ToTAndroid",
-    sheriff_rotations = args.ignore_default(None),
     console_view_entry = consoles.console_view_entry(
         category = "ToT Android",
         short_name = "rel",

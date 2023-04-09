@@ -96,28 +96,32 @@ ci.builder(
         short_name = "avd",
     ),
     properties = {
-        "avd_configs": [
-            "tools/android/avd/proto/creation/generic_android19.textpb",
-            "tools/android/avd/proto/creation/generic_android22.textpb",
-            "tools/android/avd/proto/creation/generic_android23.textpb",
-            "tools/android/avd/proto/creation/generic_android24.textpb",
-            "tools/android/avd/proto/creation/generic_playstore_android24.textpb",
-            "tools/android/avd/proto/creation/generic_android25.textpb",
-            "tools/android/avd/proto/creation/generic_playstore_android25.textpb",
-            "tools/android/avd/proto/creation/generic_android27.textpb",
-            "tools/android/avd/proto/creation/generic_playstore_android27.textpb",
-            "tools/android/avd/proto/creation/generic_android28.textpb",
-            "tools/android/avd/proto/creation/generic_playstore_android28.textpb",
-            "tools/android/avd/proto/creation/generic_android29.textpb",
-            "tools/android/avd/proto/creation/generic_android30.textpb",
-            "tools/android/avd/proto/creation/generic_playstore_android30.textpb",
-            "tools/android/avd/proto/creation/generic_android31.textpb",
-            "tools/android/avd/proto/creation/generic_playstore_android31.textpb",
-            "tools/android/avd/proto/creation/generic_android32_foldable.textpb",
-            "tools/android/avd/proto/creation/generic_playstore_android32_foldable.textpb",
-            "tools/android/avd/proto/creation/generic_android33.textpb",
-            "tools/android/avd/proto/creation/generic_playstore_android33.textpb",
-        ],
+        "$build/avd_packager": {
+            "avd_configs": [
+                "tools/android/avd/proto/creation/generic_android19.textpb",
+                "tools/android/avd/proto/creation/generic_android22.textpb",
+                "tools/android/avd/proto/creation/generic_android23.textpb",
+                "tools/android/avd/proto/creation/generic_android24.textpb",
+                "tools/android/avd/proto/creation/generic_playstore_android24.textpb",
+                "tools/android/avd/proto/creation/generic_android25.textpb",
+                "tools/android/avd/proto/creation/generic_playstore_android25.textpb",
+                "tools/android/avd/proto/creation/generic_android27.textpb",
+                "tools/android/avd/proto/creation/generic_playstore_android27.textpb",
+                "tools/android/avd/proto/creation/generic_android28.textpb",
+                "tools/android/avd/proto/creation/generic_playstore_android28.textpb",
+                "tools/android/avd/proto/creation/generic_android29.textpb",
+                "tools/android/avd/proto/creation/generic_android30.textpb",
+                "tools/android/avd/proto/creation/generic_playstore_android30.textpb",
+                "tools/android/avd/proto/creation/generic_android31.textpb",
+                "tools/android/avd/proto/creation/generic_playstore_android31.textpb",
+                "tools/android/avd/proto/creation/generic_android32_foldable.textpb",
+                "tools/android/avd/proto/creation/generic_playstore_android32_foldable.textpb",
+                "tools/android/avd/proto/creation/generic_android33.textpb",
+                "tools/android/avd/proto/creation/generic_playstore_android33.textpb",
+            ],
+            "gclient_config": "chromium",
+            "gclient_apply_config": ["android"],
+        },
     },
 )
 
@@ -139,10 +143,6 @@ ci.builder(
                 "cipd_yaml": "third_party/android_sdk/cipd/build-tools/25.0.2.yaml",
             },
             {
-                "sdk_package_name": "build-tools;31.0.0",
-                "cipd_yaml": "third_party/android_sdk/cipd/build-tools/31.0.0.yaml",
-            },
-            {
                 "sdk_package_name": "build-tools;33.0.0",
                 "cipd_yaml": "third_party/android_sdk/cipd/build-tools/33.0.0.yaml",
             },
@@ -159,12 +159,12 @@ ci.builder(
                 "cipd_yaml": "third_party/android_sdk/cipd/patcher/v4.yaml",
             },
             {
-                "sdk_package_name": "platforms;android-31",
-                "cipd_yaml": "third_party/android_sdk/cipd/platforms/android-31.yaml",
-            },
-            {
                 "sdk_package_name": "platforms;android-33",
                 "cipd_yaml": "third_party/android_sdk/cipd/platforms/android-33.yaml",
+            },
+            {
+                "sdk_package_name": "platforms;android-TiramisuPrivacySandbox",
+                "cipd_yaml": "third_party/android_sdk/cipd/platforms/android-TiramisuPrivacySandbox.yaml",
             },
             {
                 "sdk_package_name": "platform-tools",
@@ -263,6 +263,10 @@ ci.builder(
                 "sdk_package_name": "system-images;android-33;google_apis_playstore;x86_64",
                 "cipd_yaml": "third_party/android_sdk/cipd/system_images/android-33/google_apis_playstore/x86_64.yaml",
             },
+            {
+                "sdk_package_name": "system-images;android-TiramisuPrivacySandbox;google_apis_playstore;x86_64",
+                "cipd_yaml": "third_party/android_sdk/cipd/system_images/android-TiramisuPrivacySandbox/google_apis_playstore/x86_64.yaml",
+            },
         ],
     },
 )
@@ -278,7 +282,7 @@ ci.builder(
         category = "rts",
         short_name = "create-model",
     ),
-    execution_timeout = 8 * time.hour,
+    execution_timeout = 10 * time.hour,
     notifies = [
         luci.notifier(
             name = "rts-model-packager-notifier",

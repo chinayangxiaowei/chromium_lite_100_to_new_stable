@@ -16,7 +16,7 @@ try_.defaults.set(
     pool = try_.DEFAULT_POOL,
     cores = 8,
     os = os.LINUX_DEFAULT,
-    compilator_cores = 32,
+    compilator_cores = 16,
     compilator_reclient_jobs = reclient.jobs.HIGH_JOBS_FOR_CQ,
     execution_timeout = try_.DEFAULT_EXECUTION_TIMEOUT,
     goma_backend = goma.backend.RBE_PROD,
@@ -36,6 +36,7 @@ try_.builder(
     mirrors = [
         "ci/chromeos-amd64-generic-cfi-thin-lto-rel",
     ],
+    goma_backend = None,
 )
 
 try_.builder(
@@ -44,6 +45,7 @@ try_.builder(
     mirrors = [
         "ci/chromeos-amd64-generic-dbg",
     ],
+    goma_backend = None,
     main_list_view = "try",
     tryjob = try_.job(
         location_filters = [
@@ -68,7 +70,8 @@ try_.orchestrator_builder(
 try_.compilator_builder(
     name = "chromeos-amd64-generic-rel-compilator",
     branch_selector = branches.selector.CROS_LTS_BRANCHES,
-    cores = 16,
+    cores = 8,
+    goma_backend = None,
     main_list_view = "try",
 )
 
@@ -77,6 +80,7 @@ try_.builder(
     mirrors = [
         "ci/chromeos-arm-generic-dbg",
     ],
+    goma_backend = None,
 )
 
 try_.builder(
@@ -84,6 +88,7 @@ try_.builder(
     branch_selector = branches.selector.CROS_LTS_BRANCHES,
     mirrors = ["ci/chromeos-arm-generic-rel"],
     builderless = not settings.is_main,
+    goma_backend = None,
     main_list_view = "try",
     tryjob = try_.job(),
 )
@@ -92,6 +97,7 @@ try_.builder(
     name = "chromeos-arm64-generic-rel",
     branch_selector = branches.selector.CROS_LTS_BRANCHES,
     mirrors = ["ci/chromeos-arm64-generic-rel"],
+    goma_backend = None,
 )
 
 try_.builder(
@@ -101,6 +107,7 @@ try_.builder(
         "ci/lacros-amd64-generic-rel",
     ],
     builderless = not settings.is_main,
+    goma_backend = None,
     main_list_view = "try",
     tryjob = try_.job(),
 )
@@ -114,6 +121,40 @@ try_.orchestrator_builder(
     compilator = "lacros-amd64-generic-rel-compilator",
     main_list_view = "try",
     use_orchestrator_pool = True,
+)
+
+try_.builder(
+    name = "lacros-amd64-generic-rel-skylab",
+    branch_selector = branches.selector.CROS_BRANCHES,
+    builder_spec = builder_config.builder_spec(
+        gclient_config = builder_config.gclient_config(
+            config = "chromium",
+            apply_configs = [
+                "checkout_lacros_sdk",
+                "chromeos",
+            ],
+        ),
+        chromium_config = builder_config.chromium_config(
+            config = "chromium",
+            apply_configs = [
+                "mb",
+            ],
+            build_config = builder_config.build_config.RELEASE,
+            target_arch = builder_config.target_arch.INTEL,
+            target_bits = 64,
+            target_platform = builder_config.target_platform.CHROMEOS,
+            target_cros_boards = [
+                "amd64-generic",
+            ],
+        ),
+        build_gs_bucket = "chromium-chromiumos-archive",
+        # TODO(https://crbug.com/1399919): change skylab_upload_location
+        # as a property. Change try builder as CI mirrors
+        skylab_upload_location = builder_config.skylab_upload_location(
+            gs_bucket = "chromium-try-skylab",
+        ),
+    ),
+    goma_backend = None,
 )
 
 try_.compilator_builder(
@@ -148,9 +189,6 @@ try_.builder(
         skylab_upload_location = builder_config.skylab_upload_location(
             gs_bucket = "gs://lacros-amd64-generic-rel-skylab-try",
         ),
-        test_results_config = builder_config.test_results_config(
-            config = "staging_server",
-        ),
     ),
     builderless = not settings.is_main,
     main_list_view = "try",
@@ -171,6 +209,7 @@ try_.builder(
         "ci/lacros-arm-generic-rel",
     ],
     builderless = not settings.is_main,
+    goma_backend = None,
     main_list_view = "try",
     tryjob = try_.job(),
 )
@@ -195,17 +234,10 @@ try_.builder(
         is_compile_only = True,
     ),
     builderless = not settings.is_main,
+    goma_backend = None,
     main_list_view = "try",
+    reclient_jobs = reclient.jobs.HIGH_JOBS_FOR_CQ,
     tryjob = try_.job(),
-)
-
-try_.builder(
-    name = "linux-lacros-tester-rel-reviver",
-    mirrors = [
-        "ci/linux-lacros-tester-rel-reviver",
-    ],
-    builderless = True,
-    main_list_view = "try",
 )
 
 try_.builder(
@@ -229,6 +261,7 @@ try_.builder(
 try_.builder(
     name = "linux-chromeos-inverse-fieldtrials-fyi-rel",
     mirrors = builder_config.copy_from("try/linux-chromeos-rel"),
+    goma_backend = None,
 )
 
 try_.orchestrator_builder(
@@ -250,7 +283,7 @@ try_.orchestrator_builder(
 try_.compilator_builder(
     name = "linux-chromeos-rel-compilator",
     branch_selector = branches.selector.CROS_LTS_BRANCHES,
-    goma_jobs = goma.jobs.J300,
+    goma_backend = None,
     main_list_view = "try",
 )
 
@@ -260,6 +293,7 @@ try_.builder(
     mirrors = [
         "ci/linux-lacros-dbg",
     ],
+    goma_backend = None,
 )
 
 try_.orchestrator_builder(
@@ -281,7 +315,8 @@ try_.orchestrator_builder(
 try_.compilator_builder(
     name = "linux-lacros-rel-compilator",
     branch_selector = branches.selector.CROS_BRANCHES,
-    goma_jobs = goma.jobs.J300,
+    cores = 32,
+    goma_backend = None,
     main_list_view = "try",
 )
 
@@ -293,10 +328,15 @@ try_.builder(
     mirrors = [
         "ci/linux-chromeos-dbg",
     ],
+    goma_backend = None,
 )
 
 try_.builder(
     name = "linux-chromeos-annotator-rel",
+    mirrors = [
+        "ci/linux-chromeos-annotator-rel",
+    ],
+    goma_backend = None,
 )
 
 try_.builder(
@@ -305,6 +345,8 @@ try_.builder(
         "ci/linux-cfm-rel",
     ],
     goma_backend = None,
+    reclient_instance = reclient.instance.DEFAULT_UNTRUSTED,
+    reclient_jobs = reclient.jobs.LOW_JOBS_FOR_CQ,
     tryjob = try_.job(
         location_filters = [
             "chromeos/ash/components/chromebox_for_meetings/.+",
@@ -332,6 +374,7 @@ try_.builder(
     ),
     builderless = False,
     coverage_test_types = ["unit", "overall"],
+    goma_backend = None,
     tryjob = try_.job(
         experiment_percentage = 5,
     ),

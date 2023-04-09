@@ -1,13 +1,17 @@
 {
-    "project": "chromium-m109",
-    "project_title": "Chromium M109",
-    "ref": "refs/branch-heads/5414",
-    "chrome_project": "chrome-m109",
+    "project": "chromium-m110",
+    "project_title": "Chromium M110",
+    "ref": "refs/branch-heads/5481",
+    "chrome_project": "chrome-m110",
     "is_main": false,
     "platforms": {
-        "windows": {
-            "description": "long-term support for Windows pre-10: crbug.com/1406951",
+        "cros": {
+            "description": "beta/stable",
             "sheriff_rotation": "chrome_browser_release"
+        },
+        "fuchsia": {
+            "description": "fuchsia LTS",
+            "sheriff_rotation": "fuchsia"
         }
     }
 }

@@ -343,6 +343,10 @@ ci.gpu.linux_builder(
 
 ci.gpu.linux_builder(
     name = "ChromeOS FYI Release Skylab (kevin)",
+    # Kevin is a busy board in OS lab. As this is an FYI builder,
+    # we try to avoid peak hours and run it from 8PM TO 4AM PST.
+    # It is 3 AM to 11 AM UTC.
+    schedule = "0 3,6,9 * * *",
     builder_spec = builder_config.builder_spec(
         gclient_config = builder_config.gclient_config(
             config = "chromium",
@@ -936,10 +940,10 @@ ci.thin_tester(
         run_tests_serially = True,
     ),
     # Uncomment this entry when this experimental tester is actually in use.
-    console_view_entry = consoles.console_view_entry(
-        category = "Mac|Apple",
-        short_name = "exp",
-    ),
+    # console_view_entry = consoles.console_view_entry(
+    #     category = "Mac|Apple",
+    #     short_name = "exp",
+    # ),
     list_view = "chromium.gpu.experimental",
 )
 
@@ -963,10 +967,10 @@ ci.thin_tester(
         run_tests_serially = True,
     ),
     # Uncomment this entry when this experimental tester is actually in use.
-    console_view_entry = consoles.console_view_entry(
-        category = "Mac|Intel",
-        short_name = "exp",
-    ),
+    # console_view_entry = consoles.console_view_entry(
+    #     category = "Mac|Intel",
+    #     short_name = "exp",
+    # ),
     list_view = "chromium.gpu.experimental",
 )
 
@@ -1320,10 +1324,10 @@ ci.thin_tester(
         run_tests_serially = True,
     ),
     # Uncomment this entry when this experimental tester is actually in use.
-    # console_view_entry = consoles.console_view_entry(
-    #     category = "Windows|10|x64|Intel",
-    #     short_name = "exp",
-    # ),
+    console_view_entry = consoles.console_view_entry(
+        category = "Windows|10|x64|Intel",
+        short_name = "exp",
+    ),
     list_view = "chromium.gpu.experimental",
 )
 

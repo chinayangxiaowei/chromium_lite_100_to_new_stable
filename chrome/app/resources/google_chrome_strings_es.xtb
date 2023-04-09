@@ -35,7 +35,7 @@ Es posible que algunas funciones no estén disponibles y que no se guarden los c
 <translation id="1597911401261118146">Para comprobar si tus contraseñas han sufrido quiebras de seguridad de datos u otros problemas de seguridad, <ph name="BEGIN_LINK" />inicia sesión en Chrome<ph name="END_LINK" />.</translation>
 <translation id="1599904803480101533">Chrome ha bloqueado este archivo porque puede ocultar software malicioso</translation>
 <translation id="1619887657840448962">Para aumentar la seguridad de Chrome, hemos inhabilitado la siguiente extensión que no figura en <ph name="IDS_EXTENSION_WEB_STORE_TITLE" /> y que puede haberse añadido sin tu conocimiento.</translation>
-<translation id="1627304841979541023"><ph name="BEGIN_BOLD" />Cómo puedes gestionar tus datos:<ph name="END_BOLD" /> para proteger tu privacidad, eliminamos automáticamente tus intereses si tienen una antigüedad superior a 4 semanas. A medida que sigas navegando, es posible que un interés vuelva a aparecer en la lista. También puedes eliminar los intereses que no quieras que Chrome tenga en cuenta.</translation>
+<translation id="1627304841979541023"><ph name="BEGIN_BOLD" />Cómo puedes gestionar tus datos:<ph name="END_BOLD" /> para proteger tu privacidad, eliminamos automáticamente tus intereses que tienen una antigüedad superior a 4 semanas. A medida que sigas navegando, es posible que un interés vuelva a aparecer en la lista. También puedes eliminar los intereses que no quieras que Chrome tenga en cuenta.</translation>
 <translation id="1628000112320670027">Obtener ayuda de Chrome</translation>
 <translation id="1640672724030957280">Descargando...</translation>
 <translation id="1662146548738125461">Información sobre ChromeOS Flex</translation>
@@ -68,7 +68,7 @@ Es posible que algunas funciones no estén disponibles y que no se guarden los c
 <translation id="2120620239521071941">Se eliminarán <ph name="ITEMS_COUNT" /> elementos de este dispositivo. Para recuperar tus datos en otro momento, inicia sesión en Chrome como <ph name="USER_EMAIL" />.</translation>
 <translation id="2121284319307530122">Reiniciar para actualizar &amp;Chrome</translation>
 <translation id="2123055963409958220">Genera un informe de la <ph name="BEGIN_LINK" />configuración actual<ph name="END_LINK" /> para ayudar a mejorar Chrome</translation>
-<translation id="2131230230468101642">Para proteger tu privacidad, eliminamos automáticamente tus intereses si tienen una antigüedad superior a 4 semanas. A medida que sigas navegando, es posible que un interés vuelva a aparecer en la lista. También puedes eliminar los intereses que no quieras que Chrome tenga en cuenta.</translation>
+<translation id="2131230230468101642">Para proteger tu privacidad, eliminamos automáticamente tus intereses que tienen una antigüedad superior a 4 semanas. A medida que sigas navegando, es posible que un interés vuelva a aparecer en la lista. También puedes eliminar los intereses que no quieras que Chrome tenga en cuenta.</translation>
 <translation id="2139300032719313227">Reiniciar ChromeOS</translation>
 <translation id="2151406531797534936">Reinicia Chrome ahora</translation>
 <translation id="2174917724755363426">No se ha completado la instalación. ¿Seguro que quieres cancelarla?</translation>
@@ -85,7 +85,6 @@ Es posible que algunas funciones no estén disponibles y que no se guarden los c
 <translation id="2401189691232800402">Sistema ChromeOS</translation>
 <translation id="2467438592969358367">Google Chrome quiere exportar tus contraseñas. Escribe tu contraseña de Windows para permitirlo.</translation>
 <translation id="2485422356828889247">Desinstalar</translation>
-<translation id="2494974097748878569">Asistente de Google</translation>
 <translation id="2534507159460261402">Google Pay (copiada en Chrome)</translation>
 <translation id="2559253115192232574">Después, un sitio que visites puede pedirle a Chrome consultar tus intereses para personalizar los anuncios que veas. Chrome puede compartir hasta 3 intereses.</translation>
 <translation id="2563121210305478421">¿Reiniciar Chrome?</translation>
@@ -130,6 +129,7 @@ Es posible que algunas funciones no estén disponibles y que no se guarden los c
 <translation id="3140883423282498090">Los cambios se aplicarán la próxima vez que reinicies Google Chrome.</translation>
 <translation id="3149510190863420837">Aplicaciones de Chrome</translation>
 <translation id="3169523567916669830">Durante las pruebas, puedes ver y eliminar los temas de interés que usan los sitios para mostrarte anuncios. Chrome estima tus intereses según tu historial de navegación reciente.</translation>
+<translation id="3211604354460514046">{NUM_DEVICES,plural, =1{Google Chrome está conectado a un dispositivo HID}other{Google Chrome está conectado a dispositivos HID}}</translation>
 <translation id="3245429137663807393">Si también compartes informes de uso de Chrome, esos informes incluirán las URLs que visites.</translation>
 <translation id="3282568296779691940">Iniciar sesión en Chrome</translation>
 <translation id="3286538390144397061">Reiniciar ahora</translation>
@@ -233,7 +233,7 @@ Puede que algunas funciones no estén disponibles. Especifica otro directorio de
 <translation id="5357889879764279201">Obtener ayuda con ChromeOS Flex</translation>
 <translation id="5386244825306882791">También controla qué página se muestra al iniciar Chrome o al hacer búsquedas desde el omnibox.</translation>
 <translation id="5394833366792865639">Compartir una pestaña de Chrome</translation>
-<translation id="5412485296464121825">Los sitios pueden almacenar información con Chrome sobre tus intereses. Por ejemplo, si visitas un sitio para comprar zapatillas para una maratón, es posible que el sitio considere que te interesa correr maratones. Después, si visitas un sitio diferente para registrarte en una carrera, ese sitio puede mostrarte un anuncio de zapatillas de correr basándose en tus intereses.</translation>
+<translation id="5412485296464121825">Los sitios pueden almacenar información con Chrome sobre tus intereses. Por ejemplo, si visitas un sitio para comprar zapatillas para una maratón, es posible que el sitio considere que te interesa correr maratones. Si más tarde visitas un sitio diferente para registrarte en una carrera, ese sitio puede mostrarte un anuncio de zapatillas de correr basándose en tus intereses.</translation>
 <translation id="5430073640787465221">Tu archivo de preferencias está dañado o no es válido.
 
 Google Chrome no puede recuperar tu configuración.</translation>
@@ -290,7 +290,6 @@ Google Chrome no puede recuperar tu configuración.</translation>
 <translation id="6739177684496155661">¿Continuar en un nuevo perfil de Chrome?</translation>
 <translation id="6750954913813541382">Chrome envía a Google el texto que escribes en el navegador para corregir los errores ortográficos</translation>
 <translation id="677276454032249905">¿Quieres salir de Chrome de todas formas?</translation>
-<translation id="6785872064505734160">El Asistente de Google en Chrome puede realizar acciones por ti en sitios web.</translation>
 <translation id="683440813066116847">Regla entrante para que Google Chrome Canary permita tráfico mDNS.</translation>
 <translation id="6881299373831449287">Actualizando Chrome</translation>
 <translation id="6885412569789873916">Aplicaciones de Chrome Beta</translation>
@@ -370,7 +369,7 @@ Los permisos que hayas dado a sitios web y aplicaciones se pueden aplicar a esta
 <translation id="8290100596633877290">¡Vaya! Se ha producido un fallo en Google Chrome. ¿Quieres reiniciar el navegador ahora?</translation>
 <translation id="8341646175450781745">Cuando esta opción está activada, Chrome libera memoria de las pestañas inactivas. Esto proporciona más recursos informáticos a las pestañas activas y a otras aplicaciones, y permite que Chrome siga funcionando con rapidez. Tus pestañas inactivas volverán a activarse automáticamente cuando vuelvas a ellas. <ph name="BEGIN_LINK" />Consulta más información<ph name="END_LINK" /> o <ph name="BEGIN_LINK_2" />envíanos comentarios<ph name="END_LINK_2" />.</translation>
 <translation id="8342675569599923794">Este archivo es peligroso, por lo que Chrome lo ha bloqueado.</translation>
-<translation id="8349795646647783032"><ph name="BEGIN_BOLD" />Cómo usamos estos datos:<ph name="END_BOLD" /> los sitios pueden almacenar información con Chrome sobre tus intereses. Por ejemplo, si visitas un sitio para comprar zapatillas para una maratón, es posible que el sitio considere que te interesa correr maratones. Después, si visitas un sitio diferente para registrarte en una carrera, ese sitio puede mostrarte un anuncio de zapatillas de correr basándose en tus intereses.</translation>
+<translation id="8349795646647783032"><ph name="BEGIN_BOLD" />Cómo usamos estos datos:<ph name="END_BOLD" /> los sitios pueden almacenar información con Chrome sobre tus intereses. Por ejemplo, si visitas un sitio para comprar zapatillas para una maratón, es posible que el sitio considere que te interesa correr maratones. Si más tarde visitas un sitio diferente para registrarte en una carrera, ese sitio puede mostrarte un anuncio de zapatillas de correr basándose en tus intereses.</translation>
 <translation id="8370517070665726704">Copyright <ph name="YEAR" /> Google LLC. Todos los derechos reservados.</translation>
 <translation id="8383226135083126309"><ph name="BEGIN_BOLD" />Cómo usamos estos datos:<ph name="END_BOLD" /> Chrome puede estimar tus intereses. Después, un sitio que visites puede pedirle a Chrome consultar tus intereses para personalizar los anuncios que veas.</translation>
 <translation id="8387459386171870978">Seguir usando Chrome</translation>
@@ -402,7 +401,7 @@ Los permisos que hayas dado a sitios web y aplicaciones se pueden aplicar a esta
 <translation id="873133009373065397">Google Chrome no puede determinar ni establecer el navegador predeterminado</translation>
 <translation id="8821043148920470810">Para recibir futuras actualizaciones de Google Chrome, deberás tener Windows 10 o una versión posterior. Este ordenador tiene Windows 7.</translation>
 <translation id="8823341990149967727">Chrome no está actualizado</translation>
-<translation id="8825634023950448068">Para proteger tu privacidad, eliminamos automáticamente tus intereses si tienen una antigüedad superior a 4 semanas. A medida que sigas navegando, es posible que un interés vuelva a aparecer en la lista. Además, si Chrome se equivoca o no quieres ver ciertos anuncios, puedes eliminar un interés.</translation>
+<translation id="8825634023950448068">Para proteger tu privacidad, eliminamos automáticamente tus intereses que tienen una antigüedad superior a 4 semanas. A medida que sigas navegando, es posible que un interés vuelva a aparecer en la lista. Además, si Chrome se equivoca o no quieres ver ciertos anuncios, puedes eliminar un interés.</translation>
 <translation id="8834965163890861871">Google Chrome está intentando cambiar contraseñas. Para permitirlo, escribe tu contraseña de Windows.</translation>
 <translation id="884296878221830158">También controla qué página se muestra al iniciar Chrome o hacer clic en el botón de página principal.</translation>
 <translation id="8847000024471094355">Chrome está inactivo</translation>
@@ -413,7 +412,7 @@ Los permisos que hayas dado a sitios web y aplicaciones se pueden aplicar a esta
 <translation id="8986207147630327271">Vas a añadir un perfil de trabajo a este navegador y le vas a dar a tu administrador el control únicamente sobre este perfil.</translation>
 <translation id="8989968390305463310">Tu historial de navegación influye en los anuncios que ves y en los intereses que se estiman abajo. Para proteger tu privacidad, Chrome elimina automáticamente tus intereses cada mes. Los intereses se actualizan a menos que los elimines.</translation>
 <translation id="8999208279178790196">{0,plural, =0{Hay una actualización de Chrome disponible}=1{Hay una actualización de Chrome disponible}other{Hay una actualización de Chrome disponible desde hace # días}}</translation>
-<translation id="9003498785844995646">Si se activa esta opción, Chrome ahorrará batería limitando la actividad en segundo plano y los efectos visuales, como el desplazamiento suave y la velocidad de fotogramas de los vídeos. <ph name="BEGIN_LINK" />Consulta más información<ph name="END_LINK" /> o <ph name="BEGIN_LINK_2" />envíanos comentarios<ph name="END_LINK_2" />.</translation>
+<translation id="9003498785844995646">Si se activa esta opción, Chrome ahorrará batería limitando la actividad en segundo plano y los efectos visuales, como el desplazamiento fluido y la velocidad de fotogramas de los vídeos. <ph name="BEGIN_LINK" />Consulta más información<ph name="END_LINK" /> o <ph name="BEGIN_LINK_2" />envíanos comentarios<ph name="END_LINK_2" />.</translation>
 <translation id="9053892488859122171">Sistema ChromeOS Flex</translation>
 <translation id="9067395829937117663">Google Chrome requiere Windows 7 o una versión posterior.</translation>
 <translation id="911206726377975832">¿Quieres borrar también los datos de navegación?</translation>

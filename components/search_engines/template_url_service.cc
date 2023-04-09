@@ -13,6 +13,7 @@
 #include "base/containers/contains.h"
 #include "base/debug/crash_logging.h"
 #include "base/format_macros.h"
+#include "base/i18n/case_conversion.h"
 #include "base/memory/raw_ptr.h"
 #include "base/metrics/histogram_functions.h"
 #include "base/metrics/histogram_macros.h"
@@ -824,6 +825,37 @@ GURL TemplateURLService::GenerateSearchURLForDefaultSearchProvider(
   return default_provider ? default_provider->GenerateSearchURL(
                                 search_terms_data(), search_terms)
                           : GURL();
+}
+
+absl::optional<TemplateURLService::SearchMetadata>
+TemplateURLService::ExtractSearchMetadata(const GURL& url) const {
+  if (!loaded()) {
+    return absl::nullopt;
+  }
+
+  const TemplateURL* template_url = GetTemplateURLForHost(url.host());
+
+  std::u16string search_terms;
+  bool is_valid_search_url = template_url &&
+                             template_url->ExtractSearchTermsFromURL(
+                                 url, search_terms_data(), &search_terms) &&
+                             !search_terms.empty();
+  if (!is_valid_search_url) {
+    return absl::nullopt;
+  }
+
+  const std::u16string& normalized_search_query =
+      base::i18n::ToLower(base::CollapseWhitespace(search_terms, false));
+  TemplateURLRef::SearchTermsArgs search_terms_args(normalized_search_query);
+  const TemplateURLRef& search_url_ref = template_url->url_ref();
+  if (!search_url_ref.SupportsReplacement(search_terms_data())) {
+    return absl::nullopt;
+  }
+
+  return SearchMetadata{
+      GURL(search_url_ref.ReplaceSearchTerms(search_terms_args,
+                                             search_terms_data())),
+      base::i18n::ToLower(base::CollapseWhitespace(search_terms, false))};
 }
 
 bool TemplateURLService::IsSideSearchSupportedForDefaultSearchProvider() const {
@@ -2175,7 +2207,14 @@ void TemplateURLService::MergeInSyncTemplateURL(
       keyword_to_turl_and_length_.equal_range(sync_turl->keyword());
   for (auto it = match_range.first; it != match_range.second; ++it) {
     TemplateURL* local_turl = it->second.first;
-    if (local_turl->type() == TemplateURL::NORMAL) {
+    // The conflict resolution code below sometimes resets the TemplateURL's
+    // GUID, which can trigger deleting any Policy-created engines. Avoid this
+    // use-after-free bug by excluding any Policy-created engines. Also exclude
+    // Play API created engines, as those also seem local-only and should not
+    // be merged into Synced engines. crbug.com/1414224.
+    if (local_turl->type() == TemplateURL::NORMAL &&
+        !local_turl->created_by_policy() &&
+        !local_turl->created_from_play_api()) {
       local_duplicates.push_back(local_turl);
     }
   }

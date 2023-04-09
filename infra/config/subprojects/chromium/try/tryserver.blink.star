@@ -90,7 +90,9 @@ try_.builder(
     ),
     builderless = True,
     os = os.WINDOWS_ANY,
-    goma_backend = goma.backend.RBE_PROD,
+    goma_backend = None,
+    reclient_instance = reclient.instance.DEFAULT_UNTRUSTED,
+    reclient_jobs = reclient.jobs.LOW_JOBS_FOR_CQ,
 )
 
 try_.builder(
@@ -114,7 +116,8 @@ try_.builder(
     ),
     builderless = True,
     os = os.WINDOWS_ANY,
-    goma_backend = goma.backend.RBE_PROD,
+    reclient_instance = reclient.instance.DEFAULT_UNTRUSTED,
+    reclient_jobs = reclient.jobs.LOW_JOBS_FOR_CQ,
 )
 
 blink_mac_builder(

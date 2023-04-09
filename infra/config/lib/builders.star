@@ -160,6 +160,7 @@ sheriff_rotations = struct(
     ANDROID = _rotation("android"),
     ANGLE = _rotation("angle"),
     CHROMIUM = _rotation("chromium"),
+    CFT = _rotation("cft"),
     FUCHSIA = _rotation("fuchsia"),
     CHROMIUM_CLANG = _rotation("chromium.clang"),
     CHROMIUM_FUZZ = _rotation("chromium.fuzz"),
@@ -300,7 +301,7 @@ def _code_coverage_property(
 
 _VALID_REPROXY_ENV_PREFIX_LIST = ["RBE_", "GLOG_", "GOMA_"]
 
-def _reclient_property(*, instance, service, jobs, rewrapper_env, profiler_service, publish_trace, cache_silo, ensure_verified, bootstrap_env):
+def _reclient_property(*, instance, service, jobs, rewrapper_env, profiler_service, publish_trace, cache_silo, ensure_verified, bootstrap_env, scandeps_server):
     reclient = {}
     instance = defaults.get_value("reclient_instance", instance)
     if not instance:
@@ -328,6 +329,9 @@ def _reclient_property(*, instance, service, jobs, rewrapper_env, profiler_servi
                      ", ".join(_VALID_REPROXY_ENV_PREFIX_LIST) +
                      "), got '%s'" % k)
         reclient["bootstrap_env"] = bootstrap_env
+    scandeps_server = defaults.get_value("reclient_scandeps_server", scandeps_server)
+    if scandeps_server:
+        reclient["scandeps_server"] = scandeps_server
     profiler_service = defaults.get_value("reclient_profiler_service", profiler_service)
     if profiler_service:
         reclient["profiler_service"] = profiler_service
@@ -411,8 +415,13 @@ defaults = args.defaults(
     reclient_bootstrap_env = None,
     reclient_profiler_service = None,
     reclient_publish_trace = None,
+    reclient_scandeps_server = False,
     reclient_cache_silo = None,
     reclient_ensure_verified = None,
+
+    # This is to enable luci.buildbucket.omit_python2 experiment.
+    # TODO(crbug.com/1362440): remove this after enabling this in all builders.
+    omit_python2 = True,
 
     # Provide vars for bucket and executable so users don't have to
     # unnecessarily make wrapper functions
@@ -472,8 +481,10 @@ def builder(
         reclient_bootstrap_env = args.DEFAULT,
         reclient_profiler_service = args.DEFAULT,
         reclient_publish_trace = args.DEFAULT,
+        reclient_scandeps_server = args.DEFAULT,
         reclient_cache_silo = None,
         reclient_ensure_verified = None,
+        omit_python2 = args.DEFAULT,
         **kwargs):
     """Define a builder.
 
@@ -648,10 +659,14 @@ def builder(
             not set.
         reclient_publish_trace: If True, it publish trace by rpl2cloudtrace. Has
             no effect if reclient_instance is not set.
+        reclient_scandeps_server: If true, reproxy should start its own scandeps_server
         reclient_cache_silo: A string indicating a cache siling key to use for
             remote caching. Has no effect if reclient_instance is not set.
         reclient_ensure_verified: If True, it verifies build artifacts. Has no
             effect if reclient_instance is not set.
+        omit_python2: If True, set luci.buildbucket.omit_python2 experiment.
+            TODO(crbug.com/1362440): remove this after enabling this in all
+            builders.
         **kwargs: Additional keyword arguments to forward on to `luci.builder`.
 
     Returns:
@@ -800,6 +815,7 @@ def builder(
         bootstrap_env = reclient_bootstrap_env,
         profiler_service = reclient_profiler_service,
         publish_trace = reclient_publish_trace,
+        scandeps_server = reclient_scandeps_server,
         cache_silo = reclient_cache_silo,
         ensure_verified = reclient_ensure_verified,
     )
@@ -827,6 +843,13 @@ def builder(
         kwargs["triggered_by"] = triggered_by
 
     experiments = kwargs.pop("experiments", None) or {}
+
+    # TODO: remove this after this experiment is removed from
+    # cr-buildbucket/settings.cfg (http://shortn/_cz2s9ql61X).
+    if defaults.get_value("omit_python2", omit_python2):
+        experiments["luci.buildbucket.omit_python2"] = 100
+    elif "luci.buildbucket.omit_python2" not in experiments:
+        experiments["luci.buildbucket.omit_python2"] = 0
 
     builder = branches.builder(
         name = name,

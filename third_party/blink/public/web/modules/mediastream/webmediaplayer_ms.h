@@ -81,7 +81,7 @@ class BLINK_MODULES_EXPORT WebMediaPlayerMS
       WebMediaPlayerDelegate* delegate,
       std::unique_ptr<media::MediaLog> media_log,
       scoped_refptr<base::SingleThreadTaskRunner> main_render_task_runner,
-      scoped_refptr<base::SequencedTaskRunner> io_task_runner,
+      scoped_refptr<base::SequencedTaskRunner> video_task_runner,
       scoped_refptr<base::SingleThreadTaskRunner> compositor_task_runner,
       scoped_refptr<base::SequencedTaskRunner> media_task_runner,
       scoped_refptr<base::TaskRunner> worker_task_runner,
@@ -212,6 +212,8 @@ class BLINK_MODULES_EXPORT WebMediaPlayerMS
   static const gfx::Size kUseGpuMemoryBufferVideoFramesMinResolution;
 #endif  // BUILDFLAG(IS_WIN)
 
+  void ReplaceCurrentFrameWithACopy();
+
   bool IsInPictureInPicture() const;
 
   // Switch to SurfaceLayer, either initially or from VideoLayer.
@@ -304,7 +306,7 @@ class BLINK_MODULES_EXPORT WebMediaPlayerMS
   std::unique_ptr<MediaStreamRendererFactory> renderer_factory_;
 
   const scoped_refptr<base::SingleThreadTaskRunner> main_render_task_runner_;
-  const scoped_refptr<base::SequencedTaskRunner> io_task_runner_;
+  const scoped_refptr<base::SequencedTaskRunner> video_task_runner_;
   const scoped_refptr<base::SingleThreadTaskRunner> compositor_task_runner_;
   const scoped_refptr<base::SequencedTaskRunner> media_task_runner_;
 
@@ -314,7 +316,7 @@ class BLINK_MODULES_EXPORT WebMediaPlayerMS
   // Used for DCHECKs to ensure methods calls executed in the correct thread.
   THREAD_CHECKER(thread_checker_);
 
-  scoped_refptr<WebMediaPlayerMSCompositor> compositor_;
+  std::unique_ptr<WebMediaPlayerMSCompositor> compositor_;
 
   const WebString initial_audio_output_device_id_;
 

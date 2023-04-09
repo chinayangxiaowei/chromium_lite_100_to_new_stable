@@ -1309,6 +1309,7 @@ Starting worker: resources/global-interface-listing-worker.js
 [Worker]     getter data
 [Worker]     getter timestamp
 [Worker]     getter type
+[Worker]     method clone
 [Worker]     method constructor
 [Worker]     method getMetadata
 [Worker]     method toString
@@ -1521,6 +1522,7 @@ Starting worker: resources/global-interface-listing-worker.js
 [Worker]     method durability
 [Worker]     method estimate
 [Worker]     method expires
+[Worker]     method getDirectory
 [Worker]     method persisted
 [Worker]     method setExpires
 [Worker] interface StorageBucketManager

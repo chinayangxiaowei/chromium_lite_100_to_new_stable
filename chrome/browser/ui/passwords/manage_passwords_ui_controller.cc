@@ -17,7 +17,6 @@
 #include "base/timer/timer.h"
 #include "build/build_config.h"
 #include "chrome/app/chrome_command_ids.h"
-#include "chrome/browser/autofill_assistant/password_change/apc_client.h"
 #include "chrome/browser/feature_engagement/tracker_factory.h"
 #include "chrome/browser/password_manager/account_password_store_factory.h"
 #include "chrome/browser/password_manager/chrome_password_manager_client.h"
@@ -209,6 +208,8 @@ bool ManagePasswordsUIController::OnChooseCredentials(
   DCHECK(!local_credentials.empty());
   if (!HasBrowserWindow())
     return false;
+  // Delete any existing window from the screen.
+  dialog_controller_.reset();
   // If |local_credentials| contains PSL matches they shouldn't be propagated to
   // the state (unless they are also web affiliations) because PSL matches
   // aren't saved for current page. This logic is implemented here because
@@ -683,14 +684,6 @@ void ManagePasswordsUIController::NavigateToPasswordCheckup(
     password_manager::PasswordCheckReferrer referrer) {
   chrome::ShowPasswordCheck(chrome::FindBrowserWithWebContents(web_contents()));
   password_manager::LogPasswordCheckReferrer(referrer);
-}
-
-void ManagePasswordsUIController::StartAutomatedPasswordChange(
-    const GURL& origin,
-    const std::u16string& username) {
-  ApcClient* apc_client = ApcClient::GetOrCreateForWebContents(web_contents());
-  // Start checks that no other run is ongoing, so we can always call it.
-  apc_client->Start(origin, base::UTF16ToUTF8(username), /*skip_login=*/true);
 }
 
 void ManagePasswordsUIController::EnableSync(const AccountInfo& account) {

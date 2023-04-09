@@ -40,12 +40,14 @@ constexpr float kMinimumVisibleContrastRatio = 3.0f;
 // Determines the contrast ratio of two colors or two relative luminance values
 // (as computed by RelativeLuminance()), calculated according to
 // http://www.w3.org/TR/WCAG20/#contrast-ratiodef .
+GFX_EXPORT float GetContrastRatio(SkColor4f color_a, SkColor4f color_b);
 GFX_EXPORT float GetContrastRatio(SkColor color_a, SkColor color_b);
 GFX_EXPORT float GetContrastRatio(float luminance_a, float luminance_b);
 
 // The relative luminance of |color|, that is, the weighted sum of the
 // linearized RGB components, normalized to 0..1, per BT.709.  See
 // http://www.w3.org/TR/WCAG20/#relativeluminancedef .
+GFX_EXPORT float GetRelativeLuminance4f(SkColor4f color);
 GFX_EXPORT float GetRelativeLuminance(SkColor color);
 
 // The luma of |color|, that is, the weighted sum of the gamma-compressed R'G'B'
@@ -169,10 +171,10 @@ GFX_EXPORT SkColor PickGoogleColor(SkColor color,
 
 // Like the version above, but tries to contrast sufficiently with both
 // `background_color_a` and `background_color_b` simultaneously.
-GFX_EXPORT SkColor PickGoogleColor(SkColor color,
-                                   SkColor background_color_a,
-                                   SkColor background_color_b,
-                                   float min_contrast);
+GFX_EXPORT SkColor PickGoogleColorTwoBackgrounds(SkColor color,
+                                                 SkColor background_color_a,
+                                                 SkColor background_color_b,
+                                                 float min_contrast);
 
 // Creates an rgba string for an SkColor. For example: 'rgba(255,0,255,0.5)'.
 GFX_EXPORT std::string SkColorToRgbaString(SkColor color);

@@ -25,8 +25,8 @@
 <translation id="1156488781945104845">Hora atual</translation>
 <translation id="1161762950103988776">Saltar</translation>
 <translation id="1164857107703583584">Podem ser utilizados comandos de avanço para navegar eficazmente numa página Web.</translation>
+<translation id="116896278675803795">Alterar automaticamente o idioma para corresponder ao conteúdo selecionado</translation>
 <translation id="1175914831232945926">Dígitos</translation>
-<translation id="1181003590763099524">mover para o início</translation>
 <translation id="1188858454923323853">complementar</translation>
 <translation id="1189258430971676908">Área para praticar: listas pendentes</translation>
 <translation id="1195238899008218998">Posfácio</translation>
@@ -151,7 +151,6 @@
 <translation id="1914424852593176649">Tamanho: <ph name="FONT_SIZE" /></translation>
 <translation id="1914635379910604678">Chord <ph name="DOT" /></translation>
 <translation id="1923956950274750765">Orquídea médio</translation>
-<translation id="1928535370180099152">realçar o caráter anterior</translation>
 <translation id="1928932365747995741">Não existe nenhum campo de texto editável anterior.</translation>
 <translation id="1964135212174907577">Objeto seguinte</translation>
 <translation id="1966649499058910679">Realçar cada palavra conforme é falada</translation>
@@ -205,9 +204,8 @@
 <translation id="2381733276052567791">Ativar ou desativar a conversão de texto em voz</translation>
 <translation id="2390264819538553347">Para avançar, prima Enter. Para retroceder, prima a tecla de retrocesso.</translation>
 <translation id="2398579267367951220">Escreva para pesquisar a página. Prima Enter para avançar para o resultado, as setas para cima ou para baixo para procurar resultados, continue a escrever para alterar a sua pesquisa ou prima Escape para cancelar.</translation>
-<translation id="2407047351320112166">realçar o caráter seguinte</translation>
 <translation id="240709722712693803">Azul-violeta</translation>
-<translation id="2410298923485357543">Utilizar a voz natural quando o dispositivo estiver online</translation>
+<translation id="2410298923485357543">Usar a voz natural quando o dispositivo estiver online</translation>
 <translation id="2416512023405990736">Uma caixa de verificação desmarcada</translation>
 <translation id="2417569100218200841">Informações do conteúdo</translation>
 <translation id="2417948780551741035">Notas finais</translation>
@@ -329,7 +327,6 @@
 <translation id="309749186376891736">Mover o cursor</translation>
 <translation id="3103579948980282461">Roxo médio</translation>
 <translation id="3104705064753753826">alrt dlg</translation>
-<translation id="3105857328626674463">realçar a palavra anterior</translation>
 <translation id="3109724472072898302">Fechado</translation>
 <translation id="311015743332597320">Deslize rapidamente com quatro dedos para a direita.</translation>
 <translation id="3112457281078985179">Para ativar ou desativar o ChromeVox, utilize Control + Alt + Z.</translation>
@@ -358,7 +355,6 @@
 <translation id="3241052487511142956">Link visitado anterior</translation>
 <translation id="3241638166094654466">Células em cada linha:</translation>
 <translation id="3244209481693235975"><ph name="LANGUAGE" />: <ph name="CONTENT" /></translation>
-<translation id="3247621388192105674">mover para o fim</translation>
 <translation id="3260949043575829030">Item semelhante anterior</translation>
 <translation id="3270069636408109001">Não existe nenhuma tabela seguinte.</translation>
 <translation id="3273791280096244679">Guardar etiqueta</translation>
@@ -568,7 +564,6 @@
 <translation id="4780458943471935919">Desloque-se para a página seguinte.</translation>
 <translation id="4784215347943747396">Controle o dispositivo com apenas 1 ou 2 comutadores.</translation>
 <translation id="4786285211967466855">Não existe nenhum cabeçalho de nível 1 anterior.</translation>
-<translation id="4786591486270126089">Mudar automaticamente a voz com base no idioma</translation>
 <translation id="4787577491510559358">Anunciar a formatação para o item atual</translation>
 <translation id="479989351350248267">search</translation>
 <translation id="4804818685124855865">Desligar</translation>
@@ -591,7 +586,7 @@
 <translation id="4886524826165775965"><ph name="INDEX" />/<ph name="TOTAL" /></translation>
 <translation id="4892105484979139179">Turquesa-escuro</translation>
 <translation id="489907760999452556">Link interno</translation>
-<translation id="4909019435900810068">Retroceder uma palavra</translation>
+<translation id="4909019435900810068">Anterior uma palavra</translation>
 <translation id="4911349081560453449">Não existe nenhuma caixa de verificação anterior.</translation>
 <translation id="492295894462528572">Prefácio</translation>
 <translation id="495046168593986294">Deslocar para cima</translation>
@@ -701,7 +696,7 @@
 <translation id="5632083598315326067">Símbolo de gráficos</translation>
 <translation id="5648939288050772726">Parabéns! Aprendeu as noções básicas para usar o ChromeVox com êxito. Não se esqueça de que pode abrir o menu de comandos do ChromeVox em qualquer altura ao premir Pesquisar + Ponto. Para saber ainda mais acerca do ChromeVox e ChromeOS, visite os artigos seguintes.
     Se concluiu o tutorial, use o ChromeVox para navegar para o botão Fechar e clique no mesmo.</translation>
-<translation id="5653397561111110475">Utilizar as funcionalidades de acessibilidade do ecrã tátil do Chromebook</translation>
+<translation id="5653397561111110475">Usar as funcionalidades de acessibilidade do ecrã tátil do Chromebook</translation>
 <translation id="5655682562155942719">Comandos para avançar</translation>
 <translation id="56637627897541303">Área de texto</translation>
 <translation id="5669637233317991674">Prima a tecla de pesquisa + seta para a direita ou tecla de pesquisa + seta para a esquerda para navegar nesta aula</translation>
@@ -952,13 +947,11 @@
 <translation id="743783356331413498">Exemplo</translation>
 <translation id="7439060726180460871">Diretório</translation>
 <translation id="744163271241493234">pwded</translation>
-<translation id="7443479558101073378">realçar a palavra seguinte</translation>
 <translation id="7465123027577412805">Pretende utilizar a voz natural?</translation>
 <translation id="7491962110804786152">tab</translation>
 <translation id="7492497529767769458">Avance para a secção seguinte. Os exemplos incluem o tabuleiro de estado e o Launcher.</translation>
 <translation id="7505149250476994901">Diga "cap" antes da letra.</translation>
 <translation id="7533226154149229506">Amarelo-ouro claro</translation>
-<translation id="7541021454094606506">eliminar tudo</translation>
 <translation id="7543255924852002459">Ignorar etiqueta</translation>
 <translation id="7552432549459840808">Atalhos úteis do Chrome</translation>
 <translation id="7553679324939294712">inserir <ph name="INSERT_PHRASE" /> antes de <ph name="BEFORE_PHRASE" /></translation>
@@ -1092,7 +1085,7 @@
 <translation id="8446884382197647889">Saiba Mais</translation>
 <translation id="8448196839635577295">Nenhum foco atual do ChromeVox. Toque em explorar para procurar itens.</translation>
 <translation id="8455868257606149352">Máx.: <ph name="X" /></translation>
-<translation id="84575901236241018">tem chave de acesso, <ph name="KEY" /></translation>
+<translation id="84575901236241018">tem token de acesso, <ph name="KEY" /></translation>
 <translation id="8463645336674919227">A sair do erro gramatical…</translation>
 <translation id="8465573210279050749">eliminar a palavra anterior</translation>
 <translation id="847040613207937740">Não existe nenhuma caixa de verificação seguinte.</translation>

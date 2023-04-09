@@ -5,6 +5,7 @@
 load("//lib/builders.star", "builder", "cpu", "defaults", "free_space", "os")
 load("//lib/ci.star", "ci")
 load("//lib/consoles.star", "consoles")
+load("//lib/dimensions.star", "dimensions")
 load("//lib/polymorphic.star", "polymorphic")
 
 luci.bucket(
@@ -36,15 +37,21 @@ consoles.list_view(
 
 defaults.set(
     bucket = "reviver",
+    pool = ci.DEFAULT_POOL,
+    os = os.LINUX_DEFAULT,
     list_view = "reviver",
+
+    # TODO(crbug.com/1362440): remove this.
+    omit_python2 = False,
     service_account = "reviver-builder@chops-service-accounts.iam.gserviceaccount.com",
 )
 
 polymorphic.launcher(
     name = "android-launcher",
-    # To avoid peak hours, we run it at 1 AM, 4 AM, 7 AM, 10AM, 1 PM UTC.
-    schedule = "0 1,4,7,10,13 * * *",
+    # To avoid peak hours, we run it at 2 AM, 5 AM, 8 AM, 11AM, 2 PM UTC.
+    schedule = "0 2,5,8,11,14 * * *",
     pool = ci.DEFAULT_POOL,
+    cores = 8,
     os = os.LINUX_DEFAULT,
     runner = "reviver/runner",
     target_builders = [
@@ -54,19 +61,108 @@ polymorphic.launcher(
     ],
 )
 
+polymorphic.launcher(
+    name = "android-device-launcher",
+    # To avoid peak hours, we run it at 5 AM, 8 AM, 11AM UTC.
+    schedule = "0 5,8,11 * * *",
+    pool = ci.DEFAULT_POOL,
+    os = os.LINUX_DEFAULT,
+    runner = "reviver/runner",
+    target_builders = [
+        "ci/android-pie-arm64-rel",
+    ],
+)
+
+polymorphic.launcher(
+    name = "linux-launcher",
+    # To avoid peak hours, we run it at 5~11 UTC, 21~27 PST.
+    schedule = "0 5-11/3 * * *",
+    runner = "reviver/runner",
+    target_builders = [
+        polymorphic.target_builder(
+            builder = "ci/Linux Builder",
+            testers = [
+                "ci/Linux Tests",
+            ],
+        ),
+    ],
+)
+
+polymorphic.launcher(
+    name = "win-launcher",
+    # To avoid peak hours, we run it at 5~11 UTC, 21~27 PST.
+    schedule = "0 5-11/3 * * *",
+    runner = "reviver/runner",
+    target_builders = [
+        polymorphic.target_builder(
+            builder = "ci/Win x64 Builder",
+            dimensions = dimensions.dimensions(
+                builderless = True,
+                os = os.WINDOWS_DEFAULT,
+                cpu = cpu.X86_64,
+                free_space = free_space.standard,
+            ),
+            testers = [
+                "ci/Win10 Tests x64",
+            ],
+        ),
+    ],
+)
+
+polymorphic.launcher(
+    name = "mac-launcher",
+    # To avoid peak hours, we run it at 5~11 UTC, 21~27 PST.
+    schedule = "0 5-11/3 * * *",
+    runner = "reviver/runner",
+    target_builders = [
+        polymorphic.target_builder(
+            builder = "ci/Mac Builder",
+            dimensions = dimensions.dimensions(
+                builderless = True,
+                os = os.MAC_DEFAULT,
+                cpu = cpu.X86_64,
+                free_space = free_space.standard,
+            ),
+            testers = [
+                "ci/Mac12 Tests",
+            ],
+        ),
+    ],
+)
+
 # A coordinator of slightly aggressive scheduling with effectively unlimited
 # test bot capacity for fuchsia.
 polymorphic.launcher(
     name = "fuchsia-coordinator",
     # Avoid peak hours.
-    schedule = "0 1,3,5,7,9,11,13 * * *",
+    schedule = "0 2,4,6,8,10,12,14 * * *",
     pool = ci.DEFAULT_POOL,
     os = os.LINUX_DEFAULT,
     runner = "reviver/runner",
     target_builders = [
         "ci/fuchsia-fyi-arm64-dbg",
         "ci/fuchsia-fyi-x64-asan",
+        "ci/fuchsia-fyi-x64-dbg",
         "ci/fuchsia-x64-rel",
+    ],
+)
+
+# A coordinator for lacros.
+polymorphic.launcher(
+    name = "lacros-coordinator",
+    # To avoid peak hours, we run it from 8PM TO 4AM PST. It is
+    # 3 AM to 11 AM UTC.
+    schedule = "0 3,5,7,9 * * *",
+    pool = ci.DEFAULT_POOL,
+    os = os.LINUX_DEFAULT,
+    runner = "reviver/runner",
+    target_builders = [
+        polymorphic.target_builder(
+            builder = "ci/linux-lacros-builder-rel",
+            testers = [
+                "ci/linux-lacros-tester-rel",
+            ],
+        ),
     ],
 )
 

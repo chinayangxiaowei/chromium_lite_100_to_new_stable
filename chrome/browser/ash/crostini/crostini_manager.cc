@@ -1058,12 +1058,8 @@ ContainerOsVersion VersionFromOsRelease(
 }
 
 bool IsUpgradableContainerVersion(ContainerOsVersion version) {
-  if (base::FeatureList::IsEnabled(
-          chromeos::features::kCrostiniBullseyeUpgrade)) {
-    return version == ContainerOsVersion::kDebianStretch ||
-           version == ContainerOsVersion::kDebianBuster;
-  }
-  return version == ContainerOsVersion::kDebianStretch;
+  return version == ContainerOsVersion::kDebianStretch ||
+         version == ContainerOsVersion::kDebianBuster;
 }
 
 }  // namespace
@@ -1556,15 +1552,13 @@ void CrostiniManager::StartTerminaVm(std::string name,
   request.set_owner_id(owner_id_);
   request.set_timeout(static_cast<uint32_t>(kStartVmTimeout.InSeconds()));
   request.mutable_vm()->set_wayland_server(wayland_path.AsUTF8Unsafe());
-  if (base::FeatureList::IsEnabled(chromeos::features::kCrostiniGpuSupport))
+  if (base::FeatureList::IsEnabled(ash::features::kCrostiniGpuSupport))
     request.set_enable_gpu(true);
   if (profile_->GetPrefs()->GetBoolean(prefs::kCrostiniMicAllowed) &&
       profile_->GetPrefs()->GetBoolean(::prefs::kAudioCaptureAllowed)) {
     request.set_enable_audio_capture(true);
   }
-  if (base::FeatureList::IsEnabled(chromeos::features::kCrostiniUseLxd4)) {
-    request.add_features(vm_tools::concierge::StartVmRequest::LXD_4_LTS);
-  }
+  request.add_features(vm_tools::concierge::StartVmRequest::LXD_4_LTS);
   const int32_t cpus = base::SysInfo::NumberOfProcessors() - num_cores_disabled;
   DCHECK_LT(0, cpus);
   request.set_cpus(cpus);
@@ -1628,7 +1622,7 @@ void CrostiniManager::StartLxd(std::string vm_name,
   request.set_vm_name(std::move(vm_name));
   request.set_owner_id(owner_id_);
   request.set_reset_lxd_db(
-      base::FeatureList::IsEnabled(chromeos::features::kCrostiniResetLxdDb));
+      base::FeatureList::IsEnabled(ash::features::kCrostiniResetLxdDb));
   GetCiceroneClient()->StartLxd(
       std::move(request),
       base::BindOnce(&CrostiniManager::OnStartLxd,
@@ -4065,6 +4059,9 @@ void CrostiniManager::RegisterContainer(const guest_os::GuestId& container_id) {
           std::make_unique<CrostiniMountProvider>(profile_, container_id));
     }
   }
+
+  guest_os::GuestOsSharePath::GetForProfile(profile_)->RegisterGuest(
+      container_id);
 }
 
 void CrostiniManager::UnregisterContainer(
@@ -4084,6 +4081,16 @@ void CrostiniManager::UnregisterContainer(
     mount_registry->Unregister(it->second);
     mount_provider_ids_.erase(it);
   }
+
+  guest_os::GuestOsSharePath::GetForProfile(profile_)->UnregisterGuest(
+      container_id);
+
+  if (container_id == DefaultContainerId()) {
+    // For now the upgrade notification only supports the default container. If
+    // we're removing that container then destroy any notification we might have
+    // for it.
+    upgrade_available_notification_.reset();
+  }
 }
 
 void CrostiniManager::UnregisterAllContainers() {
@@ -4100,6 +4107,17 @@ void CrostiniManager::UnregisterAllContainers() {
     mount_registry->Unregister(pair.second);
   }
   mount_provider_ids_.clear();
+
+  auto* share_service = guest_os::GuestOsSharePath::GetForProfile(profile_);
+  // Copy the list since we're going to iterate+mutate.
+  auto guests = base::flat_set<guest_os::GuestId>(share_service->ListGuests());
+  for (const auto& guest : guests) {
+    if (guest.vm_type == kCrostiniDefaultVmType) {
+      share_service->UnregisterGuest(guest);
+    }
+  }
+
+  upgrade_available_notification_.reset();
 }
 
 bool CrostiniManager::RegisterCreateOptions(

@@ -6,6 +6,7 @@ package org.chromium.chrome.browser.toolbar;
 
 import org.chromium.base.FeatureList;
 import org.chromium.chrome.browser.flags.ChromeFeatureList;
+import org.chromium.chrome.browser.flags.MutableFlagWithSafeDefault;
 
 /** Utility class for toolbar code interacting with features and params. */
 public final class ToolbarFeatures {
@@ -14,8 +15,10 @@ public final class ToolbarFeatures {
     // allows half of this work to still be done, allowing measurement of both halves when compared
     // to the original ablation and controls.
     private static final String ALLOW_CAPTURES = "allow_captures";
-
-    private static Boolean sSuppressionEnabled;
+    private static final MutableFlagWithSafeDefault sSuppressionFlag =
+            new MutableFlagWithSafeDefault(ChromeFeatureList.SUPPRESS_TOOLBAR_CAPTURES, false);
+    private static final MutableFlagWithSafeDefault sRecordSuppressionMetrics =
+            new MutableFlagWithSafeDefault(ChromeFeatureList.RECORD_SUPPRESSION_METRICS, true);
 
     /** Private constructor to avoid instantiation. */
     private ToolbarFeatures() {}
@@ -38,21 +41,15 @@ public final class ToolbarFeatures {
     }
 
     public static boolean shouldSuppressCaptures() {
-        if (Boolean.TRUE.equals(sSuppressionEnabled)) return true;
-        if (Boolean.FALSE.equals(sSuppressionEnabled)) return false;
-        if (!FeatureList.isInitialized()) return false;
-        if (FeatureList.hasTestFeature(ChromeFeatureList.SUPPRESS_TOOLBAR_CAPTURES)) {
-            // Don't cache if the feature value is test-configured since it can change during the
-            // process lifetime.
-            return ChromeFeatureList.isEnabled(ChromeFeatureList.SUPPRESS_TOOLBAR_CAPTURES);
-        }
+        return sSuppressionFlag.isEnabled();
+    }
 
-        if (FeatureList.isNativeInitialized()) {
-            sSuppressionEnabled =
-                    ChromeFeatureList.isEnabled(ChromeFeatureList.SUPPRESS_TOOLBAR_CAPTURES);
-            return sSuppressionEnabled;
-        }
-
-        return false;
+    /**
+     * Returns whether to record metrics from suppression experiment. This allows an arm of
+     * suppression to run without the overhead from reporting any extra metrics in Java. Using a
+     * feature instead of a param to utilize Java side caching.
+     */
+    public static boolean shouldRecordSuppressionMetrics() {
+        return sRecordSuppressionMetrics.isEnabled();
     }
 }

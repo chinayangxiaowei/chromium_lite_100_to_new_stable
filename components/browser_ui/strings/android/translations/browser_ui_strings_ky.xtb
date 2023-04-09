@@ -193,7 +193,6 @@
 <translation id="5048398596102334565">Сайттарга сенсорлорду колдонууга уруксат берүү (сунушталат)</translation>
 <translation id="5050380848339752099">Бул сайт жашыруун режимден сырткары колдонмо менен маалыматты бөлүшкөнү жатат.</translation>
 <translation id="5063480226653192405">Колдонулушу</translation>
-<translation id="5082281938627763039">Ушуну менен <ph name="FPS_MEMBER" /> жана <ph name="FPS_OWNER" /> аныктаган топко кирген сайттардагы cookie файлдары жана сайттагы башка маалымат жок кылынат</translation>
 <translation id="5091013926750941408">Мобилдик түзмөктөгү сайт</translation>
 <translation id="509133520954049755">Компьютердик версиясын сурануу</translation>
 <translation id="5100237604440890931">Жыйналган – жайып көрсөтүү үчүн чыкылдатыңыз.</translation>
@@ -207,7 +206,6 @@
 <translation id="528192093759286357">Толук экрандан чыгуу үчүн жогорудан ылдый сүйрөп келип, "Артка" деген баскычка тийип коюңуз.</translation>
 <translation id="5300589172476337783">Көрсөтүү</translation>
 <translation id="5301954838959518834">Жарайт, түшүндүм</translation>
-<translation id="5313967007315987356">Сайт кошуу</translation>
 <translation id="5317780077021120954">Сактоо</translation>
 <translation id="5335288049665977812">Сайттарга JavaScript'ти иштетүүгө уруксат берилсин (сунушталат)</translation>
 <translation id="534295439873310000">NFC түзмөктөрү</translation>
@@ -241,9 +239,11 @@
 <translation id="5922853908706496913">Экраныңыз бөлүшүлүүдө</translation>
 <translation id="5922967540311291836">Үчүнчү тараптын cookie файлдарын бөгөттөө:</translation>
 <translation id="5939518447894949180">Кайра коюу</translation>
+<translation id="5968921426641056619">Веб дарегин киргизиңиз</translation>
 <translation id="5975083100439434680">Кичирейтүү</translation>
 <translation id="5976059395673079613"><ph name="PERMISSION" />, <ph name="WARNING_MESSAGE" /></translation>
 <translation id="6015775454662021376">Бул сайттын түзмөгүңүзгө кирүү мүмкүнчүлүгүн көзөмөлдөңүз</translation>
+<translation id="6018815681665454784">Өчүрүлүп, баштапкы абалга келтирилсинби?</translation>
 <translation id="6040143037577758943">Жабуу</translation>
 <translation id="6042308850641462728">Дагы</translation>
 <translation id="6064125863973209585">Жүктөлүп алынгандар</translation>
@@ -307,6 +307,7 @@
 <translation id="7250468141469952378"><ph name="ITEM_COUNT" /> нерсе тандалды</translation>
 <translation id="7260727271532453612"><ph name="PERMISSION_1" /> жана <ph name="PERMISSION_2" /> дайындарын колдонууга уруксат берилди</translation>
 <translation id="7302486331832100261">Адатта билдирмелерди өчүрөсүз. Уруксат берүү үчүн "Чоо-жайын" таптап коюңуз.</translation>
+<translation id="7366415735885268578">Сайт кошуу</translation>
 <translation id="7383715096023715447"><ph name="DOMAIN" /> параметрлери</translation>
 <translation id="7423098979219808738">Адегенде сура</translation>
 <translation id="7423538860840206698">Алмашуу буферин окуу бөгөттөлгөн</translation>
@@ -322,6 +323,7 @@
 <translation id="7658239707568436148">Жокко чыгаруу</translation>
 <translation id="7667547420449112975">Оз өлкөсүнүн ажайып сыйкырчысы</translation>
 <translation id="7690549345586282764">Масштабды көрсөтүү</translation>
+<translation id="7695658402549134106"><ph name="SITE_NAME" /> сайтынын параметрлери</translation>
 <translation id="7719367874908701697">Бетти чоңойтуп/кичирейтүү</translation>
 <translation id="7781829728241885113">Кечээ</translation>
 <translation id="7791543448312431591">Кошуу</translation>
@@ -348,6 +350,7 @@
 <translation id="813082847718468539">Сайттын маалыматын карап көрүү</translation>
 <translation id="8131740175452115882">Ырастоо</translation>
 <translation id="8154912474061769055">Функциялар көпчүлүк сайттарда иштебеши мүмкүн</translation>
+<translation id="8168435359814927499">Мазмун</translation>
 <translation id="8197286292360124385"><ph name="PERMISSION_1" /> дайындарын колдонууга уруксат берилди</translation>
 <translation id="8200772114523450471">Улантуу</translation>
 <translation id="8206354486702514201">Бул жөндөөнү администраторуңуз күчүнө киргизген.</translation>
@@ -364,6 +367,7 @@
 <translation id="8380167699614421159">Бул сайт тажатма же адаштыруучу жарнамаларды көрсөтүп жатат</translation>
 <translation id="8394832520002899662">Сайтка кайтуу үчүн таптаңыз</translation>
 <translation id="8409345997656833551">Макаланын жөнөкөйлөтүлгөн көрүнүшү жеткиликтүү болгондо кабар алуу</translation>
+<translation id="8423565414844018592">Тексттин масштабы <ph name="TEXT_SCALING" /> деп коюлду</translation>
 <translation id="8428213095426709021">Параметрлер</translation>
 <translation id="8441146129660941386">Артка түрдүрүү</translation>
 <translation id="8444433999583714703"><ph name="APP_NAME" /> колдонмосуна жайгашкан жериңизге кирүүгө уруксат берүү үчүн, <ph name="BEGIN_LINK" />Android Параметрлеринен<ph name="END_LINK" /> жайгашкан жер кызматын күйгүзүңүз.</translation>
@@ -394,7 +398,6 @@
 <translation id="8921772741368021346"><ph name="POSITION" />/<ph name="DURATION" /></translation>
 <translation id="8926666909099850184">NFC бул түзмөктө өчүрүлгөн. <ph name="BEGIN_LINK" />Android параметрлерине<ph name="END_LINK" /> өтүп, аны күйгүзүңүз.</translation>
 <translation id="8928445016601307354">Сайттардын NFC түзмөктөрүндөгү маалыматты көрүү жана өзгөртүү мүмкүнчүлүгүн бөгөттөө</translation>
-<translation id="8941729603749328384">www.example.com</translation>
 <translation id="8958424370300090006">Белгилүү бир сайттын cookie файлдарын бөгөттөө.</translation>
 <translation id="8959122750345127698">Чабыттоо жеткиликсиз: <ph name="URL" /></translation>
 <translation id="8986362086234534611">Унутуу</translation>

@@ -38,6 +38,20 @@ ci.builder(
     name = "linux-ash-chromium-generator-rel",
     schedule = "triggered",
     triggered_by = [],
+    builder_spec = builder_config.builder_spec(
+        gclient_config = builder_config.gclient_config(
+            config = "chromium",
+            apply_configs = ["chromeos"],
+        ),
+        chromium_config = builder_config.chromium_config(
+            config = "chromium",
+            apply_configs = ["mb"],
+            build_config = builder_config.build_config.RELEASE,
+            target_arch = builder_config.target_arch.INTEL,
+            target_bits = 64,
+        ),
+        build_gs_bucket = "chromium-chromiumos-archive",
+    ),
     sheriff_rotations = args.ignore_default(None),
     tree_closing = False,
     console_view_entry = consoles.console_view_entry(
@@ -526,6 +540,46 @@ ci.builder(
     console_view_entry = consoles.console_view_entry(
         category = "lacros|x64",
         short_name = "rel",
+    ),
+    main_console_view = "main",
+    cq_mirrors_console_view = "mirrors",
+    reclient_jobs = reclient.jobs.HIGH_JOBS_FOR_CI,
+)
+
+ci.builder(
+    name = "lacros-amd64-generic-rel-skylab",
+    builder_spec = builder_config.builder_spec(
+        gclient_config = builder_config.gclient_config(
+            config = "chromium",
+            apply_configs = [
+                "checkout_lacros_sdk",
+                "chromeos",
+            ],
+        ),
+        chromium_config = builder_config.chromium_config(
+            config = "chromium",
+            apply_configs = [
+                "mb",
+            ],
+            build_config = builder_config.build_config.RELEASE,
+            target_arch = builder_config.target_arch.INTEL,
+            target_bits = 64,
+            target_platform = builder_config.target_platform.CHROMEOS,
+            target_cros_boards = [
+                "amd64-generic",
+            ],
+        ),
+        build_gs_bucket = "chromium-chromiumos-archive",
+        skylab_upload_location = builder_config.skylab_upload_location(
+            gs_bucket = "chromium-ci-skylab",
+        ),
+    ),
+    sheriff_rotations = args.ignore_default(None),
+    # TODO(crbug.com/1399674): Enable tree closing when stable.
+    tree_closing = False,
+    console_view_entry = consoles.console_view_entry(
+        category = "lacros|x64",
+        short_name = "skylab",
     ),
     main_console_view = "main",
     cq_mirrors_console_view = "mirrors",

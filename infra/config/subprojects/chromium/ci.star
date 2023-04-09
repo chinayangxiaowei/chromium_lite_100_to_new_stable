@@ -77,6 +77,7 @@ luci.gitiles_poller(
         "chromium.gpu",
         "chromium.fyi",
         "chromium.android.fyi",
+        "chromium.cft",
         "chromium.clang",
         "chromium.fuzz",
         "chromium.gpu.fyi",
@@ -138,12 +139,14 @@ consoles.console_view(
     ("fuchsia-x64", "gardener|p/chrome|x64", "rel"),
 )]
 
+exec("./ci/blink.infra.star")
 exec("./ci/checks.star")
 exec("./ci/chromium.star")
 exec("./ci/chromium.accessibility.star")
 exec("./ci/chromium.android.star")
 exec("./ci/chromium.android.fyi.star")
 exec("./ci/chromium.angle.star")
+exec("./ci/chromium.cft.star")
 exec("./ci/chromium.chromiumos.star")
 exec("./ci/chromium.clang.star")
 exec("./ci/chromium.dawn.star")
@@ -157,6 +160,7 @@ exec("./ci/chromium.gpu.fyi.star")
 exec("./ci/chromium.linux.star")
 exec("./ci/chromium.mac.star")
 exec("./ci/chromium.memory.star")
+exec("./ci/chromium.memory.fyi.star")
 exec("./ci/chromium.packager.star")
 exec("./ci/chromium.rust.star")
 exec("./ci/chromium.swangle.star")

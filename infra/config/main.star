@@ -26,7 +26,6 @@ lucicfg.config(
         "cq-usage/default.cfg",
         "cq-usage/full.cfg",
         "luci/commit-queue.cfg",
-        "luci/chops-weetbix.cfg",
         "luci/cr-buildbucket.cfg",
         "luci/luci-analysis.cfg",
         "luci/luci-logdog.cfg",
@@ -40,7 +39,6 @@ lucicfg.config(
         "outages.pyl",
         "sheriff-rotations/*.txt",
         "project.pyl",
-        "testing/gn_isolate_map.pyl",
     ],
     fail_on_warnings = True,
     lint_checks = [
@@ -64,13 +62,6 @@ lucicfg.emit(
 lucicfg.emit(
     dest = "luci/luci-analysis.cfg",
     data = io.read_file("luci-analysis.cfg"),
-)
-
-# TODO(b/243488110): Delete when Weetbix renaming to
-# LUCI Analysis complete.
-lucicfg.emit(
-    dest = "luci/chops-weetbix.cfg",
-    data = io.read_file("chops-weetbix.cfg"),
 )
 
 luci.project(
@@ -119,21 +110,6 @@ luci.project(
         ),
         luci.binding(
             roles = "role/analysis.editor",
-            groups = ["project-chromium-committers", "googlers"],
-        ),
-        # Roles for Weetbix.
-        # TODO(b/243488110): Delete when renaming to
-        # LUCI Analysis complete.
-        luci.binding(
-            roles = "role/weetbix.reader",
-            groups = "all",
-        ),
-        luci.binding(
-            roles = "role/weetbix.queryUser",
-            groups = "authenticated-users",
-        ),
-        luci.binding(
-            roles = "role/weetbix.editor",
             groups = ["project-chromium-committers", "googlers"],
         ),
     ],
@@ -221,11 +197,11 @@ luci.builder.defaults.test_presentation.set(resultdb.test_presentation(grouping_
 exec("//swarming.star")
 
 exec("//recipes.star")
-exec("//targets/targets.star")
 
 exec("//notifiers.star")
 
 exec("//subprojects/chromium/subproject.star")
+exec("//subprojects/chrome/subproject.star")
 branches.exec("//subprojects/codesearch/subproject.star")
 branches.exec("//subprojects/findit/subproject.star")
 branches.exec("//subprojects/flakiness/subproject.star")

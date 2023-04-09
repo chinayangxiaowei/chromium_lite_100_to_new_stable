@@ -4,6 +4,8 @@
 
 #include "base/metrics/sample_vector.h"
 
+#include <ostream>
+
 #include "base/check_op.h"
 #include "base/lazy_instance.h"
 #include "base/memory/ptr_util.h"
@@ -273,6 +275,12 @@ void SampleVectorBase::MoveSingleSampleToCounts() {
   // an invalid (including zero) "value" will crash.
   if (sample.count == 0)
     return;
+
+  // Stop here if the sample bucket would be out of range for the AtomicCount
+  // array.
+  if (sample.bucket >= counts_size()) {
+    return;
+  }
 
   // Move the value into storage. Sum and redundant-count already account
   // for this entry so no need to call IncreaseSumAndCount().

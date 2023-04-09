@@ -85,7 +85,6 @@
 <translation id="2401189691232800402">ChromeOS тутуму</translation>
 <translation id="2467438592969358367">Google Chrome сырсөздөрүңүздү экспорттогону жатат. Ага уруксат берүү үчүн Windows аккаунтуңуздун сырсөзүн териңиз.</translation>
 <translation id="2485422356828889247">Орнотуудан чыгаруу</translation>
-<translation id="2494974097748878569">Chrome'догу Google Жардамчы</translation>
 <translation id="2534507159460261402">Google Pay (Chrome'го көчүрүлдү)</translation>
 <translation id="2559253115192232574">Кийинчерээк сиз баш баккан сайттар Chrome'дон кызыккан нерселериңиз тууралуу маалымат алып, ылайыктуу жарнамаларды көрсөтө алат. Chrome 3 кызыккан нерсеңизди бөлүшө алат.</translation>
 <translation id="2563121210305478421">Chrome'ду кайра иштетесизби?</translation>
@@ -130,6 +129,7 @@
 <translation id="3140883423282498090">Өзгөртүүлөрүңүз Google Chrome кийинки жолу кайра ишке киргизилгенде күчүнө кирет.</translation>
 <translation id="3149510190863420837">Chrome колдонмолору</translation>
 <translation id="3169523567916669830">Сыноо учурунда сайттар жарнамаларды көрсөтүү үчүн колдонгон темаларды көрүп, өчүрө аласыз. Chrome сизди кызыктырган темаларды акыркы көргөн вебсайттарыңыздын негизинде божомолдойт.</translation>
+<translation id="3211604354460514046">{NUM_DEVICES,plural, =1{Google Chrome HID түзмөгүнө туташып турат}other{Google Chrome HID түзмөктөрүнө туташып турат}}</translation>
 <translation id="3245429137663807393">Chrome'дун колдонулушу тууралуу кабарларды да бөлүшсөңүз, ал кабарларда сиз баш баккан URL даректери камтылат</translation>
 <translation id="3282568296779691940">Chrome'го кириңиз</translation>
 <translation id="3286538390144397061">Азыр өчүрүп күйгүзүү</translation>
@@ -290,7 +290,6 @@ Google Chrome параметрлериңизди калыбына келтире
 <translation id="6739177684496155661">Жаңы Chrome профилинде улантасызбы?</translation>
 <translation id="6750954913813541382">Орфографиялык каталарды оңдоо үчүн Chrome серепчиде терилген текстти Google кызматтарына жөнөтүп турат</translation>
 <translation id="677276454032249905">Баары бир Chrome'дон чыгасызбы?</translation>
-<translation id="6785872064505734160">Chrome'догу Google Жардамчы вебсайттардагы аракеттерди сиз үчүн аткара алат</translation>
 <translation id="683440813066116847">mDNS трафигине мүмкүндүк берүү үчүн Google Chrome Canary'нин кайрылуу эрежеси.</translation>
 <translation id="6881299373831449287">Chrome жаңыртылууда</translation>
 <translation id="6885412569789873916">Chrome Бета Колдонмолору</translation>

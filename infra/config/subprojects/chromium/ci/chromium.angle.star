@@ -3,7 +3,6 @@
 # found in the LICENSE file.
 """Definitions of builders in the chromium.angle builder group."""
 
-load("//lib/args.star", "args")
 load("//lib/builders.star", "reclient", "sheriff_rotations", "xcode")
 load("//lib/builder_config.star", "builder_config")
 load("//lib/ci.star", "ci")
@@ -88,7 +87,6 @@ ci.thin_tester(
         build_gs_bucket = "chromium-angle-archive",
         run_tests_serially = True,
     ),
-    sheriff_rotations = args.ignore_default(None),
     console_view_entry = consoles.console_view_entry(
         category = "Android|Nexus5X|Chromium",
         short_name = "arm64",

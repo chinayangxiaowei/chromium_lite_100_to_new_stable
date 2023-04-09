@@ -106,7 +106,7 @@
 <translation id="3115898365077584848">Mostrar informações</translation>
 <translation id="3123473560110926937">Bloqueado em alguns sites.</translation>
 <translation id="3143754809889689516">Reproduzir desde o início</translation>
-<translation id="3162899666601560689">Os sites podem utilizar cookies para melhorar a experiência de navegação, por exemplo, para manter a sua sessão iniciada ou memorizar os artigos no seu carrinho de compras.</translation>
+<translation id="3162899666601560689">Os sites podem usar cookies para melhorar a experiência de navegação, por exemplo, para manter a sua sessão iniciada ou memorizar os artigos no seu carrinho de compras</translation>
 <translation id="3198916472715691905"><ph name="STORAGE_AMOUNT" /> de dados armazenados</translation>
 <translation id="3203366800380907218">Da Web</translation>
 <translation id="321187648315454507">Para permitir que a app <ph name="APP_NAME" /> lhe envie notificações, ative também as notificações nas <ph name="BEGIN_LINK" />Definições do Android<ph name="END_LINK" />.</translation>
@@ -193,7 +193,6 @@
 <translation id="5048398596102334565">Permitir que os sites acedam aos sensores de movimentos (recomendado)</translation>
 <translation id="5050380848339752099">Este site está prestes a partilhar informações com uma app fora do Modo de navegação anónima.</translation>
 <translation id="5063480226653192405">Utilização</translation>
-<translation id="5082281938627763039">Esta ação elimina os cookies e outros dados de sites de <ph name="FPS_MEMBER" /> e dos sites no grupo de sites de <ph name="FPS_OWNER" /></translation>
 <translation id="5091013926750941408">Site para dispositivos móveis</translation>
 <translation id="509133520954049755">Pedir a vista de computador</translation>
 <translation id="5100237604440890931">Reduzido. Clique para expandir.</translation>
@@ -207,7 +206,6 @@
 <translation id="528192093759286357">Arraste a partir da parte superior e toque no botão de retrocesso para sair do ecrã inteiro.</translation>
 <translation id="5300589172476337783">Mostrar</translation>
 <translation id="5301954838959518834">OK</translation>
-<translation id="5313967007315987356">Adicionar site</translation>
 <translation id="5317780077021120954">Guardar</translation>
 <translation id="5335288049665977812">Permitir que os sites executem JavaScript (recomendado)</translation>
 <translation id="534295439873310000">Dispositivos NFC</translation>
@@ -241,9 +239,11 @@
 <translation id="5922853908706496913">Partilhar o ecrã</translation>
 <translation id="5922967540311291836">Bloqueie cookies de terceiros:</translation>
 <translation id="5939518447894949180">Repor</translation>
+<translation id="5968921426641056619">Introduza o endereço Web</translation>
 <translation id="5975083100439434680">Reduzir</translation>
 <translation id="5976059395673079613"><ph name="PERMISSION" /> – <ph name="WARNING_MESSAGE" /></translation>
 <translation id="6015775454662021376">Controle o acesso deste site ao seu dispositivo.</translation>
+<translation id="6018815681665454784">Limpar e repor?</translation>
 <translation id="6040143037577758943">Fechar</translation>
 <translation id="6042308850641462728">Mais</translation>
 <translation id="6064125863973209585">Transferências concluídas</translation>
@@ -272,7 +272,7 @@
 <translation id="6545864417968258051">Procura de Bluetooth</translation>
 <translation id="6552800053856095716">{PERMISSIONS_SUMMARY_BLOCKED,plural, =1{<ph name="PERMISSION_1" />, <ph name="PERMISSION_2" /> e mais <ph name="NUM_MORE" /> bloqueadas.}other{<ph name="PERMISSION_1" />, <ph name="PERMISSION_2" /> e mais <ph name="NUM_MORE" /> bloqueadas.}}</translation>
 <translation id="6554732001434021288">Última visita há <ph name="NUM_DAYS" /> dias</translation>
-<translation id="6561560012278703671">Utilizar mensagens mais discretas (impede interrupções de pedidos de notificação)</translation>
+<translation id="6561560012278703671">Usar mensagens mais discretas (impede interrupções de pedidos de notificação)</translation>
 <translation id="6593061639179217415">Site para computador</translation>
 <translation id="6608650720463149374"><ph name="GIGABYTES" /> GB</translation>
 <translation id="6612358246767739896">Conteúdo protegido</translation>
@@ -307,6 +307,7 @@
 <translation id="7250468141469952378"><ph name="ITEM_COUNT" /> selecionado(s).</translation>
 <translation id="7260727271532453612">Autorização de <ph name="PERMISSION_1" /> e <ph name="PERMISSION_2" />.</translation>
 <translation id="7302486331832100261">Normalmente, bloqueia as notificações. Para permitir, toque em Detalhes.</translation>
+<translation id="7366415735885268578">Adicionar um site</translation>
 <translation id="7383715096023715447">Definições do <ph name="DOMAIN" /></translation>
 <translation id="7423098979219808738">Perguntar primeiro</translation>
 <translation id="7423538860840206698">Leitura da área de transferência bloqueada</translation>
@@ -322,10 +323,11 @@
 <translation id="7658239707568436148">Cancelar</translation>
 <translation id="7667547420449112975">O Maravilhoso Feiticeiro de Oz</translation>
 <translation id="7690549345586282764">Mostrar zoom</translation>
+<translation id="7695658402549134106">Preferência de sites para <ph name="SITE_NAME" /></translation>
 <translation id="7719367874908701697">Zoom da página</translation>
 <translation id="7781829728241885113">Ontem</translation>
 <translation id="7791543448312431591">Adicionar</translation>
-<translation id="780301667611848630">Não, obrigado</translation>
+<translation id="780301667611848630">Não</translation>
 <translation id="7804248752222191302">Um site está a utilizar a sua câmara.</translation>
 <translation id="7817023149356982970">A sua sessão será terminada neste site.</translation>
 <translation id="7835852323729233924">Multimédia em reprodução</translation>
@@ -348,6 +350,7 @@
 <translation id="813082847718468539">Ver informações do Website</translation>
 <translation id="8131740175452115882">Confirmar</translation>
 <translation id="8154912474061769055">As funcionalidades em muitos sites podem não funcionar</translation>
+<translation id="8168435359814927499">Conteúdo</translation>
 <translation id="8197286292360124385">Autorização de <ph name="PERMISSION_1" />.</translation>
 <translation id="8200772114523450471">Continuar</translation>
 <translation id="8206354486702514201">Esta definição é aplicada pelo gestor.</translation>
@@ -364,6 +367,7 @@
 <translation id="8380167699614421159">Este site apresenta anúncios intrusivos ou enganadores.</translation>
 <translation id="8394832520002899662">Toque para regressar ao site.</translation>
 <translation id="8409345997656833551">Receba uma notificação quando um artigo pode ser apresentado na vista simplificada</translation>
+<translation id="8423565414844018592">Escalabilidade do texto definida para <ph name="TEXT_SCALING" />.</translation>
 <translation id="8428213095426709021">Definições</translation>
 <translation id="8441146129660941386">Procurar para trás</translation>
 <translation id="8444433999583714703">Para permitir que a app <ph name="APP_NAME" /> aceda à sua localização, ative também a localização nas <ph name="BEGIN_LINK" />Definições do Android<ph name="END_LINK" />.</translation>
@@ -380,7 +384,7 @@
 <translation id="8676374126336081632">Limpar texto</translation>
 <translation id="868929229000858085">Pesquise os seus contactos</translation>
 <translation id="8702612070107455751">Todos os dados offline serão limpos.</translation>
-<translation id="8712637175834984815">Entendido</translation>
+<translation id="8712637175834984815">OK</translation>
 <translation id="8719283222052720129">Ative a autorização para a app <ph name="APP_NAME" /> nas <ph name="BEGIN_LINK" />Definições do Android<ph name="END_LINK" />.</translation>
 <translation id="8725066075913043281">Tentar novamente</translation>
 <translation id="8730621377337864115">Concluído</translation>
@@ -394,7 +398,6 @@
 <translation id="8921772741368021346"><ph name="POSITION" />/<ph name="DURATION" /></translation>
 <translation id="8926666909099850184">O NFC está desativado para este dispositivo. Ative-o nas <ph name="BEGIN_LINK" />Definições do Android<ph name="END_LINK" />.</translation>
 <translation id="8928445016601307354">Impedir os sites de verem e alterarem informações em dispositivos NFC</translation>
-<translation id="8941729603749328384">www.example.com</translation>
 <translation id="8958424370300090006">Bloqueie cookies para um site específico.</translation>
 <translation id="8959122750345127698">A navegação está inacessível: <ph name="URL" /></translation>
 <translation id="8986362086234534611">Esquecer</translation>
