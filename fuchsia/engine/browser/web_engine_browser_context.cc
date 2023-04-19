@@ -151,9 +151,7 @@ WebEngineBrowserContext::GetPermissionControllerDelegate() {
 
 content::ClientHintsControllerDelegate*
 WebEngineBrowserContext::GetClientHintsControllerDelegate() {
-  // TODO(crbug.com/1356277): Temporarily disable Client Hints as it is causing
-  // several apps to fail. Re-enable Client Hints after breakage is fixed.
-  return nullptr;
+  return &client_hints_delegate_;
 }
 
 content::BackgroundFetchDelegate*

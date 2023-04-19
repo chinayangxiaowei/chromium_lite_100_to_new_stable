@@ -59,6 +59,7 @@ class PortTestCase(LoggingTestCase):
     # Subclasses override this to point to their Port subclass.
     os_name = None
     os_version = None
+    machine = None
     port_maker = Port
     port_name = None
     full_port_name = None
@@ -69,10 +70,12 @@ class PortTestCase(LoggingTestCase):
                   options=None,
                   os_name=None,
                   os_version=None,
+                  machine=None,
                   **kwargs):
-        host = host or MockSystemHost(
-            os_name=(os_name or self.os_name),
-            os_version=(os_version or self.os_version))
+        host = host or MockSystemHost(os_name=(os_name or self.os_name),
+                                      os_version=(os_version
+                                                  or self.os_version),
+                                      machine=(machine or self.machine))
         options = options or optparse.Values({
             'configuration': 'Release',
             'use_xvfb': True
@@ -361,12 +364,6 @@ class PortTestCase(LoggingTestCase):
     def test_path_to_apache_config_file(self):
         # Specific behavior may vary by port, so unit test sub-classes may override this.
         port = self.make_port()
-        # Many unit tests in this class won't pass when run individually. The
-        # class variables e.g. os_name will remain uninitialized in such case.
-        # The port above appears to be LinuxPort previously(but why?). And the
-        # test was able to pass. Set is_linux to return False to mimic BSD's
-        # case, to make the test pass.
-        port.host.platform.is_linux = lambda: False
 
         port.host.environ[
             'WEBKIT_HTTP_SERVER_CONF_PATH'] = '/path/to/httpd.conf'
@@ -404,5 +401,6 @@ class PortTestCase(LoggingTestCase):
         # use a real SystemHost(). We don't care what virtual_test_suites() returns as long
         # as it is iterable.
         port = self.make_port(host=SystemHost(), port_name=self.full_port_name)
+        port.operating_system = lambda: 'linux'
         self.assertTrue(
             isinstance(port.virtual_test_suites(), collections.Iterable))

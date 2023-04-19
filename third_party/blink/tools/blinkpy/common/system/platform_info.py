@@ -30,6 +30,8 @@ import re
 import sys
 from six.moves import map
 
+from blinkpy.common.system.executive import ScriptError
+
 
 class PlatformInfo(object):
     """This class provides a consistent (and mockable) interpretation of
@@ -56,7 +58,7 @@ class PlatformInfo(object):
             self.os_version = platform_module.release()
         if self.os_name.startswith('mac'):
             self.os_version = self._determine_mac_version(
-                platform_module.mac_ver()[0])
+                self._raw_mac_version(platform_module))
         if self.os_name.startswith('win'):
             self.os_version = self._determine_win_version(
                 self._win_version_tuple())
@@ -64,14 +66,6 @@ class PlatformInfo(object):
 
     def is_mac(self):
         return self.os_name == 'mac'
-
-    def is_mac_monterey(self):
-        if not self.is_mac():
-            return False
-
-        command = ['sw_vers', '-productVersion']
-        version = self._executive.run_command(command).strip()
-        return version.startswith('12.')
 
     def is_win(self):
         return self.os_name == 'win'
@@ -170,6 +164,18 @@ class PlatformInfo(object):
 
         return 'unknown'
 
+    def _raw_mac_version(self, platform_module):
+        """Read this Mac's version string (starts with "<major>.<minor>")."""
+        try:
+            # crbug/1294954: Python's `platform.mac_ver()` can be unreliable.
+            command = ['sw_vers', '-productVersion']
+            output = self._executive.run_command(command).strip()
+            if re.match(r'\d+\.\d+', output):
+                return output
+        except (OSError, SystemError, ScriptError):
+            pass
+        return platform_module.mac_ver()[0]
+
     def _determine_os_name(self, sys_platform):
         if sys_platform == 'darwin':
             return 'mac'
@@ -192,7 +198,7 @@ class PlatformInfo(object):
                 minor_release=minor_release,
             )
         else:
-            assert 11 <= major_release <= 11, 'Unsupported mac OS version: %s' % mac_version_string
+            assert 11 <= major_release <= 12, 'Unsupported mac OS version: %s' % mac_version_string
             return 'mac{major_release}'.format(major_release=major_release, )
 
     def _determine_linux_version(self, _):

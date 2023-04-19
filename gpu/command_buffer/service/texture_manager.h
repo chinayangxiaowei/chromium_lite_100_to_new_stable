@@ -19,6 +19,7 @@
 #include "base/memory/raw_ptr.h"
 #include "base/memory/ref_counted.h"
 #include "base/memory/weak_ptr.h"
+#include "base/notreached.h"
 #include "gpu/command_buffer/service/feature_info.h"
 #include "gpu/command_buffer/service/gl_utils.h"
 #include "gpu/command_buffer/service/memory_tracking.h"
@@ -467,6 +468,11 @@ class GPU_GLES2_EXPORT Texture final : public TextureBase {
   bool NeedsMips() const {
     return sampler_state_.min_filter != GL_NEAREST &&
            sampler_state_.min_filter != GL_LINEAR;
+  }
+
+  size_t MaxValidMipLevel() const {
+    DCHECK(!face_infos_.empty());
+    return face_infos_[0].level_infos.size();
   }
 
  private:
@@ -931,6 +937,11 @@ class GPU_GLES2_EXPORT TextureManager
   bool ValidForTarget(
       GLenum target, GLint level,
       GLsizei width, GLsizei height, GLsizei depth);
+  bool ValidForTextureTarget(const Texture* texture,
+                             GLint level,
+                             GLsizei width,
+                             GLsizei height,
+                             GLsizei depth);
 
   // True if this texture meets all the GLES2 criteria for rendering.
   // See section 3.8.2 of the GLES2 spec.

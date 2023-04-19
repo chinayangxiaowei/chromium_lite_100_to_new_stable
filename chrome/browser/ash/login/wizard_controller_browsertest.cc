@@ -8,6 +8,7 @@
 #include "ash/components/geolocation/simple_geolocation_provider.h"
 #include "ash/components/settings/timezone_settings.h"
 #include "ash/components/timezone/timezone_request.h"
+#include "ash/components/tpm/stub_install_attributes.h"
 #include "ash/constants/ash_features.h"
 #include "ash/constants/ash_switches.h"
 #include "ash/public/cpp/login_screen_test_api.h"
@@ -68,6 +69,7 @@
 #include "chrome/browser/ash/net/rollback_network_config/fake_rollback_network_config.h"
 #include "chrome/browser/ash/net/rollback_network_config/rollback_network_config_service.h"
 #include "chrome/browser/ash/policy/enrollment/auto_enrollment_client.h"
+#include "chrome/browser/ash/policy/enrollment/auto_enrollment_type_checker.h"
 #include "chrome/browser/ash/policy/enrollment/enrollment_config.h"
 #include "chrome/browser/ash/policy/enrollment/fake_auto_enrollment_client.h"
 #include "chrome/browser/ash/policy/server_backed_state/server_backed_device_state.h"
@@ -97,7 +99,6 @@
 #include "chromeos/system/fake_statistics_provider.h"
 #include "chromeos/system/statistics_provider.h"
 #include "chromeos/test/chromeos_test_utils.h"
-#include "chromeos/tpm/stub_install_attributes.h"
 #include "components/policy/core/common/cloud/cloud_policy_constants.h"
 #include "components/prefs/pref_registry_simple.h"
 #include "components/prefs/pref_service.h"
@@ -588,7 +589,7 @@ class WizardControllerFlowTest : public WizardControllerTest {
         std::make_unique<MockAutoEnrollmentCheckScreenView>();
     ExpectSetDelegate(mock_auto_enrollment_check_screen_view_.get());
     mock_auto_enrollment_check_screen_ = MockScreenExpectLifecycle(
-        std::make_unique<MockAutoEnrollmentCheckScreen>(
+        std::make_unique<testing::NiceMock<MockAutoEnrollmentCheckScreen>>(
             mock_auto_enrollment_check_screen_view_.get(), GetErrorScreen(),
             base::BindRepeating(
                 &WizardController::OnAutoEnrollmentCheckScreenExit,
@@ -607,7 +608,7 @@ class WizardControllerFlowTest : public WizardControllerTest {
     ExpectBindUnbind(mock_enable_adb_sideloading_screen_view_.get());
     mock_enable_adb_sideloading_screen_ = MockScreenExpectLifecycle(
         std::make_unique<MockEnableAdbSideloadingScreen>(
-            mock_enable_adb_sideloading_screen_view_.get(),
+            mock_enable_adb_sideloading_screen_view_->AsWeakPtr(),
             base::BindRepeating(
                 &WizardController::OnEnableAdbSideloadingScreenExit,
                 base::Unretained(wizard_controller))));
@@ -667,6 +668,19 @@ class WizardControllerFlowTest : public WizardControllerTest {
     device_disabled_screen_view_.reset();
     test_url_loader_factory_.ClearResponses();
     WizardControllerTest::TearDownOnMainThread();
+  }
+
+  void SetUpCommandLine(base::CommandLine* command_line) override {
+    WizardControllerTest::SetUpCommandLine(command_line);
+
+    // Default to now showing auto enrollment check screen. If you want to show
+    // this screen, you can override the flags.
+    command_line->AppendSwitchASCII(
+        switches::kEnterpriseEnableForcedReEnrollment,
+        policy::AutoEnrollmentTypeChecker::kForcedReEnrollmentNever);
+    command_line->AppendSwitchASCII(
+        switches::kEnterpriseEnableInitialEnrollment,
+        policy::AutoEnrollmentTypeChecker::kInitialEnrollmentNever);
   }
 
   void InitTimezoneResolver() {
@@ -798,7 +812,12 @@ class WizardControllerFlowTest : public WizardControllerTest {
   MockEnrollmentScreen* mock_enrollment_screen_ = nullptr;
   std::unique_ptr<MockEnrollmentScreenView> mock_enrollment_screen_view_;
 
-  MockAutoEnrollmentCheckScreen* mock_auto_enrollment_check_screen_ = nullptr;
+  // Auto enrollment check screen is a nice mock because it may or may not be
+  // shown depending on when asynchronous auto enrollment check finishes. Only
+  // add expectations for this if you are sure they are not affected by race
+  // conditions.
+  testing::NiceMock<MockAutoEnrollmentCheckScreen>*
+      mock_auto_enrollment_check_screen_ = nullptr;
   std::unique_ptr<MockAutoEnrollmentCheckScreenView>
       mock_auto_enrollment_check_screen_view_;
 
@@ -1198,7 +1217,7 @@ class WizardControllerDeviceStateTest : public WizardControllerFlowTest {
 
     command_line->AppendSwitchASCII(
         switches::kEnterpriseEnableForcedReEnrollment,
-        AutoEnrollmentController::kForcedReEnrollmentAlways);
+        policy::AutoEnrollmentTypeChecker::kForcedReEnrollmentAlways);
     command_line->AppendSwitchASCII(
         switches::kEnterpriseEnrollmentInitialModulus, "1");
     command_line->AppendSwitchASCII(switches::kEnterpriseEnrollmentModulusLimit,
@@ -1633,7 +1652,7 @@ class WizardControllerDeviceStateWithInitialEnrollmentTest
 
     command_line->AppendSwitchASCII(
         switches::kEnterpriseEnableInitialEnrollment,
-        AutoEnrollmentController::kInitialEnrollmentAlways);
+        policy::AutoEnrollmentTypeChecker::kInitialEnrollmentAlways);
   }
 
   // Test initial enrollment. This method is shared by the tests for initial
@@ -1920,7 +1939,7 @@ IN_PROC_BROWSER_TEST_F(WizardControllerDeviceStateWithInitialEnrollmentTest,
 
   CheckCurrentScreen(AutoEnrollmentCheckScreenView::kScreenId);
   mock_auto_enrollment_check_screen_->RealShow();
-  EXPECT_EQ(AutoEnrollmentController::AutoEnrollmentCheckType::
+  EXPECT_EQ(policy::AutoEnrollmentTypeChecker::CheckType::
                 kUnknownDueToMissingSystemClockSync,
             auto_enrollment_controller()->auto_enrollment_check_type());
 
@@ -1928,7 +1947,7 @@ IN_PROC_BROWSER_TEST_F(WizardControllerDeviceStateWithInitialEnrollmentTest,
   system_clock_client()->NotifyObserversSystemClockUpdated();
 
   base::RunLoop().RunUntilIdle();
-  EXPECT_EQ(AutoEnrollmentController::AutoEnrollmentCheckType::kNone,
+  EXPECT_EQ(policy::AutoEnrollmentTypeChecker::CheckType::kNone,
             auto_enrollment_controller()->auto_enrollment_check_type());
   EXPECT_EQ(policy::AUTO_ENROLLMENT_STATE_NO_ENROLLMENT,
             auto_enrollment_controller()->state());
@@ -1979,7 +1998,7 @@ IN_PROC_BROWSER_TEST_F(WizardControllerDeviceStateWithInitialEnrollmentTest,
 
   CheckCurrentScreen(AutoEnrollmentCheckScreenView::kScreenId);
   mock_auto_enrollment_check_screen_->RealShow();
-  EXPECT_EQ(AutoEnrollmentController::AutoEnrollmentCheckType::
+  EXPECT_EQ(policy::AutoEnrollmentTypeChecker::CheckType::
                 kUnknownDueToMissingSystemClockSync,
             auto_enrollment_controller()->auto_enrollment_check_type());
 
@@ -1987,7 +2006,7 @@ IN_PROC_BROWSER_TEST_F(WizardControllerDeviceStateWithInitialEnrollmentTest,
   // Fast-forward by a bit more than that.
   task_runner->FastForwardBy(base::Seconds(45 + 1));
 
-  EXPECT_EQ(AutoEnrollmentController::AutoEnrollmentCheckType::kNone,
+  EXPECT_EQ(policy::AutoEnrollmentTypeChecker::CheckType::kNone,
             auto_enrollment_controller()->auto_enrollment_check_type());
   EXPECT_EQ(policy::AUTO_ENROLLMENT_STATE_NO_ENROLLMENT,
             auto_enrollment_controller()->state());
@@ -2038,7 +2057,7 @@ IN_PROC_BROWSER_TEST_F(WizardControllerDeviceStateWithInitialEnrollmentTest,
 
   CheckCurrentScreen(AutoEnrollmentCheckScreenView::kScreenId);
   mock_auto_enrollment_check_screen_->RealShow();
-  EXPECT_EQ(AutoEnrollmentController::AutoEnrollmentCheckType::
+  EXPECT_EQ(policy::AutoEnrollmentTypeChecker::CheckType::
                 kUnknownDueToMissingSystemClockSync,
             auto_enrollment_controller()->auto_enrollment_check_type());
 
@@ -2259,14 +2278,8 @@ class WizardControllerProxyAuthOnSigninTest : public WizardControllerTest {
 };
 
 // TODO(crbug.com/1286218): Flakes on CrOS.
-#if BUILDFLAG(IS_CHROMEOS)
-#define MAYBE_ProxyAuthDialogOnSigninScreen \
-  DISABLED_ProxyAuthDialogOnSigninScreen
-#else
-#define MAYBE_ProxyAuthDialogOnSigninScreen ProxyAuthDialogOnSigninScreen
-#endif
 IN_PROC_BROWSER_TEST_F(WizardControllerProxyAuthOnSigninTest,
-                       MAYBE_ProxyAuthDialogOnSigninScreen) {
+                       DISABLED_ProxyAuthDialogOnSigninScreen) {
   content::WindowedNotificationObserver auth_needed_waiter(
       chrome::NOTIFICATION_AUTH_NEEDED,
       content::NotificationService::AllSources());
@@ -2457,13 +2470,6 @@ IN_PROC_BROWSER_TEST_F(WizardControllerEnableAdbSideloadingTest,
   EXPECT_CALL(*mock_welcome_screen_, HideImpl()).Times(1);
   SkipToScreen(EnableAdbSideloadingScreenView::kScreenId,
                mock_enable_adb_sideloading_screen_);
-  CheckCurrentScreen(EnableAdbSideloadingScreenView::kScreenId);
-
-  test::OobeJS().ClickOnPath(
-      {"adb-sideloading", "enable-adb-sideloading-cancel-button"});
-
-  base::RunLoop().RunUntilIdle();
-
   CheckCurrentScreen(EnableAdbSideloadingScreenView::kScreenId);
   EXPECT_CALL(*mock_enable_adb_sideloading_screen_, HideImpl()).Times(1);
   EXPECT_CALL(*mock_welcome_screen_, ShowImpl()).Times(1);
@@ -3124,6 +3130,7 @@ class WizardControllerOnboardingResumeTest : public WizardControllerTest {
 
 IN_PROC_BROWSER_TEST_F(WizardControllerOnboardingResumeTest,
                        PRE_ControlFlowResumeInterruptedOnboarding) {
+  LoginDisplayHost::default_host()->GetWizardContext()->is_branded_build = true;
   OobeScreenWaiter(UserCreationView::kScreenId).Wait();
   LoginManagerMixin::TestUserInfo test_user(user_);
   login_mixin_.LoginWithDefaultContext(test_user);
@@ -3135,6 +3142,7 @@ IN_PROC_BROWSER_TEST_F(WizardControllerOnboardingResumeTest,
 
 IN_PROC_BROWSER_TEST_F(WizardControllerOnboardingResumeTest,
                        ControlFlowResumeInterruptedOnboarding) {
+  LoginDisplayHost::default_host()->GetWizardContext()->is_branded_build = true;
   login_mixin_.LoginAsNewRegularUser();
   OobeScreenWaiter(MarketingOptInScreenView::kScreenId).Wait();
 }
@@ -3295,6 +3303,58 @@ IN_PROC_BROWSER_TEST_F(WizardControllerRollbackFlowTest,
   const std::string* guid = network.FindStringKey("GUID");
   ASSERT_TRUE(guid);
   EXPECT_EQ(*guid, "wpa-psk-network-guid");
+}
+
+class WizardControllerThemeSelectionDefaultSettingsTest
+    : public WizardControllerTest {
+ public:
+ protected:
+  DeviceStateMixin device_state_{
+      &mixin_host_, DeviceStateMixin::State::OOBE_COMPLETED_UNOWNED};
+  FakeGaiaMixin gaia_mixin_{&mixin_host_};
+  LoginManagerMixin login_mixin_{&mixin_host_, LoginManagerMixin::UserList(),
+                                 &gaia_mixin_};
+  AccountId user_{
+      AccountId::FromUserEmailGaiaId(test::kTestEmail, test::kTestGaiaId)};
+
+  base::test::ScopedFeatureList feature_list_;
+};
+
+IN_PROC_BROWSER_TEST_F(WizardControllerThemeSelectionDefaultSettingsTest,
+                       SkipThemeSelection) {
+  LoginDisplayHost::default_host()->GetWizardContext()->is_branded_build = true;
+  login_mixin_.LoginAsNewRegularUser();
+  WizardController::default_controller()->AdvanceToScreen(
+      GestureNavigationScreenView::kScreenId);
+  OobeScreenWaiter(MarketingOptInScreenView::kScreenId).Wait();
+}
+
+class WizardControllerThemeSelectionEnabledTest
+    : public WizardControllerThemeSelectionDefaultSettingsTest {
+ public:
+  WizardControllerThemeSelectionEnabledTest() {
+    feature_list_.InitAndEnableFeature(features::kEnableOobeThemeSelection);
+  }
+
+  base::test::ScopedFeatureList feature_list_;
+};
+
+IN_PROC_BROWSER_TEST_F(WizardControllerThemeSelectionEnabledTest,
+                       TransitionToMarketingOptIn) {
+  LoginDisplayHost::default_host()->GetWizardContext()->is_branded_build = true;
+  login_mixin_.LoginAsNewRegularUser();
+  WizardController::default_controller()->AdvanceToScreen(
+      ThemeSelectionScreenView::kScreenId);
+  test::OobeJS().ClickOnPath({"theme-selection", "nextButton"});
+  OobeScreenWaiter(MarketingOptInScreenView::kScreenId).Wait();
+}
+
+IN_PROC_BROWSER_TEST_F(WizardControllerThemeSelectionEnabledTest,
+                       TransitionToThemeSelection) {
+  login_mixin_.LoginAsNewRegularUser();
+  WizardController::default_controller()->AdvanceToScreen(
+      GestureNavigationScreenView::kScreenId);
+  OobeScreenWaiter(ThemeSelectionScreenView::kScreenId).Wait();
 }
 
 // TODO(nkostylev): Add test for WebUI accelerators http://crosbug.com/22571

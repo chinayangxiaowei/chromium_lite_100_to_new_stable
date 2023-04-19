@@ -2,7 +2,9 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+load("//lib/builder_config.star", "builder_config")
 load("//lib/builders.star", "builder", "builders", "cpu", "defaults", "goma", "os", "xcode")
+load("//lib/structs.star", "structs")
 
 luci.bucket(
     name = "goma",
@@ -96,8 +98,8 @@ fyi_goma_rbe_canary_builder(
         ),
     ),
     cores = 4,
-    goma_jobs = goma.jobs.J80,
     os = os.MAC_DEFAULT,
+    goma_jobs = goma.jobs.J80,
 )
 
 fyi_goma_rbe_canary_builder(
@@ -117,9 +119,9 @@ fyi_goma_rbe_canary_builder(
         ),
     ),
     cores = None,
-    goma_jobs = goma.jobs.J80,
     os = os.MAC_11,
     cpu = cpu.ARM64,
+    goma_jobs = goma.jobs.J80,
 )
 
 fyi_goma_rbe_canary_builder(
@@ -133,6 +135,17 @@ fyi_goma_rbe_canary_builder(
 
 fyi_goma_rbe_canary_builder(
     name = "chromeos-amd64-generic-rel-goma-rbe-canary",
+    builder_spec = builder_config.copy_from(
+        "ci/chromeos-amd64-generic-rel",
+        lambda spec: structs.evolve(
+            spec,
+            chromium_config = structs.extend(
+                spec.chromium_config,
+                apply_configs = "goma_canary",
+            ),
+            build_gs_bucket = "chromium-fyi-archive",
+        ),
+    ),
     goma_enable_ats = True,
 )
 
@@ -155,8 +168,8 @@ fyi_goma_rbe_canary_builder(
 fyi_goma_rbe_canary_builder(
     name = "mac-archive-rel-goma-rbe-canary",
     cores = 4,
-    goma_jobs = goma.jobs.J80,
     os = os.MAC_DEFAULT,
+    goma_jobs = goma.jobs.J80,
 )
 
 fyi_goma_rbe_canary_builder(
@@ -174,8 +187,8 @@ fyi_goma_rbe_canary_builder(
             build_gs_bucket = "chromium-fyi-archive",
         ),
     ),
-    goma_enable_ats = False,
     os = os.WINDOWS_DEFAULT,
+    goma_enable_ats = False,
 )
 
 fyi_goma_rbe_canary_builder(
@@ -194,8 +207,8 @@ fyi_goma_rbe_canary_builder(
             build_gs_bucket = "chromium-fyi-archive",
         ),
     ),
-    goma_enable_ats = False,
     os = os.WINDOWS_DEFAULT,
+    goma_enable_ats = False,
 )
 
 fyi_goma_rbe_canary_builder(
@@ -215,8 +228,8 @@ fyi_goma_rbe_canary_builder(
             build_gs_bucket = "chromium-fyi-archive",
         ),
     ),
-    goma_enable_ats = False,
     os = os.WINDOWS_DEFAULT,
+    goma_enable_ats = False,
 )
 
 fyi_goma_rbe_canary_builder(
@@ -234,8 +247,8 @@ fyi_goma_rbe_canary_builder(
             build_gs_bucket = "chromium-fyi-archive",
         ),
     ),
-    goma_enable_ats = True,
     os = os.WINDOWS_DEFAULT,
+    goma_enable_ats = True,
 )
 
 fyi_goma_rbe_canary_builder(
@@ -254,8 +267,8 @@ fyi_goma_rbe_canary_builder(
             build_gs_bucket = "chromium-fyi-archive",
         ),
     ),
-    goma_enable_ats = True,
     os = os.WINDOWS_DEFAULT,
+    goma_enable_ats = True,
 )
 
 def fyi_goma_rbe_latest_client_builder(
@@ -308,8 +321,8 @@ fyi_goma_rbe_latest_client_builder(
         ),
     ),
     cores = 4,
-    goma_jobs = goma.jobs.J80,
     os = os.MAC_DEFAULT,
+    goma_jobs = goma.jobs.J80,
 )
 
 fyi_goma_rbe_latest_client_builder(
@@ -327,8 +340,8 @@ fyi_goma_rbe_latest_client_builder(
             build_gs_bucket = "chromium-fyi-archive",
         ),
     ),
-    goma_enable_ats = False,
     os = os.WINDOWS_DEFAULT,
+    goma_enable_ats = False,
 )
 
 fyi_goma_rbe_latest_client_builder(
@@ -347,8 +360,8 @@ fyi_goma_rbe_latest_client_builder(
             build_gs_bucket = "chromium-fyi-archive",
         ),
     ),
-    goma_enable_ats = False,
     os = os.WINDOWS_DEFAULT,
+    goma_enable_ats = False,
 )
 
 fyi_goma_rbe_latest_client_builder(
@@ -366,8 +379,8 @@ fyi_goma_rbe_latest_client_builder(
             build_gs_bucket = "chromium-fyi-archive",
         ),
     ),
-    goma_enable_ats = True,
     os = os.WINDOWS_DEFAULT,
+    goma_enable_ats = True,
 )
 
 fyi_goma_rbe_latest_client_builder(
@@ -386,8 +399,8 @@ fyi_goma_rbe_latest_client_builder(
             build_gs_bucket = "chromium-fyi-archive",
         ),
     ),
-    goma_enable_ats = True,
     os = os.WINDOWS_DEFAULT,
+    goma_enable_ats = True,
 )
 
 fyi_goma_rbe_latest_client_builder(
@@ -401,6 +414,17 @@ fyi_goma_rbe_latest_client_builder(
 
 fyi_goma_rbe_latest_client_builder(
     name = "chromeos-amd64-generic-rel-goma-rbe-latest",
+    builder_spec = builder_config.copy_from(
+        "ci/chromeos-amd64-generic-rel",
+        lambda spec: structs.evolve(
+            spec,
+            chromium_config = structs.extend(
+                spec.chromium_config,
+                apply_configs = "goma_latest_client",
+            ),
+            build_gs_bucket = "chromium-fyi-archive",
+        ),
+    ),
     goma_enable_ats = True,
 )
 
@@ -423,8 +447,8 @@ fyi_goma_rbe_latest_client_builder(
 fyi_goma_rbe_latest_client_builder(
     name = "mac-archive-rel-goma-rbe-latest",
     cores = 4,
-    goma_jobs = goma.jobs.J80,
     os = os.MAC_DEFAULT,
+    goma_jobs = goma.jobs.J80,
 )
 
 def goma_builder(
@@ -443,22 +467,22 @@ def goma_builder(
 
 goma_builder(
     name = "Chromium Android ARM 32-bit Goma RBE Staging",
-    goma_backend = goma.backend.RBE_STAGING,
     execution_timeout = 4 * time.hour,
+    goma_backend = goma.backend.RBE_STAGING,
 )
 
 goma_builder(
     name = "Chromium Android ARM 32-bit Goma RBE ToT",
+    execution_timeout = 4 * time.hour,
     goma_backend = goma.backend.RBE_TOT,
     goma_enable_ats = False,
-    execution_timeout = 4 * time.hour,
 )
 
 goma_builder(
     name = "Chromium Android ARM 32-bit Goma RBE ToT (ATS)",
+    execution_timeout = 4 * time.hour,
     goma_backend = goma.backend.RBE_TOT,
     goma_enable_ats = True,
-    execution_timeout = 4 * time.hour,
 )
 
 goma_builder(
@@ -483,6 +507,7 @@ goma_builder(
 
 goma_builder(
     name = "chromeos-amd64-generic-rel-goma-rbe-staging",
+    builder_spec = builder_config.copy_from("ci/chromeos-amd64-generic-rel"),
     goma_backend = goma.backend.RBE_STAGING,
     goma_enable_ats = True,
 )
@@ -501,6 +526,16 @@ goma_builder(
 
 goma_builder(
     name = "chromeos-amd64-generic-rel-goma-rbe-tot",
+    builder_spec = builder_config.copy_from(
+        "ci/chromeos-amd64-generic-rel",
+        lambda spec: structs.evolve(
+            spec,
+            chromium_config = structs.extend(
+                spec.chromium_config,
+                apply_configs = ["goma_client_candidate"],
+            ),
+        ),
+    ),
     goma_backend = goma.backend.RBE_TOT,
     goma_enable_ats = True,
 )
@@ -520,8 +555,8 @@ def goma_mac_builder(
 
 goma_mac_builder(
     name = "Chromium iOS Goma RBE ToT",
-    goma_backend = goma.backend.RBE_TOT,
     os = os.MAC_11,
+    goma_backend = goma.backend.RBE_TOT,
     xcode = xcode.x13main,
 )
 

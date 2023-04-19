@@ -12,6 +12,7 @@
 #include "base/unguessable_token.h"
 #include "build/chromecast_buildflags.h"
 #include "media/audio/audio_device_description.h"
+#include "media/base/media_switches.h"
 #include "services/audio/input_stream.h"
 #include "services/audio/local_muter.h"
 #include "services/audio/loopback_stream.h"
@@ -25,13 +26,11 @@
 namespace audio {
 
 #if BUILDFLAG(CHROME_WIDE_ECHO_CANCELLATION)
-const base::Feature kMixingForChromeWideAec{"MixingForChromeWideAec",
-                                            base::FEATURE_DISABLED_BY_DEFAULT};
 namespace {
 
 std::unique_ptr<OutputDeviceMixerManager> MaybeCreateOutputDeviceMixerManager(
     media::AudioManager* audio_manager) {
-  if (!base::FeatureList::IsEnabled(kMixingForChromeWideAec))
+  if (!media::IsChromeWideEchoCancellationEnabled())
     return nullptr;
 
   return std::make_unique<OutputDeviceMixerManager>(
@@ -39,10 +38,12 @@ std::unique_ptr<OutputDeviceMixerManager> MaybeCreateOutputDeviceMixerManager(
 }
 
 }  // namespace
-#endif
+#endif  // BUILDFLAG(CHROME_WIDE_ECHO_CANCELLATION)
 
-StreamFactory::StreamFactory(media::AudioManager* audio_manager)
+StreamFactory::StreamFactory(media::AudioManager* audio_manager,
+                             AecdumpRecordingManager* aecdump_recording_manager)
     : audio_manager_(audio_manager),
+      aecdump_recording_manager_(aecdump_recording_manager),
 #if BUILDFLAG(CHROME_WIDE_ECHO_CANCELLATION)
       output_device_mixer_manager_(
           MaybeCreateOutputDeviceMixerManager(audio_manager)),
@@ -84,7 +85,7 @@ void StreamFactory::CreateInputStream(
   input_streams_.insert(std::make_unique<InputStream>(
       std::move(created_callback), std::move(deleter_callback),
       std::move(stream_receiver), std::move(client), std::move(observer),
-      std::move(pending_log), audio_manager_,
+      std::move(pending_log), audio_manager_, aecdump_recording_manager_,
       UserInputMonitor::Create(std::move(key_press_count_buffer)),
       &stream_count_metric_reporter_,
 #if BUILDFLAG(CHROME_WIDE_ECHO_CANCELLATION)
@@ -175,8 +176,9 @@ void StreamFactory::BindMuter(
   if (it == muters_.end()) {
     auto muter_ptr = std::make_unique<LocalMuter>(&coordinator_, group_id);
     muter = muter_ptr.get();
-    muter->SetAllBindingsLostCallback(base::BindRepeating(
-        &StreamFactory::DestroyMuter, base::Unretained(this), muter));
+    muter->SetAllBindingsLostCallback(
+        base::BindRepeating(&StreamFactory::DestroyMuter,
+                            base::Unretained(this), muter_ptr->GetWeakPtr()));
     muters_.emplace_back(std::move(muter_ptr));
   } else {
     muter = it->get();
@@ -248,9 +250,10 @@ void StreamFactory::DestroyOutputStream(OutputStream* stream) {
   DCHECK_EQ(1u, erased);
 }
 
-void StreamFactory::DestroyMuter(LocalMuter* muter) {
+void StreamFactory::DestroyMuter(base::WeakPtr<LocalMuter> muter) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(owning_sequence_);
-  DCHECK(muter);
+  if (!muter)
+    return;
 
   // Output streams have a task posting before destruction (see the OnError
   // function in output_stream.cc). To ensure that stream destruction and
@@ -259,13 +262,10 @@ void StreamFactory::DestroyMuter(LocalMuter* muter) {
   // Otherwise, a "destroy all streams, then destroy the muter" sequence may
   // result in a brief blip of audio.
   auto do_destroy = [](base::WeakPtr<StreamFactory> weak_this,
-                       LocalMuter* muter) {
-    if (weak_this) {
-
-      const auto it =
-          std::find_if(weak_this->muters_.begin(), weak_this->muters_.end(),
-                       base::MatchesUniquePtr(muter));
-      DCHECK(it != weak_this->muters_.end());
+                       base::WeakPtr<LocalMuter> muter) {
+    if (weak_this && muter) {
+      const auto it = base::ranges::find_if(
+          weak_this->muters_, base::MatchesUniquePtr(muter.get()));
 
       // The LocalMuter can still have receivers if a receiver was bound after
       // DestroyMuter is called but before the do_destroy task is run.

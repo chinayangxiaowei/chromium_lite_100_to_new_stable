@@ -49,7 +49,7 @@ public class LayoutManagerChromePhone extends LayoutManagerChrome {
             OneshotSupplierImpl<OverviewModeBehavior> overviewModeBehaviorSupplier,
             Supplier<TopUiThemeColorProvider> topUiThemeColorProvider, JankTracker jankTracker) {
         super(host, contentContainer, true, startSurface, tabContentManagerSupplier,
-                overviewModeBehaviorSupplier, topUiThemeColorProvider, jankTracker);
+                overviewModeBehaviorSupplier, topUiThemeColorProvider, jankTracker, null, null);
     }
 
     @Override
@@ -79,14 +79,14 @@ public class LayoutManagerChromePhone extends LayoutManagerChrome {
     }
 
     @Override
-    public boolean closeAllTabsRequest(boolean incognito) {
+    public void onTabsAllClosing(boolean incognito) {
         if (getActiveLayout() == mStaticLayout && !incognito) {
             startShowing(DeviceClassManager.enableAccessibilityLayout(mHost.getContext())
                             ? mOverviewListLayout
                             : mOverviewLayout,
                     /* animate= */ false);
         }
-        return super.closeAllTabsRequest(incognito);
+        super.onTabsAllClosing(incognito);
     }
 
     @Override

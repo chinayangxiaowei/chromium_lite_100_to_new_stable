@@ -10,11 +10,13 @@
 
 #include "base/callback.h"
 #include "base/hash/md5.h"
+#include "base/run_loop.h"
 #include "base/strings/utf_string_conversions.h"
 #include "base/test/gmock_move_support.h"
 #include "base/test/gtest_util.h"
 #include "base/test/mock_callback.h"
 #include "base/test/scoped_feature_list.h"
+#include "base/threading/thread_task_runner_handle.h"
 #include "base/time/time.h"
 #include "build/build_config.h"
 #include "pdf/document_attachment_info.h"
@@ -23,7 +25,6 @@
 #include "pdf/pdf_features.h"
 #include "pdf/pdfium/pdfium_page.h"
 #include "pdf/pdfium/pdfium_test_base.h"
-#include "pdf/ppapi_migration/callback.h"
 #include "pdf/test/test_client.h"
 #include "pdf/test/test_document_loader.h"
 #include "pdf/ui/thumbnail.h"
@@ -59,6 +60,31 @@ MATCHER_P(LayoutWithOptions, options, "") {
   return arg.options() == options;
 }
 
+blink::WebMouseEvent CreateLeftClickWebMouseEventAtPositionWithClickCount(
+    const gfx::PointF& position,
+    int click_count_param) {
+  return blink::WebMouseEvent(
+      blink::WebInputEvent::Type::kMouseDown, /*position=*/position,
+      /*global_position=*/position, blink::WebPointerProperties::Button::kLeft,
+      click_count_param, blink::WebInputEvent::Modifiers::kLeftButtonDown,
+      blink::WebInputEvent::GetStaticTimeStampForTests());
+}
+
+blink::WebMouseEvent CreateLeftClickWebMouseEventAtPosition(
+    const gfx::PointF& position) {
+  return CreateLeftClickWebMouseEventAtPositionWithClickCount(position, 1);
+}
+
+blink::WebMouseEvent CreateMoveWebMouseEventToPosition(
+    const gfx::PointF& position) {
+  return blink::WebMouseEvent(
+      blink::WebInputEvent::Type::kMouseMove, /*position=*/position,
+      /*global_position=*/position,
+      blink::WebPointerProperties::Button::kNoButton, /*click_count_param=*/0,
+      blink::WebInputEvent::Modifiers::kNoModifiers,
+      blink::WebInputEvent::GetStaticTimeStampForTests());
+}
+
 class MockTestClient : public TestClient {
  public:
   MockTestClient() {
@@ -73,13 +99,6 @@ class MockTestClient : public TestClient {
               (const DocumentLayout& layout),
               (override));
   MOCK_METHOD(void, ScrollToPage, (int page), (override));
-  MOCK_METHOD(void,
-              ScheduleTaskOnMainThread,
-              (const base::Location& from_here,
-               ResultCallback callback,
-               int32_t result,
-               base::TimeDelta delay),
-              (override));
   MOCK_METHOD(void, DocumentFocusChanged, (bool), (override));
   MOCK_METHOD(void, SetLinkUnderCursor, (const std::string&), (override));
 };
@@ -134,15 +153,13 @@ class PDFiumEngineTest : public PDFiumTestBase {
     return loaded_incrementally;
   }
 
-  void FinishWithPluginSizeUpdated(MockTestClient& client,
-                                   PDFiumEngine& engine) {
-    ResultCallback callback;
-    EXPECT_CALL(client, ScheduleTaskOnMainThread)
-        .WillOnce(MoveArg<1>(&callback));
+  void FinishWithPluginSizeUpdated(PDFiumEngine& engine) {
     engine.PluginSizeUpdated({});
 
-    ASSERT_TRUE(callback);
-    std::move(callback).Run(0);
+    base::RunLoop run_loop;
+    base::ThreadTaskRunnerHandle::Get()->PostTask(FROM_HERE,
+                                                  run_loop.QuitClosure());
+    run_loop.Run();
   }
 
   // Counts the number of available pages. Returns `int` instead of `size_t` for
@@ -279,7 +296,7 @@ TEST_F(PDFiumEngineTest, ApplyDocumentLayoutBeforePluginSizeUpdated) {
   EXPECT_EQ(gfx::Size(343, 1664), engine.ApplyDocumentLayout(options));
 
   EXPECT_CALL(client, ScrollToPage(-1)).Times(1);
-  ASSERT_NO_FATAL_FAILURE(FinishWithPluginSizeUpdated(client, engine));
+  FinishWithPluginSizeUpdated(engine);
 }
 
 TEST_F(PDFiumEngineTest, ApplyDocumentLayoutAvoidsInfiniteLoop) {
@@ -511,7 +528,7 @@ TEST_F(PDFiumEngineTest, PluginSizeUpdatedAfterLoad) {
   PDFiumEngine& engine = *initialize_result.engine;
 
   initialize_result.FinishLoading();
-  ASSERT_NO_FATAL_FAILURE(FinishWithPluginSizeUpdated(client, engine));
+  FinishWithPluginSizeUpdated(engine);
 
   EXPECT_EQ(engine.GetNumberOfPages(), CountAvailablePages(engine));
 }
@@ -672,6 +689,32 @@ TEST_F(PDFiumEngineTest, SelectText) {
   EXPECT_EQ(kExpectedText, engine->GetSelectedText());
 }
 
+TEST_F(PDFiumEngineTest, SelectTextBackwards) {
+  NiceMock<MockTestClient> client;
+  std::unique_ptr<PDFiumEngine> engine =
+      InitializeEngine(&client, FILE_PATH_LITERAL("hello_world2.pdf"));
+  ASSERT_TRUE(engine);
+
+  // Plugin size chosen so all pages of the document are visible.
+  engine->PluginSizeUpdated({1024, 4096});
+
+  EXPECT_THAT(engine->GetSelectedText(), IsEmpty());
+
+  constexpr gfx::PointF kSecondPageBeginPosition(100, 420);
+  constexpr gfx::PointF kFirstPageEndPosition(100, 120);
+  EXPECT_TRUE(engine->HandleInputEvent(
+      CreateLeftClickWebMouseEventAtPosition(kSecondPageBeginPosition)));
+  EXPECT_TRUE(engine->HandleInputEvent(
+      CreateMoveWebMouseEventToPosition(kFirstPageEndPosition)));
+
+#if BUILDFLAG(IS_WIN)
+  constexpr char kExpectedText[] = "bye, world!\r\nHello, world!\r\nGoodby";
+#else
+  constexpr char kExpectedText[] = "bye, world!\nHello, world!\nGoodby";
+#endif
+  EXPECT_EQ(kExpectedText, engine->GetSelectedText());
+}
+
 TEST_F(PDFiumEngineTest, SelectCroppedText) {
   NiceMock<MockTestClient> client;
   std::unique_ptr<PDFiumEngine> engine =
@@ -686,6 +729,75 @@ TEST_F(PDFiumEngineTest, SelectCroppedText) {
 #else
   constexpr char kExpectedText[] = "world!\n";
 #endif
+  EXPECT_EQ(kExpectedText, engine->GetSelectedText());
+}
+
+TEST_F(PDFiumEngineTest, SelectTextWithDoubleClick) {
+  NiceMock<MockTestClient> client;
+  std::unique_ptr<PDFiumEngine> engine =
+      InitializeEngine(&client, FILE_PATH_LITERAL("hello_world2.pdf"));
+  ASSERT_TRUE(engine);
+
+  // Plugin size chosen so all pages of the document are visible.
+  engine->PluginSizeUpdated({1024, 4096});
+
+  EXPECT_THAT(engine->GetSelectedText(), IsEmpty());
+
+  constexpr gfx::PointF kPosition(100, 120);
+  EXPECT_TRUE(engine->HandleInputEvent(
+      CreateLeftClickWebMouseEventAtPositionWithClickCount(kPosition, 2)));
+  EXPECT_EQ("Goodbye", engine->GetSelectedText());
+}
+
+TEST_F(PDFiumEngineTest, SelectTextWithTripleClick) {
+  NiceMock<MockTestClient> client;
+  std::unique_ptr<PDFiumEngine> engine =
+      InitializeEngine(&client, FILE_PATH_LITERAL("hello_world2.pdf"));
+  ASSERT_TRUE(engine);
+
+  // Plugin size chosen so all pages of the document are visible.
+  engine->PluginSizeUpdated({1024, 4096});
+
+  EXPECT_THAT(engine->GetSelectedText(), IsEmpty());
+
+  constexpr gfx::PointF kPosition(100, 120);
+  EXPECT_TRUE(engine->HandleInputEvent(
+      CreateLeftClickWebMouseEventAtPositionWithClickCount(kPosition, 3)));
+  EXPECT_EQ("Goodbye, world!", engine->GetSelectedText());
+}
+
+TEST_F(PDFiumEngineTest, SelectLinkAreaWithNoText) {
+  NiceMock<MockTestClient> client;
+  std::unique_ptr<PDFiumEngine> engine =
+      InitializeEngine(&client, FILE_PATH_LITERAL("link_annots.pdf"));
+  ASSERT_TRUE(engine);
+
+  // Plugin size chosen so all pages of the document are visible.
+  engine->PluginSizeUpdated({1024, 4096});
+
+  EXPECT_THAT(engine->GetSelectedText(), IsEmpty());
+
+  constexpr gfx::PointF kStartPosition(90, 120);
+  EXPECT_TRUE(engine->HandleInputEvent(
+      CreateLeftClickWebMouseEventAtPosition(kStartPosition)));
+
+  constexpr gfx::PointF kMiddlePosition(100, 230);
+  EXPECT_TRUE(engine->HandleInputEvent(
+      CreateMoveWebMouseEventToPosition(kMiddlePosition)));
+
+#if BUILDFLAG(IS_WIN)
+  constexpr char kExpectedText[] = "Link Annotations - Page 1\r\nL";
+#else
+  constexpr char kExpectedText[] = "Link Annotations - Page 1\nL";
+#endif
+  EXPECT_EQ(kExpectedText, engine->GetSelectedText());
+
+  constexpr gfx::PointF kEndPosition(430, 230);
+  EXPECT_FALSE(engine->HandleInputEvent(
+      CreateMoveWebMouseEventToPosition(kEndPosition)));
+
+  // This is still `kExpectedText` because of the unit test's uncanny ability to
+  // move the mouse to `kEndPosition` in one move.
   EXPECT_EQ(kExpectedText, engine->GetSelectedText());
 }
 

@@ -25,6 +25,9 @@ namespace {
 
 VideoDecoderType GetPreferredCrosDecoderImplementation(
     gpu::GpuPreferences gpu_preferences) {
+  if (gpu_preferences.disable_accelerated_video_decode)
+    return VideoDecoderType::kUnknown;
+
   if (gpu_preferences.enable_chromeos_direct_video_decoder) {
 #if BUILDFLAG(USE_VAAPI)
     return VideoDecoderType::kVaapi;
@@ -71,6 +74,8 @@ VideoDecoderType GetActualPlatformDecoderImplementation(
     case VideoDecoderType::kVaapi: {
       if (gpu_preferences.gr_context_type != gpu::GrContextType::kVulkan)
         return VideoDecoderType::kUnknown;
+      if (!gpu_info.vulkan_info.has_value())
+        return VideoDecoderType::kUnknown;
       if (gpu_info.vulkan_info->physical_devices.empty())
         return VideoDecoderType::kUnknown;
       constexpr int kIntel = 0x8086;
@@ -103,12 +108,12 @@ std::unique_ptr<VideoDecoder> CreatePlatformVideoDecoder(
                                                  traits.gpu_info)) {
     case VideoDecoderType::kVaapi:
     case VideoDecoderType::kV4L2: {
-      auto frame_pool = std::make_unique<PlatformVideoFramePool>(
-          traits.gpu_memory_buffer_factory);
+      auto frame_pool = std::make_unique<PlatformVideoFramePool>();
       auto frame_converter = MailboxVideoFrameConverter::Create(
           base::BindRepeating(&PlatformVideoFramePool::UnwrapFrame,
                               base::Unretained(frame_pool.get())),
-          traits.gpu_task_runner, traits.get_command_buffer_stub_cb);
+          traits.gpu_task_runner, traits.get_command_buffer_stub_cb,
+          traits.gpu_preferences.enable_unsafe_webgpu);
       return VideoDecoderPipeline::Create(
           traits.task_runner, std::move(frame_pool), std::move(frame_converter),
           traits.media_log->Clone());

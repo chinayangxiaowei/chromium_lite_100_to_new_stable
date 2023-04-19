@@ -12,7 +12,6 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.appcompat.app.AppCompatActivity;
 
-import org.chromium.base.ApiCompatibilityUtils;
 import org.chromium.base.Callback;
 import org.chromium.base.CommandLine;
 import org.chromium.base.Function;
@@ -130,8 +129,6 @@ import org.chromium.ui.util.TokenHolder;
  * A {@link RootUiCoordinator} variant that controls tabbed-mode specific UI.
  */
 public class TabbedRootUiCoordinator extends RootUiCoordinator {
-    private static boolean sEnableStatusIndicatorForTests;
-
     private final ObservableSupplierImpl<EphemeralTabCoordinator> mEphemeralTabCoordinatorSupplier;
     private final RootUiTabObserver mRootUiTabObserver;
     private TabbedSystemUiCoordinator mSystemUiCoordinator;
@@ -591,8 +588,7 @@ public class TabbedRootUiCoordinator extends RootUiCoordinator {
                     }
                 };
         return new ScrimCoordinator(mActivity, delegate, coordinator,
-                ApiCompatibilityUtils.getColor(coordinator.getResources(),
-                        R.color.omnibox_focused_fading_background_color));
+                coordinator.getContext().getColor(R.color.omnibox_focused_fading_background_color));
     }
 
     // Private class methods
@@ -718,6 +714,7 @@ public class TabbedRootUiCoordinator extends RootUiCoordinator {
 
         CommerceSubscriptionsServiceFactory factory = new CommerceSubscriptionsServiceFactory();
         mCommerceSubscriptionsService = factory.getForLastUsedProfile();
+        mCommerceSubscriptionsService.getSubscriptionsManager().queryAndUpdateWaaEnabled();
         mCommerceSubscriptionsService.initDeferredStartupForActivity(
                 mTabModelSelectorSupplier.get(), mActivityLifecycleDispatcher);
     }
@@ -734,9 +731,7 @@ public class TabbedRootUiCoordinator extends RootUiCoordinator {
     private void initStatusIndicatorCoordinator(LayoutManagerImpl layoutManager) {
         // TODO(crbug.com/1035584): Disable on tablets for now as we need to do one or two extra
         // things for tablets.
-        if (DeviceFormFactor.isNonMultiDisplayContextOnTablet(mActivity)
-                || (!ChromeFeatureList.isEnabled(ChromeFeatureList.OFFLINE_INDICATOR_V2)
-                        && !sEnableStatusIndicatorForTests)) {
+        if (DeviceFormFactor.isNonMultiDisplayContextOnTablet(mActivity)) {
             return;
         }
 
@@ -755,11 +750,6 @@ public class TabbedRootUiCoordinator extends RootUiCoordinator {
         };
         mStatusIndicatorCoordinator.addObserver(mStatusIndicatorObserver);
         mStatusIndicatorCoordinator.addObserver(mStatusBarColorController);
-
-        // Don't initialize the offline indicator controller if the feature is disabled.
-        if (!ChromeFeatureList.isEnabled(ChromeFeatureList.OFFLINE_INDICATOR_V2)) {
-            return;
-        }
 
         ObservableSupplierImpl<Boolean> isUrlBarFocusedSupplier = new ObservableSupplierImpl<>();
         isUrlBarFocusedSupplier.set(mToolbarManager.isUrlBarFocused());
@@ -845,11 +835,6 @@ public class TabbedRootUiCoordinator extends RootUiCoordinator {
     @VisibleForTesting
     public StatusIndicatorCoordinator getStatusIndicatorCoordinatorForTesting() {
         return mStatusIndicatorCoordinator;
-    }
-
-    @VisibleForTesting
-    public static void setEnableStatusIndicatorForTests(boolean disable) {
-        sEnableStatusIndicatorForTests = disable;
     }
 
     @VisibleForTesting

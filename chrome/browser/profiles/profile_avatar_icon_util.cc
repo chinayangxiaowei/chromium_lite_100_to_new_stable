@@ -9,7 +9,6 @@
 #include <utility>
 #include <vector>
 
-#include "base/cxx17_backports.h"
 #include "base/feature_list.h"
 #include "base/files/file_util.h"
 #include "base/format_macros.h"
@@ -17,9 +16,10 @@
 #include "base/path_service.h"
 #include "base/rand_util.h"
 #include "base/strings/string_number_conversions.h"
+#include "base/strings/string_piece.h"
+#include "base/strings/string_util.h"
 #include "base/strings/stringprintf.h"
 #include "base/values.h"
-#include "base/win/windows_version.h"
 #include "build/build_config.h"
 #include "build/chromeos_buildflags.h"
 #include "cc/paint/paint_flags.h"
@@ -50,6 +50,7 @@
 #include "url/url_canon.h"
 
 #if BUILDFLAG(IS_WIN)
+#include "base/win/windows_version.h"
 #include "chrome/browser/profiles/profile_attributes_entry.h"
 #include "chrome/grit/chrome_unscaled_resources.h"  // nogncheck crbug.com/1125897
 #include "ui/gfx/icon_util.h"  // For Iconutil::kLargeIconSize.
@@ -624,7 +625,7 @@ int GetDefaultAvatarIconResourceIDAtIndex(size_t index) {
 
 #if BUILDFLAG(IS_WIN)
 int GetOldDefaultAvatar2xIconResourceIDAtIndex(size_t index) {
-  DCHECK_LT(index, base::size(kProfileAvatarIconResources2x));
+  DCHECK_LT(index, std::size(kProfileAvatarIconResources2x));
   return kProfileAvatarIconResources2x[index];
 }
 #endif  // BUILDFLAG(IS_WIN)
@@ -755,7 +756,8 @@ SkBitmap GetWin2xAvatarIconAsSquare(const SkBitmap& source_bitmap) {
   // old avatar icon, shave a couple of columns so the |source_bitmap| is more
   // square. So when resized to a square aspect ratio it looks pretty.
   gfx::Rect frame(gfx::SkIRectToRect(source_bitmap.bounds()));
-  frame.Inset(/*horizontal=*/kIconScaleFactor * 2, /*vertical=*/0);
+  frame.Inset(
+      gfx::Insets::VH(/*vertical=*/0, /*horizontal=*/kIconScaleFactor * 2));
   SkBitmap cropped_bitmap;
   source_bitmap.extractSubset(&cropped_bitmap, gfx::RectToSkIRect(frame));
   return cropped_bitmap;

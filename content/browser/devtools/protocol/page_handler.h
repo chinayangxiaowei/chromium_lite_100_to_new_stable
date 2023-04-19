@@ -65,7 +65,9 @@ class PageHandler : public DevToolsDomainHandler,
   PageHandler(EmulationHandler* emulation_handler,
               BrowserHandler* browser_handler,
               bool allow_unsafe_operations,
-              absl::optional<url::Origin> navigation_initiator_origin);
+              bool is_trusted,
+              absl::optional<url::Origin> navigation_initiator_origin,
+              bool may_read_local_files);
 
   PageHandler(const PageHandler&) = delete;
   PageHandler& operator=(const PageHandler&) = delete;
@@ -107,6 +109,8 @@ class PageHandler : public DevToolsDomainHandler,
       const NavigationRequest* nav_request,
       const BackForwardCacheCanStoreDocumentResult* result,
       const BackForwardCacheCanStoreTreeResult* tree_result);
+
+  void DidActivatePrerender(const NavigationRequest& nav_request);
 
   Response Enable() override;
   Response Disable() override;
@@ -212,7 +216,9 @@ class PageHandler : public DevToolsDomainHandler,
   void OnDownloadDestroyed(download::DownloadItem* item) override;
 
   const bool allow_unsafe_operations_;
+  const bool is_trusted_;
   const absl::optional<url::Origin> navigation_initiator_origin_;
+  const bool may_read_local_files_;
 
   bool enabled_;
   bool bypass_csp_ = false;

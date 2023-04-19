@@ -78,6 +78,7 @@ void FakeInstallAttributesClient::RemoveFirmwareManagementParameters(
     const ::user_data_auth::RemoveFirmwareManagementParametersRequest& request,
     RemoveFirmwareManagementParametersCallback callback) {
   remove_firmware_management_parameters_from_tpm_call_count_++;
+  fwmp_flags_ = absl::nullopt;
   ReturnProtobufMethodCallback(
       ::user_data_auth::RemoveFirmwareManagementParametersReply(),
       std::move(callback));
@@ -85,9 +86,25 @@ void FakeInstallAttributesClient::RemoveFirmwareManagementParameters(
 void FakeInstallAttributesClient::SetFirmwareManagementParameters(
     const ::user_data_auth::SetFirmwareManagementParametersRequest& request,
     SetFirmwareManagementParametersCallback callback) {
+  if (request.has_fwmp()) {
+    fwmp_flags_ = request.fwmp().flags();
+  }
   ReturnProtobufMethodCallback(
       ::user_data_auth::SetFirmwareManagementParametersReply(),
       std::move(callback));
+}
+void FakeInstallAttributesClient::GetFirmwareManagementParameters(
+    const ::user_data_auth::GetFirmwareManagementParametersRequest& request,
+    GetFirmwareManagementParametersCallback callback) {
+  auto reply = ::user_data_auth::GetFirmwareManagementParametersReply();
+  if (fwmp_flags_) {
+    reply.mutable_fwmp()->set_flags(*fwmp_flags_);
+  } else {
+    reply.set_error(
+        user_data_auth::
+            CRYPTOHOME_ERROR_FIRMWARE_MANAGEMENT_PARAMETERS_INVALID);
+  }
+  ReturnProtobufMethodCallback(reply, std::move(callback));
 }
 absl::optional<::user_data_auth::InstallAttributesGetReply>
 FakeInstallAttributesClient::BlockingInstallAttributesGet(
@@ -204,7 +221,7 @@ bool FakeInstallAttributesClient::LoadInstallAttributes() {
                              &cache_file) &&
       base::PathExists(cache_file);
   DCHECK(file_exists);
-  // Mostly copied from chrome/browser/chromeos/tpm/install_attributes.cc.
+  // Mostly copied from ash/components/tpm/install_attributes.cc.
   std::string file_blob;
   if (!base::ReadFileToStringWithMaxSize(cache_file, &file_blob,
                                          kInstallAttributesFileMaxSize)) {

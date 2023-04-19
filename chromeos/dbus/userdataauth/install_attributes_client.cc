@@ -14,7 +14,7 @@
 #include "base/logging.h"
 #include "base/threading/thread_task_runner_handle.h"
 #include "base/time/time.h"
-#include "chromeos/dbus/blocking_method_caller.h"
+#include "chromeos/dbus/common/blocking_method_caller.h"
 #include "chromeos/dbus/userdataauth/fake_install_attributes_client.h"
 #include "dbus/bus.h"
 #include "dbus/message.h"
@@ -123,6 +123,14 @@ class InstallAttributesClientImpl : public InstallAttributesClient {
       const ::user_data_auth::SetFirmwareManagementParametersRequest& request,
       SetFirmwareManagementParametersCallback callback) override {
     CallProtoMethod(::user_data_auth::kSetFirmwareManagementParameters,
+                    ::user_data_auth::kInstallAttributesInterface, request,
+                    std::move(callback));
+  }
+
+  void GetFirmwareManagementParameters(
+      const ::user_data_auth::GetFirmwareManagementParametersRequest& request,
+      GetFirmwareManagementParametersCallback callback) override {
+    CallProtoMethod(::user_data_auth::kGetFirmwareManagementParameters,
                     ::user_data_auth::kInstallAttributesInterface, request,
                     std::move(callback));
   }

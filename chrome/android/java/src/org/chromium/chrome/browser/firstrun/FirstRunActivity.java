@@ -19,11 +19,11 @@ import androidx.fragment.app.Fragment;
 import androidx.viewpager2.widget.ViewPager2;
 
 import org.chromium.base.ActivityState;
-import org.chromium.base.ApiCompatibilityUtils;
 import org.chromium.base.ApplicationStatus;
 import org.chromium.base.ApplicationStatus.ActivityStateListener;
 import org.chromium.base.metrics.RecordHistogram;
 import org.chromium.base.supplier.BooleanSupplier;
+import org.chromium.base.supplier.OneshotSupplier;
 import org.chromium.base.supplier.OneshotSupplierImpl;
 import org.chromium.base.supplier.Supplier;
 import org.chromium.chrome.R;
@@ -97,12 +97,11 @@ public class FirstRunActivity extends FirstRunActivityBase implements FirstRunPa
     @Nullable
     private static FirstRunActivityObserver sObserver;
 
-    private String mResultSyncConsentAccountName;
-
-    private boolean mFlowIsKnown;
     private boolean mPostNativeAndPolicyPagesCreated;
     // Use hasValue() to simplify access. Will be null before initialized.
     private final OneshotSupplierImpl<Boolean> mNativeSideIsInitializedSupplier =
+            new OneshotSupplierImpl<>();
+    private final OneshotSupplierImpl<Boolean> mChildAccountStatusSupplier =
             new OneshotSupplierImpl<>();
 
     private FirstRunFlowSequencer mFirstRunFlowSequencer;
@@ -139,6 +138,10 @@ public class FirstRunActivity extends FirstRunActivityBase implements FirstRunPa
             handleBackPressed();
             return true;
         });
+    }
+
+    private boolean isFlowKnown() {
+        return mFreProperties != null;
     }
 
     /** Creates first page and sets up adapter. Should result UI being shown on the screen. */
@@ -254,14 +257,22 @@ public class FirstRunActivity extends FirstRunActivityBase implements FirstRunPa
         setFinishOnTouchOutside(true);
 
         setContentView(createContentView());
-        ViewDrawBlocker.blockViewDrawUntilReady(
-                findViewById(android.R.id.content), () -> mPages.size() > 0);
+        if (FREMobileIdentityConsistencyFieldTrial.isEnabled() && mPagerAdapter == null) {
+            // SigninFirstRunFragment doesn't use getProperties() and can be shown right away,
+            // without waiting for FirstRunFlowSequencer.
+            createFirstPage();
+        } else {
+            ViewDrawBlocker.blockViewDrawUntilReady(
+                    findViewById(android.R.id.content), () -> mPages.size() > 0);
+        }
 
         mFirstRunFlowSequencer = new FirstRunFlowSequencer(this) {
             @Override
             public void onFlowIsKnown(Bundle freProperties) {
-                mFlowIsKnown = true;
+                assert freProperties != null;
                 mFreProperties = freProperties;
+                mChildAccountStatusSupplier.set(
+                        mFreProperties.getBoolean(SyncConsentFirstRunFragment.IS_CHILD_ACCOUNT));
 
                 onInternalStateChanged();
 
@@ -328,12 +339,7 @@ public class FirstRunActivity extends FirstRunActivityBase implements FirstRunPa
     }
 
     private void onInternalStateChanged() {
-        if (!mFlowIsKnown) {
-            return;
-        }
-
-        if (mNativeSideIsInitializedSupplier.hasValue() && mFreProperties == null) {
-            completeFirstRunExperience();
+        if (!isFlowKnown()) {
             return;
         }
 
@@ -351,7 +357,7 @@ public class FirstRunActivity extends FirstRunActivityBase implements FirstRunPa
     }
 
     private boolean areNativeAndPoliciesInitialized() {
-        return mNativeSideIsInitializedSupplier.hasValue() && mFlowIsKnown
+        return mNativeSideIsInitializedSupplier.hasValue() && isFlowKnown()
                 && this.getPolicyLoadListener().get() != null;
     }
 
@@ -399,7 +405,7 @@ public class FirstRunActivity extends FirstRunActivityBase implements FirstRunPa
                 if (activity.getTaskId() == this.getTaskId()) {
                     activity.finish();
                 } else {
-                    ApiCompatibilityUtils.finishAndRemoveTask(activity);
+                    activity.finishAndRemoveTask();
                     if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.LOLLIPOP_MR1) {
                         // On L ApiCompatibilityUtils.finishAndRemoveTask() sometimes fails. Try one
                         // last time, see crbug.com/781396 for origin of this approach.
@@ -465,12 +471,8 @@ public class FirstRunActivity extends FirstRunActivityBase implements FirstRunPa
     public void completeFirstRunExperience() {
         RecordHistogram.recordMediumTimesHistogram("MobileFre.FromLaunch.FreCompleted",
                 SystemClock.elapsedRealtime() - mIntentCreationElapsedRealtimeMs);
-        if (mFreProperties.getBoolean(OPEN_ADVANCED_SYNC_SETTINGS)) {
-            recordFreProgressHistogram(MobileFreProgress.SYNC_CONSENT_SETTINGS_LINK_CLICK);
-        }
 
-        FirstRunFlowSequencer.markFlowAsCompleted(mResultSyncConsentAccountName,
-                mFreProperties.getBoolean(OPEN_ADVANCED_SYNC_SETTINGS));
+        FirstRunFlowSequencer.markFlowAsCompleted();
 
         if (sObserver != null) sObserver.onUpdateCachedEngineName(this);
 
@@ -509,20 +511,6 @@ public class FirstRunActivity extends FirstRunActivityBase implements FirstRunPa
         }
 
         if (sObserver != null) sObserver.onExitFirstRun(this);
-    }
-
-    @Override
-    public void refuseSync() {
-        mResultSyncConsentAccountName = null;
-        mFreProperties.putBoolean(OPEN_ADVANCED_SYNC_SETTINGS, false);
-        recordFreProgressHistogram(MobileFreProgress.SYNC_CONSENT_DISMISSED);
-    }
-
-    @Override
-    public void acceptSync(String accountName, boolean openSettings) {
-        mResultSyncConsentAccountName = accountName;
-        mFreProperties.putBoolean(OPEN_ADVANCED_SYNC_SETTINGS, openSettings);
-        recordFreProgressHistogram(MobileFreProgress.SYNC_CONSENT_ACCEPTED);
     }
 
     @Override
@@ -605,6 +593,17 @@ public class FirstRunActivity extends FirstRunActivityBase implements FirstRunPa
             RecordHistogram.recordEnumeratedHistogram(
                     "MobileFre.Progress.ViewIntent", state, MobileFreProgress.MAX);
         }
+    }
+
+    @Override
+    public void recordNativeAndPoliciesLoadedHistogram() {
+        RecordHistogram.recordTimesHistogram("MobileFre.FromLaunch.NativeAndPoliciesLoaded",
+                SystemClock.elapsedRealtime() - mIntentCreationElapsedRealtimeMs);
+    }
+
+    @Override
+    public OneshotSupplier<Boolean> getChildAccountStatusListener() {
+        return mChildAccountStatusSupplier;
     }
 
     @Override

@@ -358,7 +358,6 @@ void OverviewController::ToggleOverview(OverviewEnterExitType type) {
       observer.OnOverviewModeEnded();
     if (!should_end_immediately && delayed_animations_.empty())
       OnEndingAnimationComplete(/*canceled=*/false);
-    Shell::Get()->frame_throttling_controller()->EndThrottling();
   } else {
     DCHECK(CanEnterOverview());
     TRACE_EVENT_NESTABLE_ASYNC_BEGIN0("ui", "OverviewController::EnterOverview",
@@ -551,12 +550,19 @@ void OverviewController::OnEndingAnimationComplete(bool canceled) {
     paint_as_active_lock_.reset();
   }
 
+  // Ends the manual frame throttling at the end of overview exit.
+  Shell::Get()->frame_throttling_controller()->EndThrottling();
+
   TRACE_EVENT_NESTABLE_ASYNC_END1("ui", "OverviewController::ExitOverview",
                                   this, "canceled", canceled);
 }
 
 void OverviewController::ResetPauser() {
+  if (overview_session_)
+    overview_session_->set_ignore_activations(true);
   occlusion_tracker_pauser_.reset();
+  if (overview_session_)
+    overview_session_->set_ignore_activations(false);
 }
 
 void OverviewController::UpdateRoundedCornersAndShadow() {

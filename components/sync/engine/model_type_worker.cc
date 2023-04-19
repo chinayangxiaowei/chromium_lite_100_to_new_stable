@@ -20,6 +20,7 @@
 #include "base/strings/strcat.h"
 #include "base/strings/string_util.h"
 #include "base/strings/stringprintf.h"
+#include "base/synchronization/waitable_event.h"
 #include "base/threading/sequenced_task_runner_handle.h"
 #include "base/threading/thread_restrictions.h"
 #include "base/trace_event/memory_usage_estimator.h"
@@ -195,10 +196,6 @@ ModelTypeWorker::ModelTypeWorker(ModelType type,
 }
 
 ModelTypeWorker::~ModelTypeWorker() {
-  base::UmaHistogramCounts1000(
-      std::string("Sync.UndecryptedEntitiesOnDataTypeDisabled.") +
-          ModelTypeToHistogramSuffix(type_),
-      entries_pending_decryption_.size());
   if (model_type_processor_) {
     // This will always be the case in production today.
     model_type_processor_->DisconnectSync();
@@ -478,6 +475,10 @@ void ModelTypeWorker::ApplyUpdates(StatusController* status) {
       // with it. This eventually unblocks a worker having undecryptable data.
       MaybeDropPendingUpdatesEncryptedWith(key);
     }
+  }
+
+  if (HasNonDeletionUpdates()) {
+    status->add_updated_type(type_);
   }
 
   // Download cycle is done, pass all updates to the processor.
@@ -883,6 +884,15 @@ ModelTypeWorker::RemoveKeysNoLongerUnknown() {
       });
 
   return removed_keys;
+}
+
+bool ModelTypeWorker::HasNonDeletionUpdates() const {
+  for (const UpdateResponseData& update : pending_updates_) {
+    if (!update.entity.is_deleted()) {
+      return true;
+    }
+  }
+  return false;
 }
 
 GetLocalChangesRequest::GetLocalChangesRequest(

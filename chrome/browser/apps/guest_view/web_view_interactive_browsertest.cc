@@ -63,6 +63,10 @@
 #include "ui/gfx/range/range.h"
 #include "ui/touch_selection/touch_selection_menu_runner.h"
 
+#if BUILDFLAG(IS_MAC)
+#include "ui/base/test/scoped_fake_nswindow_fullscreen.h"
+#endif
+
 using extensions::AppWindow;
 using extensions::ExtensionsAPIClient;
 using guest_view::GuestViewBase;
@@ -982,17 +986,9 @@ IN_PROC_BROWSER_TEST_F(WebViewPointerLockInteractiveTest,
              NO_TEST_SERVER);
 }
 
-// Disable this on mac, throws an assertion failure on teardown which
-// will result in flakiness:
-//
-// "not is fullscreen state"
-// "*** Assertion failure in -[_NSWindowFullScreenTransition
-//     transitionedWindowFrame],"
-// See similar bug: http://crbug.com/169820.
-//
-// In addition to the above, these tests are flaky on some platforms:
+// These tests are flaky on some platforms:
 // http://crbug.com/468660
-#if BUILDFLAG(IS_WIN)
+#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC)
 #define MAYBE_FullscreenAllow_EmbedderHasPermission \
   FullscreenAllow_EmbedderHasPermission
 #else
@@ -1001,6 +997,10 @@ IN_PROC_BROWSER_TEST_F(WebViewPointerLockInteractiveTest,
 #endif
 IN_PROC_BROWSER_TEST_F(WebViewInteractiveTest,
                        MAYBE_FullscreenAllow_EmbedderHasPermission) {
+#if BUILDFLAG(IS_MAC)
+  ui::test::ScopedFakeNSWindowFullscreen fake_fullscreen;
+#endif
+
   FullscreenTestHelper("testFullscreenAllow",
                        "web_view/fullscreen/embedder_has_permission");
 }
@@ -1488,6 +1488,40 @@ IN_PROC_BROWSER_TEST_F(WebViewInteractiveTest, MAYBE_KeyboardFocusWindowCycle) {
       "window.runCommand('testKeyboardFocusRunNextStep', 'aBcxYz');"));
 
   ASSERT_TRUE(next_step_listener.WaitUntilSatisfied());
+}
+
+// Ensure that destroying a <webview> with a pending mouse lock request doesn't
+// leave a stale mouse lock widget pointer in the embedder WebContents. See
+// https://crbug.com/1346245.
+IN_PROC_BROWSER_TEST_F(WebViewInteractiveTest,
+                       DestroyGuestWithPendingPointerLock) {
+  LoadAndLaunchPlatformApp("web_view/pointer_lock_pending",
+                           "WebViewTest.LAUNCHED");
+
+  content::WebContents* embedder_web_contents = GetFirstAppWindowWebContents();
+  content::WebContents* guest_web_contents =
+      GetGuestViewManager()->WaitForSingleGuestCreated();
+
+  // The embedder is configured to remove the <webview> as soon as it receives
+  // the pointer lock permission request from the guest, without responding to
+  // it.  Hence, have the guest request pointer lock and wait for its
+  // destruction.
+  content::RenderFrameDeletedObserver observer(
+      guest_web_contents->GetMainFrame());
+  EXPECT_TRUE(content::ExecuteScript(
+      guest_web_contents,
+      "document.querySelector('div').requestPointerLock()"));
+  observer.WaitUntilDeleted();
+
+  // The embedder WebContents shouldn't have a mouse lock widget.
+  EXPECT_FALSE(GetMouseLockWidget(embedder_web_contents));
+
+  // Close the embedder app and ensure that this doesn't crash, which used to
+  // be the case if the mouse lock widget (now destroyed) hadn't been cleared
+  // in the embedder.
+  content::WebContentsDestroyedWatcher destroyed_watcher(embedder_web_contents);
+  CloseAppWindow(GetFirstAppWindow());
+  destroyed_watcher.Wait();
 }
 
 #if BUILDFLAG(IS_MAC)

@@ -38,6 +38,7 @@
 #include "ui/aura/client/aura_constants.h"
 #include "ui/compositor/layer.h"
 #include "ui/compositor/layer_animation_element.h"
+#include "ui/compositor/layer_animator.h"
 #include "ui/display/screen.h"
 
 namespace ash {
@@ -310,6 +311,7 @@ void TabletModeWindowManager::OnSplitViewStateChanged(
       SplitViewController::Get(Shell::GetPrimaryRootWindow())->end_reason()) {
     case SplitViewController::EndReason::kNormal:
     case SplitViewController::EndReason::kUnsnappableWindowActivated:
+    case SplitViewController::EndReason::kRootWindowDestroyed:
       break;
     case SplitViewController::EndReason::kHomeLauncherPressed:
     case SplitViewController::EndReason::kActiveUserChanged:

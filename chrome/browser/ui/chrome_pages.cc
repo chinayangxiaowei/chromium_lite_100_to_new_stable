@@ -136,6 +136,10 @@ void ShowHelpImpl(Browser* browser, Profile* profile, HelpSource source) {
   LaunchSystemWebAppAsync(profile, web_app::SystemAppType::HELP, params);
 #else
   GURL url;
+#if BUILDFLAG(IS_CHROMEOS_LACROS)
+  // If this is Lacros, forward the request to Ash.
+  url = GURL(kOsUIHelpAppURL);
+#else
   switch (source) {
     case HELP_SOURCE_KEYBOARD:
       url = GURL(kChromeHelpViaKeyboardURL);
@@ -154,17 +158,18 @@ void ShowHelpImpl(Browser* browser, Profile* profile, HelpSource source) {
     case HELP_SOURCE_WEBUI:
       url = GURL(kChromeHelpViaWebUIURL);
       break;
-#endif
+#endif  // BUILDFLAG(IS_CHROMEOS_ASH)
     default:
       NOTREACHED() << "Unhandled help source " << source;
   }
+#endif  // BUILDFLAG_IS_CHROMEOS_LACROS)
   std::unique_ptr<ScopedTabbedBrowserDisplayer> displayer;
   if (!browser) {
     displayer = std::make_unique<ScopedTabbedBrowserDisplayer>(profile);
     browser = displayer->browser();
   }
   ShowSingletonTab(browser, url);
-#endif
+#endif  // BUILDFLAG(IS_CHROMEOS_ASH) && BUILDFLAG(GOOGLE_CHROME_BRANDING)
 }
 
 std::string GenerateContentSettingsExceptionsSubPage(ContentSettingsType type) {
@@ -244,9 +249,12 @@ void ShowHistory(Browser* browser, const std::string& host_name) {
   base::RecordAction(UserMetricsAction("ShowHistory"));
   GURL url = GURL(kChromeUIHistoryURL);
   if (!host_name.empty()) {
-    url = url.Resolve(base::StringPrintf(
-        "/?q=%s",
-        net::EscapeQueryParamValue(host_name, /*use_plus=*/false).c_str()));
+    GURL::Replacements replacements;
+    std::string query("q=");
+    query += net::EscapeQueryParamValue(base::StrCat({"host:", host_name}),
+                                        /*use_plus=*/false);
+    replacements.SetQueryStr(query);
+    url = url.ReplaceComponents(replacements);
   }
   ShowSingletonTabIgnorePathOverwriteNTP(browser, url);
 }
@@ -448,6 +456,11 @@ void ShowPrivacySandboxSettings(Browser* browser) {
   ShowSettingsSubPage(browser, kPrivacySandboxSubPage);
 }
 
+void ShowPrivacySandboxAdPersonalization(Browser* browser) {
+  base::RecordAction(UserMetricsAction("Options_ShowPrivacySandbox"));
+  ShowSettingsSubPage(browser, kPrivacySandboxAdPersonalizationSubPage);
+}
+
 #if BUILDFLAG(IS_CHROMEOS_ASH)
 void ShowEnterpriseManagementPageInTabbedBrowser(Browser* browser) {
   // Management shows in a tab because it has a "back" arrow that takes the
@@ -485,8 +498,6 @@ void ShowScanningApp(Profile* profile) {
 }
 
 void ShowDiagnosticsApp(Profile* profile) {
-  DCHECK(base::FeatureList::IsEnabled(chromeos::features::kDiagnosticsApp));
-
   LaunchSystemWebAppAsync(profile, web_app::SystemAppType::DIAGNOSTICS);
 }
 

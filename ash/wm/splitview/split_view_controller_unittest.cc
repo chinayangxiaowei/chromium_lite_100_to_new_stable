@@ -359,7 +359,11 @@ class TestWindowStateDelegate : public WindowStateDelegate {
   ~TestWindowStateDelegate() override = default;
 
   // WindowStateDelegate:
-  void OnDragStarted(int component) override { drag_in_progress_ = true; }
+  std::unique_ptr<PresentationTimeRecorder> OnDragStarted(
+      int component) override {
+    drag_in_progress_ = true;
+    return nullptr;
+  }
   void OnDragFinished(bool cancel, const gfx::PointF& location) override {
     drag_in_progress_ = false;
   }
@@ -676,7 +680,8 @@ TEST_F(SplitViewControllerTest, SnapWindowWithUnresizableSnapProperty) {
 // i.e., half of the screen is occupied by a snapped window and half of the
 // screen is occupied by the overview windows grid, the next activatable window
 // will be picked to snap when exiting the overview mode.
-TEST_F(SplitViewControllerTest, ExitOverviewTest) {
+// TODO(crbug.com/1312252): Re-enable this test
+TEST_F(SplitViewControllerTest, DISABLED_ExitOverviewTest) {
   ui::ScopedAnimationDurationScaleMode anmatin_scale(
       ui::ScopedAnimationDurationScaleMode::NON_ZERO_DURATION);
 
@@ -995,6 +1000,48 @@ TEST_F(SplitViewControllerTest, SplitDividerWindowBounds) {
   // divider to one third of the screen size, and vice versa.
   EXPECT_NEAR(window1_width, old_window2_width, 1);
   EXPECT_NEAR(window2_width, old_window1_width, 1);
+}
+
+// Verify that disconnecting a display while dragging the split view divider in
+// it in tablet mode won't lead to a crash. Regression test for
+// https://crbug.com/1316892.
+TEST_F(SplitViewControllerTest,
+       DisplayDisconnectionWhileDraggingSplitDividerInTabletMode) {
+  ui::ScopedAnimationDurationScaleMode animation_scale(
+      ui::ScopedAnimationDurationScaleMode::NORMAL_DURATION);
+
+  UpdateDisplay("800x600,800x600");
+
+  Shell::Get()->tablet_mode_controller()->SetEnabledForTest(true);
+  EXPECT_TRUE(EnterOverview());
+
+  // Turn off the display mirror mode.
+  Shell::Get()->display_manager()->SetMirrorMode(display::MirrorMode::kOff,
+                                                 absl::nullopt);
+
+  // Create a window on the secondary display.
+  std::unique_ptr<aura::Window> w(
+      CreateTestWindowInShellWithBounds(gfx::Rect(900, 0, 100, 100)));
+
+  // Snap the window on the second display.
+  auto* split_view_controller = SplitViewController::Get(w->GetRootWindow());
+  split_view_controller->SnapWindow(w.get(), SplitViewController::LEFT);
+  auto* split_view_divider = split_view_controller->split_view_divider();
+  ASSERT_TRUE(split_view_divider);
+
+  auto* event_generator = GetEventGenerator();
+  const gfx::Point divider_center_pointer =
+      split_view_divider->GetDividerBoundsInScreen(/*is_dragging=*/false)
+          .CenterPoint();
+  event_generator->PressTouch(divider_center_pointer);
+
+  // Drag the split view divider without releasing the drag.
+  const gfx::Vector2d delta(100, 0);
+  event_generator->MoveTouch(divider_center_pointer + delta);
+
+  // Now disconnect the second display, verify there's no crash.
+  UpdateDisplay("800x600");
+  base::RunLoop().RunUntilIdle();
 }
 
 // Tests that the bounds of the snapped windows and divider are adjusted when
@@ -5556,7 +5603,9 @@ TEST_F(SplitViewAppDraggingTest, BackdropBoundsDuringDrag) {
 // virtual keyboard improvement and the virtual keyboard.
 class SplitViewKeyboardTest : public SplitViewControllerTest {
  public:
-  SplitViewKeyboardTest() = default;
+  SplitViewKeyboardTest() {
+    scoped_feature_list_.InitAndEnableFeature(features::kAdjustSplitViewForVK);
+  }
 
   SplitViewKeyboardTest(const SplitViewKeyboardTest&) = delete;
   SplitViewKeyboardTest& operator=(const SplitViewKeyboardTest&) = delete;
@@ -5566,7 +5615,6 @@ class SplitViewKeyboardTest : public SplitViewControllerTest {
   // SplitViewControllerTest:
   void SetUp() override {
     SplitViewControllerTest::SetUp();
-    scoped_feature_list_.InitAndEnableFeature(features::kAdjustSplitViewForVK);
     SetVirtualKeyboardEnabled(true);
   }
 
@@ -5826,6 +5874,49 @@ TEST_F(SplitViewKeyboardTest, RestoreByActivatingTopWindow) {
 
   // Activate the top window. The bottom window will restore to original bounds.
   top_client->Focus();
+  EXPECT_TRUE(keyboard_controller()->IsKeyboardVisible());
+  EXPECT_EQ(orig_bottom_bounds, bottom_window->GetBoundsInScreen());
+  EXPECT_EQ(orig_divider_bounds, split_view_controller()
+                                     ->split_view_divider()
+                                     ->divider_widget()
+                                     ->GetWindowBoundsInScreen());
+  EXPECT_TRUE(split_view_controller()->split_view_divider()->IsAdjustable());
+}
+
+// Tests that when there is no activated input field in the bottom window,
+// showing keyboard (on-screen keyboard) will not change the split view layout.
+TEST_F(SplitViewKeyboardTest, NoInputField) {
+  UpdateDisplay("1200x800");
+  int64_t display_id = display::Screen::GetScreen()->GetPrimaryDisplay().id();
+  display::DisplayManager* display_manager = Shell::Get()->display_manager();
+  display::test::ScopedSetInternalDisplayId set_internal(display_manager,
+                                                         display_id);
+  ScreenOrientationControllerTestApi test_api(
+      Shell::Get()->screen_orientation_controller());
+  ASSERT_EQ(chromeos::OrientationType::kLandscapePrimary,
+            test_api.GetCurrentOrientation());
+
+  gfx::Rect bounds(0, 0, 400, 400);
+  std::unique_ptr<aura::Window> bottom_window(CreateWindow(bounds));
+
+  split_view_controller()->SnapWindow(bottom_window.get(),
+                                      SplitViewController::RIGHT);
+
+  test_api.SetDisplayRotation(display::Display::ROTATE_270,
+                              display::Display::RotationSource::ACTIVE);
+  EXPECT_EQ(chromeos::OrientationType::kPortraitPrimary,
+            test_api.GetCurrentOrientation());
+  EXPECT_FALSE(split_view_controller()->IsPhysicalLeftOrTop(
+      SplitViewController::RIGHT, bottom_window.get()));
+
+  const gfx::Rect orig_bottom_bounds = bottom_window->GetBoundsInScreen();
+  const gfx::Rect orig_divider_bounds = split_view_controller()
+                                            ->split_view_divider()
+                                            ->divider_widget()
+                                            ->GetWindowBoundsInScreen();
+  // Enable keyboard. The bottom window and divider will not move since there is
+  // no input field.
+  keyboard_controller()->ShowKeyboard(/*lock=*/false);
   EXPECT_TRUE(keyboard_controller()->IsKeyboardVisible());
   EXPECT_EQ(orig_bottom_bounds, bottom_window->GetBoundsInScreen());
   EXPECT_EQ(orig_divider_bounds, split_view_controller()

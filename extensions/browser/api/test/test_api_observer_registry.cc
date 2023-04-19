@@ -8,6 +8,7 @@
 
 #include "base/check.h"
 #include "base/no_destructor.h"
+#include "base/observer_list.h"
 
 namespace extensions {
 
@@ -47,6 +48,12 @@ bool TestApiObserverRegistry::NotifyTestMessage(
         any_listener_will_respond || listener_will_respond;
   }
   return any_listener_will_respond;
+}
+
+void TestApiObserverRegistry::NotifyScriptResult(
+    const base::Value& result_value) {
+  for (auto& observer : observers_)
+    observer.OnScriptResult(result_value);
 }
 
 void TestApiObserverRegistry::AddObserver(TestApiObserver* observer) {

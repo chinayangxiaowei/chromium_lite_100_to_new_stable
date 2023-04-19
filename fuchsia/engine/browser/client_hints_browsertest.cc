@@ -4,6 +4,7 @@
 
 #include "base/callback_forward.h"
 #include "base/strings/string_number_conversions.h"
+#include "build/build_config.h"
 #include "components/version_info/version_info.h"
 #include "content/public/browser/client_hints_controller_delegate.h"
 #include "content/public/browser/web_contents.h"
@@ -27,6 +28,9 @@ constexpr const char kRoundTripTimeCH[] = "rtt";
 constexpr const char kDeviceMemoryCH[] = "sec-ch-device-memory";
 constexpr const char kUserAgentCH[] = "sec-ch-ua";
 constexpr const char kFullVersionListCH[] = "sec-ch-ua-full-version-list";
+constexpr const char kArchCH[] = "sec-ch-ua-arch";
+constexpr const char kBitnessCH[] = "sec-ch-ua-bitness";
+constexpr const char kPlatformCH[] = "sec-ch-ua-platform";
 
 // |str| is interpreted as a decimal number or integer.
 void ExpectStringIsNonNegativeNumber(std::string& str) {
@@ -37,14 +41,12 @@ void ExpectStringIsNonNegativeNumber(std::string& str) {
 
 }  // namespace
 
-// TODO(crbug.com/1356277): Client Hints temporarily disabled as it is causing
-// several apps to fail. Re-enable Client Hints tests after breakage is fixed.
-class DISABLED_ClientHintsTest : public FrameImplTestBaseWithServer {
+class ClientHintsTest : public FrameImplTestBaseWithServer {
  public:
-  DISABLED_ClientHintsTest() = default;
-  ~DISABLED_ClientHintsTest() override = default;
-  DISABLED_ClientHintsTest(const DISABLED_ClientHintsTest&) = delete;
-  DISABLED_ClientHintsTest& operator=(const DISABLED_ClientHintsTest&) = delete;
+  ClientHintsTest() = default;
+  ~ClientHintsTest() override = default;
+  ClientHintsTest(const ClientHintsTest&) = delete;
+  ClientHintsTest& operator=(const ClientHintsTest&) = delete;
 
   void SetUpOnMainThread() override {
     FrameImplTestBaseWithServer::SetUpOnMainThread();
@@ -120,7 +122,7 @@ class DISABLED_ClientHintsTest : public FrameImplTestBaseWithServer {
   cr_fuchsia::FrameForTest frame_for_test_;
 };
 
-IN_PROC_BROWSER_TEST_F(DISABLED_ClientHintsTest, NumericalClientHints) {
+IN_PROC_BROWSER_TEST_F(ClientHintsTest, NumericalClientHints) {
   SetClientHintsForTestServerToRequest(std::string(kRoundTripTimeCH) + "," +
                                        std::string(kDeviceMemoryCH));
   GetAndVerifyClientHint(kRoundTripTimeCH,
@@ -129,7 +131,7 @@ IN_PROC_BROWSER_TEST_F(DISABLED_ClientHintsTest, NumericalClientHints) {
                          base::BindRepeating(&ExpectStringIsNonNegativeNumber));
 }
 
-IN_PROC_BROWSER_TEST_F(DISABLED_ClientHintsTest, InvalidClientHint) {
+IN_PROC_BROWSER_TEST_F(ClientHintsTest, InvalidClientHint) {
   // Check browser handles requests for an invalid Client Hint.
   SetClientHintsForTestServerToRequest("not-a-client-hint");
   GetAndVerifyClientHint("not-a-client-hint",
@@ -141,8 +143,7 @@ IN_PROC_BROWSER_TEST_F(DISABLED_ClientHintsTest, InvalidClientHint) {
 // Low-entropy User Agent Client Hints are sent by default without the origin
 // needing to request them. For a list of low-entropy Client Hints, see
 // https://wicg.github.io/client-hints-infrastructure/#low-entropy-hint-table/
-IN_PROC_BROWSER_TEST_F(DISABLED_ClientHintsTest,
-                       LowEntropyClientHintsAreSentByDefault) {
+IN_PROC_BROWSER_TEST_F(ClientHintsTest, LowEntropyClientHintsAreSentByDefault) {
   GetAndVerifyClientHint(
       kUserAgentCH, base::BindRepeating([](std::string& str) {
         EXPECT_TRUE(str.find("Chromium") != std::string::npos);
@@ -151,7 +152,7 @@ IN_PROC_BROWSER_TEST_F(DISABLED_ClientHintsTest,
       }));
 }
 
-IN_PROC_BROWSER_TEST_F(DISABLED_ClientHintsTest,
+IN_PROC_BROWSER_TEST_F(ClientHintsTest,
                        LowEntropyClientHintsAreSentWhenRequested) {
   SetClientHintsForTestServerToRequest(kUserAgentCH);
   GetAndVerifyClientHint(
@@ -162,7 +163,7 @@ IN_PROC_BROWSER_TEST_F(DISABLED_ClientHintsTest,
       }));
 }
 
-IN_PROC_BROWSER_TEST_F(DISABLED_ClientHintsTest,
+IN_PROC_BROWSER_TEST_F(ClientHintsTest,
                        HighEntropyClientHintsAreNotSentByDefault) {
   GetAndVerifyClientHint(kFullVersionListCH,
                          base::BindRepeating([](std::string& str) {
@@ -170,7 +171,7 @@ IN_PROC_BROWSER_TEST_F(DISABLED_ClientHintsTest,
                          }));
 }
 
-IN_PROC_BROWSER_TEST_F(DISABLED_ClientHintsTest,
+IN_PROC_BROWSER_TEST_F(ClientHintsTest,
                        HighEntropyClientHintsAreSentWhenRequested) {
   SetClientHintsForTestServerToRequest(kFullVersionListCH);
   GetAndVerifyClientHint(
@@ -181,7 +182,35 @@ IN_PROC_BROWSER_TEST_F(DISABLED_ClientHintsTest,
       }));
 }
 
-IN_PROC_BROWSER_TEST_F(DISABLED_ClientHintsTest, RemoveClientHint) {
+IN_PROC_BROWSER_TEST_F(ClientHintsTest, ArchitectureIsArmOrX86) {
+  SetClientHintsForTestServerToRequest(kArchCH);
+  GetAndVerifyClientHint(kArchCH, base::BindRepeating([](std::string& str) {
+#if defined(ARCH_CPU_X86_64)
+                           EXPECT_EQ(str, "\"x86\"");
+#elif defined(ARCH_CPU_ARM64)
+                           EXPECT_EQ(str, "\"arm\"");
+#else
+#error Unsupported CPU architecture
+#endif
+                         }));
+}
+
+IN_PROC_BROWSER_TEST_F(ClientHintsTest, BitnessIs64) {
+  SetClientHintsForTestServerToRequest(kBitnessCH);
+  GetAndVerifyClientHint(kBitnessCH, base::BindRepeating([](std::string& str) {
+                           EXPECT_EQ(str, "\"64\"");
+                         }));
+}
+
+IN_PROC_BROWSER_TEST_F(ClientHintsTest, PlatformIsFuchsia) {
+  // Platform is a low-entropy Client Hint, so no need for test server to
+  // request it.
+  GetAndVerifyClientHint(kPlatformCH, base::BindRepeating([](std::string& str) {
+                           EXPECT_EQ(str, "\"Fuchsia\"");
+                         }));
+}
+
+IN_PROC_BROWSER_TEST_F(ClientHintsTest, RemoveClientHint) {
   SetClientHintsForTestServerToRequest(std::string(kRoundTripTimeCH) + "," +
                                        std::string(kDeviceMemoryCH));
   GetAndVerifyClientHint(kDeviceMemoryCH,
@@ -196,8 +225,7 @@ IN_PROC_BROWSER_TEST_F(DISABLED_ClientHintsTest, RemoveClientHint) {
                          }));
 }
 
-IN_PROC_BROWSER_TEST_F(DISABLED_ClientHintsTest,
-                       AdditionalClientHintsAreAlwaysSent) {
+IN_PROC_BROWSER_TEST_F(ClientHintsTest, AdditionalClientHintsAreAlwaysSent) {
   SetClientHintsForTestServerToRequest(kRoundTripTimeCH);
 
   // Enable device memory as an additional Client Hint.

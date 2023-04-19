@@ -42,6 +42,7 @@
 #include "chrome/browser/ash/login/quick_unlock/pin_storage_prefs.h"
 #include "chrome/browser/ash/login/quick_unlock/quick_unlock_factory.h"
 #include "chrome/browser/ash/login/quick_unlock/quick_unlock_storage.h"
+#include "chrome/browser/ash/login/quick_unlock/quick_unlock_utils.h"
 #include "chrome/browser/ash/login/session/user_session_manager.h"
 #include "chrome/browser/ash/login/ui/user_adding_screen.h"
 #include "chrome/browser/ash/login/users/chrome_user_manager.h"
@@ -54,7 +55,7 @@
 #include "chrome/common/chrome_switches.h"
 #include "chrome/grit/browser_resources.h"
 #include "chrome/grit/generated_resources.h"
-#include "chromeos/dbus/biod/constants.pb.h"
+#include "chromeos/ash/components/dbus/biod/constants.pb.h"
 #include "chromeos/dbus/session_manager/session_manager_client.h"
 #include "components/password_manager/core/browser/hash_password_manager.h"
 #include "components/prefs/pref_change_registrar.h"
@@ -75,6 +76,10 @@
 #include "ui/gfx/image/image.h"
 #include "url/gurl.h"
 
+// TODO(b/228873153): Remove after figuring out the root cause of the bug
+#undef ENABLED_VLOG_LEVEL
+#define ENABLED_VLOG_LEVEL 1
+
 namespace ash {
 namespace {
 
@@ -85,7 +90,8 @@ bool IsFingerprintAvailableForUser(const user_manager::User* user) {
   quick_unlock::QuickUnlockStorage* quick_unlock_storage =
       quick_unlock::QuickUnlockFactory::GetForUser(user);
   return quick_unlock_storage &&
-         quick_unlock_storage->IsFingerprintAuthenticationAvailable();
+         quick_unlock_storage->IsFingerprintAuthenticationAvailable(
+             quick_unlock::Purpose::kUnlock);
 }
 
 // Observer to start ScreenLocker when locking the screen is requested.
@@ -203,6 +209,7 @@ ScreenLocker::ScreenLocker(const user_manager::UserList& users)
 }
 
 void ScreenLocker::Init() {
+  VLOG(1) << "ScreenLocker::Init()";
   input_method::InputMethodManager* imm =
       input_method::InputMethodManager::Get();
   saved_ime_state_ = imm->GetActiveIMEState();
@@ -393,6 +400,7 @@ void ScreenLocker::Authenticate(const UserContext& user_context,
     if (unlock_attempt_type_ == AUTH_PIN) {
       quick_unlock::PinBackend::GetInstance()->TryAuthenticate(
           user_context.GetAccountId(), *user_context.GetKey(),
+          quick_unlock::Purpose::kUnlock,
           base::BindOnce(&ScreenLocker::OnPinAttemptDone,
                          weak_factory_.GetWeakPtr(), user_context));
       // OnPinAttemptDone will call ContinueAuthenticate.
@@ -607,6 +615,7 @@ void ScreenLocker::HandleShowLockScreenRequest() {
 
 // static
 void ScreenLocker::Show() {
+  VLOG(1) << "ScreenLocker::Show()";
   base::RecordAction(UserMetricsAction("ScreenLocker_Show"));
   DCHECK(base::CurrentUIThread::IsSet());
 
@@ -819,7 +828,8 @@ void ScreenLocker::OnAuthScanDone(
   quick_unlock::QuickUnlockStorage* quick_unlock_storage =
       quick_unlock::QuickUnlockFactory::GetForUser(primary_user);
   if (!quick_unlock_storage ||
-      !quick_unlock_storage->IsFingerprintAuthenticationAvailable()) {
+      !quick_unlock_storage->IsFingerprintAuthenticationAvailable(
+          quick_unlock::Purpose::kUnlock)) {
     // In theory this should be very rare. The auth session should be ended when
     // fingerprint becomes unavailable.
     quick_unlock_storage->fingerprint_storage()->RecordFingerprintUnlockResult(
@@ -899,7 +909,8 @@ void ScreenLocker::OnFingerprintAuthFailure(const user_manager::User& user) {
   quick_unlock::QuickUnlockStorage* quick_unlock_storage =
       quick_unlock::QuickUnlockFactory::GetForUser(&user);
   if (quick_unlock_storage &&
-      quick_unlock_storage->IsFingerprintAuthenticationAvailable()) {
+      quick_unlock_storage->IsFingerprintAuthenticationAvailable(
+          quick_unlock::Purpose::kUnlock)) {
     quick_unlock_storage->fingerprint_storage()->AddUnlockAttempt();
     if (quick_unlock_storage->fingerprint_storage()->ExceededUnlockAttempts()) {
       VLOG(1) << "Fingerprint unlock is disabled because it reached maximum"
@@ -926,8 +937,9 @@ void ScreenLocker::MaybeDisablePinAndFingerprintFromTimeout(
 
   // Update PIN state.
   quick_unlock::PinBackend::GetInstance()->CanAuthenticate(
-      account_id, base::BindOnce(&ScreenLocker::OnPinCanAuthenticate,
-                                 weak_factory_.GetWeakPtr(), account_id));
+      account_id, quick_unlock::Purpose::kUnlock,
+      base::BindOnce(&ScreenLocker::OnPinCanAuthenticate,
+                     weak_factory_.GetWeakPtr(), account_id));
 
   quick_unlock::QuickUnlockStorage* quick_unlock_storage =
       quick_unlock::QuickUnlockFactory::GetForAccountId(account_id);
@@ -948,8 +960,8 @@ void ScreenLocker::MaybeDisablePinAndFingerprintFromTimeout(
               account_id));
     } else {
       // Strong auth is unavailable; disable fingerprint if it was enabled.
-      if (quick_unlock_storage->fingerprint_storage()
-              ->IsFingerprintAvailable()) {
+      if (quick_unlock_storage->fingerprint_storage()->IsFingerprintAvailable(
+              quick_unlock::Purpose::kUnlock)) {
         VLOG(1) << "Require strong auth to make fingerprint unlock available.";
         LoginScreen::Get()->GetModel()->SetFingerprintState(
             account_id, FingerprintState::DISABLED_FROM_TIMEOUT);
@@ -972,7 +984,8 @@ void ScreenLocker::OnPinCanAuthenticate(const AccountId& account_id,
 void ScreenLocker::UpdateFingerprintStateForUser(
     const user_manager::User* user) {
   LoginScreen::Get()->GetModel()->SetFingerprintState(
-      user->GetAccountId(), quick_unlock::GetFingerprintStateForUser(user));
+      user->GetAccountId(), quick_unlock::GetFingerprintStateForUser(
+                                user, quick_unlock::Purpose::kUnlock));
 }
 
 }  // namespace ash

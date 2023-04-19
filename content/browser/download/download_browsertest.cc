@@ -47,6 +47,7 @@
 #include "content/public/browser/browser_thread.h"
 #include "content/public/browser/download_request_utils.h"
 #include "content/public/common/content_client.h"
+#include "content/public/common/content_features.h"
 #include "content/public/common/content_paths.h"
 #include "content/public/common/content_switches.h"
 #include "content/public/common/webplugininfo.h"
@@ -1495,9 +1496,11 @@ class DownloadFencedFrameTest
         blink::features::FencedFramesImplementationType::kMPArch) {
       fenced_frame_helper_ = std::make_unique<test::FencedFrameTestHelper>();
     } else {
-      feature_list_.InitAndEnableFeatureWithParameters(
-          blink::features::kFencedFrames,
-          {{"implementation_type", "shadow_dom"}});
+      feature_list_.InitWithFeaturesAndParameters(
+          {{blink::features::kFencedFrames,
+            {{"implementation_type", "shadow_dom"}}},
+           {features::kPrivacySandboxAdsAPIsOverride, {}}},
+          {/* disabled_features */});
     }
   }
 
@@ -1516,19 +1519,28 @@ class DownloadFencedFrameTest
 
     // FencedFrameTestHelper only supports the MPArch version of fenced frames.
     // So need to maually create a fenced frame for the ShadowDOM version.
-    TestNavigationManager navigation(shell()->web_contents(), url);
     constexpr char kAddFencedFrameScript[] = R"({
         const fenced_frame = document.createElement('fencedframe');
-        fenced_frame.src = $1;
         document.body.appendChild(fenced_frame);
     })";
-    EXPECT_TRUE(
-        ExecJs(fenced_frame_parent, JsReplace(kAddFencedFrameScript, url)));
+    EXPECT_TRUE(ExecJs(fenced_frame_parent, kAddFencedFrameScript));
+
+    // Navigate the fenced frame from inside itself, just like the
+    // `FencedFrameTestHelper` does for MPArch.
+    RenderFrameHostImpl* rfh =
+        static_cast<RenderFrameHostImpl*>(ChildFrameAt(fenced_frame_parent, 0));
+    FrameTreeNode* target_node = rfh->frame_tree_node();
+    constexpr char kNavigateInFencedFrameScript[] = R"({
+        location.href = $1;
+    })";
+
+    TestNavigationManager navigation(shell()->web_contents(), url);
+    EXPECT_EQ(url.spec(),
+              EvalJs(rfh, JsReplace(kNavigateInFencedFrameScript, url)));
     navigation.WaitForNavigationFinished();
 
-    RenderFrameHost* new_frame = ChildFrameAt(fenced_frame_parent, 0);
-
-    return new_frame;
+    EXPECT_FALSE(target_node->current_frame_host()->IsErrorDocument());
+    return target_node->current_frame_host();
   }
 
  private:
@@ -3747,6 +3759,58 @@ IN_PROC_BROWSER_TEST_F(DownloadContentTest, UpdateSiteForCookies) {
 
   // Check that the cookies were correctly set on a.test.
   EXPECT_EQ("A=lax; B=strict",
+            content::GetCookies(shell()->web_contents()->GetBrowserContext(),
+                                site_a.GetURL("a.test", "/")));
+}
+
+// Tests that if `update_first_party_url_on_redirect` is set to false, download
+// will not behave like a top-level frame navigation and SameSite=Strict cookies
+// will not be set on a redirection.
+IN_PROC_BROWSER_TEST_F(
+    DownloadContentTest,
+    SiteForCookies_DownloadUrl_NotUpdateFirstPartyUrlOnRedirect) {
+  net::EmbeddedTestServer site_a;
+  net::EmbeddedTestServer site_b;
+
+  base::StringPairs cookie_headers;
+  cookie_headers.push_back(std::make_pair(
+      std::string("Set-Cookie"), std::string("A=strict; SameSite=Strict")));
+  cookie_headers.push_back(std::make_pair(std::string("Set-Cookie"),
+                                          std::string("B=lax; SameSite=Lax")));
+
+  // This will request a URL on b.test, which redirects to a url that sets the
+  // cookies on a.test.
+  site_a.RegisterRequestHandler(CreateBasicResponseHandler(
+      "/sets-samesite-cookies", net::HTTP_OK, cookie_headers,
+      "application/octet-stream", "abcd"));
+  ASSERT_TRUE(site_a.Start());
+  site_b.RegisterRequestHandler(
+      CreateRedirectHandler("/redirected-download",
+                            site_a.GetURL("a.test", "/sets-samesite-cookies")));
+  ASSERT_TRUE(site_b.Start());
+
+  // Download the file.
+  SetupEnsureNoPendingDownloads();
+  std::unique_ptr<download::DownloadUrlParameters> download_parameters(
+      DownloadRequestUtils::CreateDownloadForWebContentsMainFrame(
+          shell()->web_contents(),
+          site_b.GetURL("b.test", "/redirected-download"),
+          TRAFFIC_ANNOTATION_FOR_TESTS));
+  download_parameters->set_update_first_party_url_on_redirect(false);
+  std::unique_ptr<DownloadTestObserver> observer(CreateWaiter(shell(), 1));
+  DownloadManagerForShell(shell())->DownloadUrl(std::move(download_parameters));
+  observer->WaitForFinished();
+
+  // Get the important info from other threads and check it.
+  EXPECT_TRUE(EnsureNoPendingDownloads());
+
+  std::vector<download::DownloadItem*> downloads;
+  DownloadManagerForShell(shell())->GetAllDownloads(&downloads);
+  ASSERT_EQ(1u, downloads.size());
+  ASSERT_EQ(download::DownloadItem::COMPLETE, downloads[0]->GetState());
+
+  // Check that the cookies were not set on a.test.
+  EXPECT_EQ("",
             content::GetCookies(shell()->web_contents()->GetBrowserContext(),
                                 site_a.GetURL("a.test", "/")));
 }

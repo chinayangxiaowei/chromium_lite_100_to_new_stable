@@ -156,6 +156,10 @@ class TestBluetoothAdapter final : public BluetoothAdapter {
   }
 #endif  // BUILDFLAG(IS_CHROMEOS_ASH) || BUILDFLAG(IS_CHROMEOS_LACROS)
 
+#if BUILDFLAG(IS_CHROMEOS_ASH)
+  void SetStandardChromeOSAdapterName() override {}
+#endif  // BUILDFLAG(IS_CHROMEOS_ASH)
+
   void OnStartDiscoverySessionQuitLoop(
       base::OnceClosure run_loop_quit,
       std::unique_ptr<device::BluetoothDiscoverySession> discovery_session) {
@@ -704,7 +708,8 @@ TEST_F(BluetoothAdapterTest, StartDiscoverySessionError_Destroy) {
 }
 
 // TODO(scheib): Enable BluetoothTest fixture tests on all platforms.
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_MAC)
+// Flaky on Mac. See crbug.com/1334462
+#if BUILDFLAG(IS_ANDROID)
 #define MAYBE_ConstructDefaultAdapter ConstructDefaultAdapter
 #else
 #define MAYBE_ConstructDefaultAdapter DISABLED_ConstructDefaultAdapter

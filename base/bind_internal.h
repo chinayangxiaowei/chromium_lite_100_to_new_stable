@@ -859,8 +859,8 @@ bool QueryCancellationTraits(const BindStateBase* base,
 template <typename Functor, typename Receiver, typename... Unused>
 std::enable_if_t<
     !(MakeFunctorTraits<Functor>::is_method &&
-      std::is_pointer_v<std::decay_t<Receiver>> &&
-      IsRefCountedType<std::remove_pointer_t<std::decay_t<Receiver>>>::value)>
+      IsPointerV<std::decay_t<Receiver>> &&
+      IsRefCountedType<RemovePointerT<std::decay_t<Receiver>>>::value)>
 BanUnconstructedRefCountedReceiver(const Receiver& receiver, Unused&&...) {}
 
 template <typename Functor>
@@ -870,8 +870,8 @@ void BanUnconstructedRefCountedReceiver() {}
 template <typename Functor, typename Receiver, typename... Unused>
 std::enable_if_t<
     MakeFunctorTraits<Functor>::is_method &&
-    std::is_pointer_v<std::decay_t<Receiver>> &&
-    IsRefCountedType<std::remove_pointer_t<std::decay_t<Receiver>>>::value>
+    IsPointerV<std::decay_t<Receiver>> &&
+    IsRefCountedType<RemovePointerT<std::decay_t<Receiver>>>::value>
 BanUnconstructedRefCountedReceiver(const Receiver& receiver, Unused&&...) {
   DCHECK(receiver);
 
@@ -881,7 +881,7 @@ BanUnconstructedRefCountedReceiver(const Receiver& receiver, Unused&&...) {
   // ran fast enough, the newly created instance could be destroyed before `oo`
   // makes another reference.
   //   Foo::Foo() {
-  //     base::PostTask(FROM_HERE, base::BindOnce(&Foo::Bar, this));
+  //     base::ThreadPool::PostTask(FROM_HERE, base::BindOnce(&Foo::Bar, this));
   //   }
   //
   //   scoped_refptr<Foo> oo = new Foo();
@@ -896,7 +896,7 @@ BanUnconstructedRefCountedReceiver(const Receiver& receiver, Unused&&...) {
   //   // static
   //   scoped_refptr<Foo> Foo::Create() {
   //     auto foo = base::WrapRefCounted(new Foo());
-  //     base::PostTask(FROM_HERE, base::BindOnce(&Foo::Bar, foo));
+  //     base::ThreadPool::PostTask(FROM_HERE, base::BindOnce(&Foo::Bar, foo));
   //     return foo;
   //   }
   //
@@ -1006,19 +1006,20 @@ struct MakeBindStateTypeImpl<true, Functor, Receiver, BoundArgs...> {
   static_assert(!std::is_array_v<std::remove_reference_t<Receiver>>,
                 "First bound argument to a method cannot be an array.");
   static_assert(
-      !std::is_pointer_v<DecayedReceiver> ||
-          IsRefCountedType<std::remove_pointer_t<DecayedReceiver>>::value,
+      !IsPointerV<DecayedReceiver> ||
+          IsRefCountedType<RemovePointerT<DecayedReceiver>>::value,
       "Receivers may not be raw pointers. If using a raw pointer here is safe"
       " and has no lifetime concerns, use base::Unretained() and document why"
       " it's safe.");
+
   static_assert(!HasRefCountedTypeAsRawPtr<std::decay_t<BoundArgs>...>::value,
                 "A parameter is a refcounted type and needs scoped_refptr.");
 
  public:
   using Type = BindState<
       std::decay_t<Functor>,
-      std::conditional_t<std::is_pointer_v<DecayedReceiver>,
-                         scoped_refptr<std::remove_pointer_t<DecayedReceiver>>,
+      std::conditional_t<IsPointerV<DecayedReceiver>,
+                         scoped_refptr<RemovePointerT<DecayedReceiver>>,
                          DecayedReceiver>,
       MakeStorageType<BoundArgs>...>;
 };

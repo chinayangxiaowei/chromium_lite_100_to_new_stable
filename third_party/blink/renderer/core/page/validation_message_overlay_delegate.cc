@@ -18,6 +18,7 @@
 #include "third_party/blink/renderer/core/layout/layout_view.h"
 #include "third_party/blink/renderer/core/loader/empty_clients.h"
 #include "third_party/blink/renderer/core/page/page.h"
+#include "third_party/blink/renderer/core/page/page_animator.h"
 #include "third_party/blink/renderer/core/page/page_popup_client.h"
 #include "third_party/blink/renderer/platform/data_resource_helper.h"
 #include "third_party/blink/renderer/platform/graphics/paint/cull_rect.h"
@@ -84,6 +85,8 @@ ValidationMessageOverlayDelegate::~ValidationMessageOverlayDelegate() {
     EventDispatchForbiddenScope::AllowUserAgentEvents allow_events;
     page_->WillBeDestroyed();
   }
+  if (destroyed_ptr_)
+    *destroyed_ptr_ = true;
 }
 
 LocalFrameView& ValidationMessageOverlayDelegate::FrameView() const {
@@ -174,10 +177,18 @@ void ValidationMessageOverlayDelegate::CreatePage(const FrameOverlay& overlay) {
   WriteDocument(data.get());
   float zoom_factor = anchor_->GetDocument().GetFrame()->PageZoomFactor();
   frame->SetPageZoomFactor(zoom_factor);
-  // Propagate deprecated DSF for platforms without use-zoom-for-dsf.
-  page_->SetDeviceScaleFactorDeprecated(
-      main_page_->DeviceScaleFactorDeprecated());
+
+  // ForceSynchronousDocumentInstall can cause another call to
+  // ValidationMessageClientImpl::ShowValidationMessage, which will hide this
+  // validation message and may even delete this. In order to avoid continuing
+  // when this is destroyed, |destroyed| will be set to true in the destructor.
+  bool destroyed = false;
+  DCHECK(!destroyed_ptr_);
+  destroyed_ptr_ = &destroyed;
   frame->ForceSynchronousDocumentInstall("text/html", data);
+  if (destroyed)
+    return;
+  destroyed_ptr_ = nullptr;
 
   Element& main_message = GetElementById("main-message");
   main_message.setTextContent(message_);

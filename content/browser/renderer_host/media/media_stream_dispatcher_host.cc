@@ -11,13 +11,13 @@
 #include "base/check_op.h"
 #include "base/command_line.h"
 #include "base/task/bind_post_task.h"
-#include "base/task/post_task.h"
 #include "base/task/task_runner_util.h"
 #include "build/build_config.h"
 #include "content/browser/renderer_host/media/media_stream_manager.h"
 #include "content/browser/renderer_host/media/video_capture_manager.h"
 #include "content/public/browser/browser_task_traits.h"
 #include "content/public/browser/browser_thread.h"
+#include "content/public/browser/global_routing_id.h"
 #include "content/public/browser/render_frame_host.h"
 #include "content/public/browser/render_process_host.h"
 #include "content/public/browser/render_view_host.h"
@@ -69,26 +69,40 @@ StartObservingWebContents(int render_process_id,
 }
 
 #if !BUILDFLAG(IS_ANDROID)
+// Helper for getting the top-level WebContents associated with a given ID.
+// Returns nullptr if one does not exist (e.g. has gone away).
+WebContents* GetMainFrameWebContents(const GlobalRoutingID& global_routing_id) {
+  DCHECK_CURRENTLY_ON(BrowserThread::UI);
+
+  if (global_routing_id == GlobalRoutingID()) {
+    return nullptr;
+  }
+
+  RenderFrameHost* const rfh = RenderFrameHost::FromID(
+      global_routing_id.child_id, global_routing_id.route_id);
+  return rfh ? WebContents::FromRenderFrameHost(rfh->GetMainFrame()) : nullptr;
+}
+
 // Checks whether a track living in the WebContents indicated by
 // (render_process_id, render_frame_id) may be cropped to the crop-target
 // indicated by |crop_id|.
-bool IsCropTargetValid(int render_process_id,
-                       int render_frame_id,
-                       const base::Token& crop_id) {
-  RenderFrameHost* const rfh =
-      RenderFrameHost::FromID(render_process_id, render_frame_id);
-  if (!rfh) {
+bool MayCrop(const GlobalRoutingID& capturing_id,
+             const GlobalRoutingID& captured_id,
+             const base::Token& crop_id) {
+  DCHECK_CURRENTLY_ON(BrowserThread::UI);
+
+  WebContents* const capturing_wc = GetMainFrameWebContents(capturing_id);
+  if (!capturing_wc) {
     return false;
   }
 
-  WebContents* const web_contents =
-      WebContents::FromRenderFrameHost(rfh->GetMainFrame());
-  if (!web_contents) {
+  WebContents* const captured_wc = GetMainFrameWebContents(captured_id);
+  if (capturing_wc != captured_wc) {  // Null or not-same-tab.
     return false;
   }
 
   CropIdWebContentsHelper* const helper =
-      CropIdWebContentsHelper::FromWebContents(web_contents);
+      CropIdWebContentsHelper::FromWebContents(captured_wc);
   if (!helper) {
     // No crop-IDs were ever produced on this WebContents.
     // Any non-zero crop-ID should be rejected on account of being
@@ -271,7 +285,7 @@ void MediaStreamDispatcherHost::OnDeviceCaptureHandleChange(
     const std::string& label,
     const blink::MediaStreamDevice& device) {
   DCHECK_CURRENTLY_ON(BrowserThread::IO);
-  DCHECK(device.display_media_info.has_value());
+  DCHECK(device.display_media_info);
 
   GetMediaStreamDeviceObserver()->OnDeviceCaptureHandleChange(label, device);
 }
@@ -530,6 +544,10 @@ void MediaStreamDispatcherHost::Crop(const base::UnguessableToken& device_id,
                                      CropCallback callback) {
   DCHECK_CURRENTLY_ON(BrowserThread::IO);
 
+  const GlobalRoutingID captured_id =
+      media_stream_manager_->video_capture_manager()->GetGlobalRoutingID(
+          device_id);
+
   // Hop to the UI thread to verify that cropping to |crop_id| is permitted
   // from this particular context. Namely, cropping is currently only allowed
   // for self-capture, so the crop_id has to be associated with the top-level
@@ -538,8 +556,9 @@ void MediaStreamDispatcherHost::Crop(const base::UnguessableToken& device_id,
   // when SelfOwnedReceiver properly supports this.
   GetUIThreadTaskRunner({})->PostTaskAndReplyWithResult(
       FROM_HERE,
-      base::BindOnce(&IsCropTargetValid, render_process_id_, render_frame_id_,
-                     crop_id),
+      base::BindOnce(&MayCrop,
+                     GlobalRoutingID(render_process_id_, render_frame_id_),
+                     captured_id, crop_id),
       base::BindOnce(&MediaStreamDispatcherHost::OnCropValidationComplete,
                      weak_factory_.GetWeakPtr(), device_id, crop_id,
                      crop_version,
@@ -564,6 +583,32 @@ void MediaStreamDispatcherHost::OnCropValidationComplete(
       device_id, crop_id, crop_version, std::move(callback));
 }
 #endif
+
+void MediaStreamDispatcherHost::GetOpenDevice(
+    const base::UnguessableToken& session_id,
+    GetOpenDeviceCallback callback) {
+  DCHECK_CURRENTLY_ON(BrowserThread::IO);
+
+  if (!base::FeatureList::IsEnabled(features::kMediaStreamTrackTransfer)) {
+    ReceivedBadMessage(render_process_id_,
+                       bad_message::MSDH_GET_OPEN_DEVICE_USE_WITHOUT_FEATURE);
+
+    std::move(callback).Run(
+        blink::mojom::MediaStreamRequestResult::NOT_SUPPORTED, nullptr);
+    return;
+  }
+  // TODO(https://crbug.com/1288839): Implement GetOpenDevice in
+  // MediaStreamManager and call that.
+
+  // TODO(https://crbug.com/1288839): Decide whether we need to have another
+  // mojo method, called by the first renderer to say "I'm going to be
+  // transferring this track, allow the receiving renderer to call GetOpenDevice
+  // on it", and whether we can/need to specific the destination renderer/frame
+  // in this case.
+
+  std::move(callback).Run(blink::mojom::MediaStreamRequestResult::NOT_SUPPORTED,
+                          nullptr);
+}
 
 void MediaStreamDispatcherHost::ReceivedBadMessage(
     int render_process_id,

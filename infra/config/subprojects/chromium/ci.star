@@ -11,10 +11,10 @@ load("//project.star", "settings")
 # Bucket-wide defaults
 ci.defaults.set(
     bucket = "ci",
-    build_numbers = True,
-    cpu = cpu.X86_64,
     triggered_by = ["chromium-gitiles-trigger"],
+    cpu = cpu.X86_64,
     free_space = builders.free_space.standard,
+    build_numbers = True,
 )
 
 luci.bucket(
@@ -26,12 +26,12 @@ luci.bucket(
         ),
         acl.entry(
             roles = acl.BUILDBUCKET_TRIGGERER,
+            groups = "project-chromium-ci-schedulers",
             users = [
                 # Allow chrome-release/branch builders on luci.chrome.official.infra
                 # to schedule builds
                 "chrome-official-brancher@chops-service-accounts.iam.gserviceaccount.com",
             ],
-            groups = "project-chromium-ci-schedulers",
         ),
         acl.entry(
             roles = acl.BUILDBUCKET_OWNER,
@@ -83,8 +83,8 @@ luci.gitiles_poller(
 
 # The main console includes some entries for builders from the chrome project
 [branches.console_view_entry(
-    builder = "chrome:ci/{}".format(name),
     console_view = "main",
+    builder = "chrome:ci/{}".format(name),
     category = "chrome",
     short_name = short_name,
 ) for name, short_name in (
@@ -110,13 +110,14 @@ consoles.console_view(
 
 # The sheriff.fuchsia console includes some entries for builders from the chrome project
 [branches.console_view_entry(
-    builder = "chrome:ci/{}".format(name),
     console_view = "sheriff.fuchsia",
+    builder = "chrome:ci/{}".format(name),
     category = category,
     short_name = short_name,
 ) for name, category, short_name in (
     ("fuchsia-fyi-arm64-size", "fyi", "a64-size"),
     ("fuchsia-fyi-astro", "astro", "gpu"),
+    ("fuchsia-fyi-atlas", "atlas", "gpu"),
     ("fuchsia-fyi-sherlock", "sherlock", "gpu"),
     ("fuchsia-builder-perf-fyi", "fyi", "builder-perf"),
     ("fuchsia-builder-perf-x64", "fyi", "builder-perf-x64"),
@@ -141,7 +142,6 @@ exec("./ci/chromium.gpu.fyi.star")
 exec("./ci/chromium.linux.star")
 exec("./ci/chromium.mac.star")
 exec("./ci/chromium.memory.star")
-exec("./ci/chromium.mojo.star")
 exec("./ci/chromium.packager.star")
 exec("./ci/chromium.rust.star")
 exec("./ci/chromium.swangle.star")

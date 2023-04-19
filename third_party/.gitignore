@@ -12,9 +12,6 @@
 /amd/
 /android_build_tools/aapt2/aapt2
 /android_build_tools/aapt2/lib64/*.so
-/android_build_tools/art/dexlayout
-/android_build_tools/art/lib/*.so
-/android_build_tools/art/profman
 /android_build_tools/bundletool/*.jar
 /android_ndk/
 /android_prebuilts/build_tools
@@ -31,6 +28,14 @@
 /androidx/libs/
 /angle
 /angle_dx11
+/apache-mac/LICENSE
+/apache-mac/bin/*
+/apache-mac/lib/*
+/apache-mac/libexec/*
+/apache-mac-arm64/LICENSE
+/apache-mac-arm64/bin/*
+/apache-mac-arm64/lib/*
+/apache-mac-arm64/libexec/*
 /apache-linux/LICENSE
 /apache-linux/bin/*
 /apache-linux/lib/*
@@ -170,6 +175,8 @@
 /minizip/src
 /mkl
 /mocha
+/js_code_coverage/*.tar.gz
+/js_code_coverage/node_modules
 /mockito/src
 /nacl_sdk_binaries/
 /nasm
@@ -177,12 +184,11 @@
 /neon_2_sse/src
 /netty-tcnative/src
 /netty4/src
-/js_code_coverage/node_modules
-/js_code_coverage/*.tar.gz
+/ninja
+/node/*.tar.gz
 /node/linux
 /node/mac
 /node/node_modules
-/node/*.tar.gz
 /node/win
 /nss
 /objenesis/lib/
@@ -223,7 +229,6 @@
 /scan-build/src
 /scons-2.0.1
 /securemessage/src
-/shaderc/src
 /shaka-player/dist/
 /skia
 /smhasher/src
@@ -236,6 +241,7 @@
 /sqlite/src
 /sqlite4java/lib/
 /subresource-filter-ruleset/data/UnindexedRules
+/swift-format
 /swiftshader/
 /syzygy
 /syzygy/binaries
@@ -247,7 +253,6 @@
 /ub-uiautomator/lib
 /ukey2/src
 /usb_ids
-/usrsctp/usrsctplib
 /v8-i18n
 /valgrind
 /vulkan-deps

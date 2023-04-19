@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "base/gtest_prod_util.h"
+#include "base/strings/string_piece.h"
 #include "base/time/time.h"
 #include "net/base/net_export.h"
 #include "net/cookies/cookie_access_result.h"
@@ -348,7 +349,8 @@ class NET_EXPORT CanonicalCookie {
       const CookieOptions& options,
       const CookieAccessParams& params,
       const std::vector<std::string>& cookieable_schemes,
-      const CookieAccessResult* cookie_access_result = nullptr) const;
+      const absl::optional<CookieAccessResult>& cookie_access_result =
+          absl::nullopt) const;
 
   std::string DebugString() const;
 
@@ -359,7 +361,7 @@ class NET_EXPORT CanonicalCookie {
                                          const std::string& path_string);
 
   // Returns a "null" time if expiration was unspecified or invalid.
-  static base::Time CanonExpiration(const ParsedCookie& pc,
+  static base::Time ParseExpiration(const ParsedCookie& pc,
                                     const base::Time& current,
                                     const base::Time& server_time);
 
@@ -420,6 +422,7 @@ class NET_EXPORT CanonicalCookie {
 
  private:
   FRIEND_TEST_ALL_PREFIXES(CanonicalCookieTest, TestPrefixHistograms);
+  FRIEND_TEST_ALL_PREFIXES(CanonicalCookieTest, TestHasHiddenPrefixName);
 
   // This constructor does not validate or canonicalize their inputs;
   // the resulting CanonicalCookies should not be relied on to be canonical
@@ -483,6 +486,9 @@ class NET_EXPORT CanonicalCookie {
   CookieEffectiveSameSite GetEffectiveSameSite(
       CookieAccessSemantics access_semantics) const;
 
+  // Checks for values that could be misinterpreted as a cookie name prefix.
+  static bool HasHiddenPrefixName(const base::StringPiece cookie_value);
+
   // Returns whether the cookie was created at most |age_threshold| ago.
   bool IsRecentlyCreated(base::TimeDelta age_threshold) const;
 
@@ -496,12 +502,16 @@ class NET_EXPORT CanonicalCookie {
 
   // Returns true iff the cookie is a partitioned cookie with a nonce or that
   // does not violate the semantics of the Partitioned attribute:
-  // - Cannot be SameParty
-  // - Must have a __Host- prefix
-  static bool IsCookiePartitionedValid(const ParsedCookie& parsed_cookie,
+  // - Must have the Secure and Path=/ attributes
+  // - Must not have the Domain or SameParty attributes
+  static bool IsCookiePartitionedValid(const GURL& url,
+                                       const ParsedCookie& parsed_cookie,
                                        bool partition_has_nonce);
-  static bool IsCookiePartitionedValid(bool is_partitioned,
-                                       CookiePrefix prefix,
+  static bool IsCookiePartitionedValid(const GURL& url,
+                                       bool secure,
+                                       const std::string& domain,
+                                       const std::string& path,
+                                       bool is_partitioned,
                                        bool is_same_party,
                                        bool partition_has_nonce);
 

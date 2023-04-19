@@ -11,6 +11,7 @@
 
 #include "base/memory/raw_ptr.h"
 #include "base/memory/ref_counted.h"
+#include "base/time/time.h"
 #include "build/build_config.h"
 #include "content/public/browser/global_request_id.h"
 #include "content/public/browser/reload_type.h"
@@ -326,6 +327,11 @@ struct NavigateParams {
   // TypedNavigationUpgradeThrottle to determine if the navigation should be
   // observed and fall back to using http scheme if necessary.
   bool is_using_https_as_default_scheme = false;
+
+  // Indicates the degree of privacy sensitivity for the navigation.
+  // Can be used to drive privacy decisions.
+  enum class PrivacySensitivity { CROSS_OTR, CROSS_PROFILE, DEFAULT };
+  PrivacySensitivity privacy_sensitivity = PrivacySensitivity::DEFAULT;
 
  private:
   NavigateParams();

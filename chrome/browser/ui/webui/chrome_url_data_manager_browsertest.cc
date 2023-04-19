@@ -205,6 +205,7 @@ IN_PROC_BROWSER_TEST_P(ChromeURLDataManagerWebUITrustedTypesTest,
 // This list was derived from chrome://about. :)
 static constexpr const char* const kChromeUrls[] = {
     "chrome://accessibility",
+    "chrome://apc-internals",
     "chrome://attribution-internals",
     "chrome://autofill-internals",
     "chrome://blob-internals",
@@ -316,7 +317,8 @@ static constexpr const char* const kChromeUrls[] = {
     "chrome://linux-proxy-config",
     "chrome://multidevice-setup",
     "chrome://network",
-    "chrome://oobe",
+    // TODO(crbug.com/1329058): Eliminate chrome://oobe/login
+    "chrome://oobe/login",
     "chrome://os-credits",
     "chrome://os-settings",
     "chrome://power",

@@ -30,6 +30,7 @@
 #include "third_party/blink/renderer/platform/mediastream/media_stream_component.h"
 #include "third_party/blink/renderer/platform/mediastream/media_stream_descriptor.h"
 #include "third_party/blink/renderer/platform/scheduler/public/post_cross_thread_task.h"
+#include "third_party/blink/renderer/platform/wtf/cross_thread_copier_media.h"
 #include "third_party/blink/renderer/platform/wtf/cross_thread_functional.h"
 #include "third_party/libyuv/include/libyuv/convert.h"
 #include "third_party/libyuv/include/libyuv/planar_functions.h"
@@ -194,18 +195,18 @@ WebMediaPlayerMSCompositor::WebMediaPlayerMSCompositor(
       dropped_frame_count_(0),
       stopped_(true),
       render_started_(!stopped_) {
+  weak_this_ = weak_ptr_factory_.GetWeakPtr();
   if (surface_layer_mode != WebMediaPlayer::SurfaceLayerMode::kNever) {
     submitter_ = std::move(submitter);
 
     PostCrossThreadTask(
         *video_frame_compositor_task_runner_, FROM_HERE,
         CrossThreadBindOnce(&WebMediaPlayerMSCompositor::InitializeSubmitter,
-                            weak_ptr_factory_.GetWeakPtr()));
+                            weak_this_));
     update_submission_state_callback_ = base::BindPostTask(
         video_frame_compositor_task_runner_,
         ConvertToBaseRepeatingCallback(CrossThreadBindRepeating(
-            &WebMediaPlayerMSCompositor::SetIsSurfaceVisible,
-            weak_ptr_factory_.GetWeakPtr())));
+            &WebMediaPlayerMSCompositor::SetIsSurfaceVisible, weak_this_)));
   }
 
   HeapVector<Member<MediaStreamComponent>> video_components;
@@ -233,35 +234,15 @@ WebMediaPlayerMSCompositor::WebMediaPlayerMSCompositor(
 }
 
 WebMediaPlayerMSCompositor::~WebMediaPlayerMSCompositor() {
-  // Ensured by destructor traits.
   DCHECK(video_frame_compositor_task_runner_->BelongsToCurrentThread());
-
-  if (submitter_) {
-    video_frame_compositor_task_runner_->DeleteSoon(FROM_HERE,
-                                                    std::move(submitter_));
-  } else {
-    DCHECK(!video_frame_provider_client_)
-        << "Must call StopUsingProvider() before dtor!";
+  if (video_frame_provider_client_) {
+    video_frame_provider_client_->StopUsingProvider();
   }
-}
-
-// static
-void WebMediaPlayerMSCompositorTraits::Destruct(
-    const WebMediaPlayerMSCompositor* compositor) {
-  if (!compositor->video_frame_compositor_task_runner_
-           ->BelongsToCurrentThread()) {
-    PostCrossThreadTask(
-        *compositor->video_frame_compositor_task_runner_, FROM_HERE,
-        CrossThreadBindOnce(&WebMediaPlayerMSCompositorTraits::Destruct,
-                            CrossThreadUnretained(compositor)));
-    return;
-  }
-  delete compositor;
 }
 
 void WebMediaPlayerMSCompositor::InitializeSubmitter() {
   DCHECK(video_frame_compositor_task_runner_->BelongsToCurrentThread());
-  submitter_->Initialize(this, /* is_media_stream = */ true);
+  submitter_->Initialize(this, /*is_media_stream=*/true);
 }
 
 void WebMediaPlayerMSCompositor::SetIsSurfaceVisible(
@@ -304,7 +285,7 @@ void WebMediaPlayerMSCompositor::SetForceBeginFrames(bool enable) {
     PostCrossThreadTask(
         *video_frame_compositor_task_runner_, FROM_HERE,
         CrossThreadBindOnce(&WebMediaPlayerMSCompositor::SetForceBeginFrames,
-                            weak_ptr_factory_.GetWeakPtr(), enable));
+                            weak_this_, enable));
     return;
   }
 
@@ -361,7 +342,8 @@ void WebMediaPlayerMSCompositor::SetVideoFrameProviderClient(
 
 void WebMediaPlayerMSCompositor::RecordFrameDecodedStats(
     absl::optional<base::TimeTicks> frame_received_time,
-    absl::optional<base::TimeDelta> frame_processing_time) {
+    absl::optional<base::TimeDelta> frame_processing_time,
+    absl::optional<uint32_t> frame_rtp_timestamp) {
   DCHECK(io_task_runner_->BelongsToCurrentThread());
   if (frame_received_time && last_enqueued_frame_receive_time_) {
     base::TimeDelta frame_receive_time_delta =
@@ -384,6 +366,13 @@ void WebMediaPlayerMSCompositor::RecordFrameDecodedStats(
     LOCAL_HISTOGRAM_TIMES(UmaPrefix() + ".DecodeDuration",
                           frame_processing_time.value());
   }
+
+  if (frame_rtp_timestamp && last_enqueued_frame_rtp_timestamp_) {
+    LOCAL_HISTOGRAM_COUNTS_10000(
+        UmaPrefix() + ".FrameDecodedRtpTimestampDelta",
+        *frame_rtp_timestamp - *last_enqueued_frame_rtp_timestamp_);
+  }
+  last_enqueued_frame_rtp_timestamp_ = frame_rtp_timestamp;
 }
 
 void WebMediaPlayerMSCompositor::EnqueueFrame(
@@ -396,8 +385,14 @@ void WebMediaPlayerMSCompositor::EnqueueFrame(
                        frame->timestamp().InMicroseconds());
   ++total_frame_count_;
   ++frame_enqueued_since_last_vsync_;
+  absl::optional<uint32_t> enqueue_frame_rtp_timestamp;
+  if (frame->metadata().rtp_timestamp) {
+    enqueue_frame_rtp_timestamp =
+        static_cast<uint32_t>(frame->metadata().rtp_timestamp.value());
+  }
   RecordFrameDecodedStats(frame->metadata().receive_time,
-                          frame->metadata().processing_time);
+                          frame->metadata().processing_time,
+                          enqueue_frame_rtp_timestamp);
 
   // With algorithm off, just let |current_frame_| hold the incoming |frame|.
   if (!rendering_frame_buffer_) {
@@ -572,7 +567,7 @@ void WebMediaPlayerMSCompositor::StartRendering() {
   PostCrossThreadTask(
       *video_frame_compositor_task_runner_, FROM_HERE,
       CrossThreadBindOnce(&WebMediaPlayerMSCompositor::StartRenderingInternal,
-                          WrapRefCounted(this)));
+                          weak_this_));
 }
 
 void WebMediaPlayerMSCompositor::StopRendering() {
@@ -580,27 +575,7 @@ void WebMediaPlayerMSCompositor::StopRendering() {
   PostCrossThreadTask(
       *video_frame_compositor_task_runner_, FROM_HERE,
       CrossThreadBindOnce(&WebMediaPlayerMSCompositor::StopRenderingInternal,
-                          WrapRefCounted(this)));
-}
-
-void WebMediaPlayerMSCompositor::ReplaceCurrentFrameWithACopy() {
-  DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
-  // Bounce this call off of IO thread to since there might still be frames
-  // passed on IO thread.
-  io_task_runner_->PostTask(
-      FROM_HERE,
-      media::BindToCurrentLoop(WTF::Bind(
-          &WebMediaPlayerMSCompositor::ReplaceCurrentFrameWithACopyInternal,
-          WrapRefCounted(this))));
-}
-
-void WebMediaPlayerMSCompositor::StopUsingProvider() {
-  DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
-  PostCrossThreadTask(
-      *video_frame_compositor_task_runner_, FROM_HERE,
-      CrossThreadBindOnce(
-          &WebMediaPlayerMSCompositor::StopUsingProviderInternal,
-          WrapRefCounted(this)));
+                          weak_this_));
 }
 
 bool WebMediaPlayerMSCompositor::MapTimestampsToRenderTimeTicks(
@@ -670,7 +645,7 @@ void WebMediaPlayerMSCompositor::RenderWithoutAlgorithm(
       *video_frame_compositor_task_runner_, FROM_HERE,
       CrossThreadBindOnce(
           &WebMediaPlayerMSCompositor::RenderWithoutAlgorithmOnCompositor,
-          WrapRefCounted(this), std::move(frame), is_copy));
+          weak_this_, std::move(frame), is_copy));
 }
 
 void WebMediaPlayerMSCompositor::RenderWithoutAlgorithmOnCompositor(
@@ -769,9 +744,8 @@ void WebMediaPlayerMSCompositor::SetCurrentFrame(
   PostCrossThreadTask(
       *video_frame_compositor_task_runner_, FROM_HERE,
       CrossThreadBindOnce(&WebMediaPlayerMSCompositor::CheckForFrameChanges,
-                          WrapRefCounted(this), is_first_frame,
-                          has_frame_size_changed, std::move(new_transform),
-                          std::move(new_opacity)));
+                          weak_this_, is_first_frame, has_frame_size_changed,
+                          std::move(new_transform), std::move(new_opacity)));
 }
 
 void WebMediaPlayerMSCompositor::CheckForFrameChanges(
@@ -838,14 +812,7 @@ void WebMediaPlayerMSCompositor::StopRenderingInternal() {
     video_frame_provider_client_->StopRendering();
 }
 
-void WebMediaPlayerMSCompositor::StopUsingProviderInternal() {
-  DCHECK(video_frame_compositor_task_runner_->BelongsToCurrentThread());
-  if (video_frame_provider_client_)
-    video_frame_provider_client_->StopUsingProvider();
-  video_frame_provider_client_ = nullptr;
-}
-
-void WebMediaPlayerMSCompositor::ReplaceCurrentFrameWithACopyInternal() {
+void WebMediaPlayerMSCompositor::ReplaceCurrentFrameWithACopy() {
   DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
   scoped_refptr<media::VideoFrame> current_frame_ref;
   {

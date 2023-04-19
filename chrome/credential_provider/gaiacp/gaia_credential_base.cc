@@ -16,7 +16,6 @@
 #include "base/bind.h"
 #include "base/callback_helpers.h"
 #include "base/command_line.h"
-#include "base/cxx17_backports.h"
 #include "base/files/file_path.h"
 #include "base/files/file_util.h"
 #include "base/json/json_reader.h"
@@ -144,7 +143,6 @@ HRESULT GetExistingAccountMappingFromCD(
     std::string* sam_account_name,
     std::vector<std::string>* local_account_names,
     BSTR* error_text) {
-  LOGFN(VERBOSE);
   DCHECK(email.size() > 0);
   DCHECK(access_token.size() > 0);
   DCHECK(sam_account_name);
@@ -267,7 +265,6 @@ HRESULT GetUserAndDomainInfo(
 
   bool is_ad_user =
       os_user_manager->IsDeviceDomainJoined() && !sam_account_name.empty();
-  LOGFN(VERBOSE) << "is_ad_user=" << is_ad_user;
   // Login via existing AD account mapping when the device is domain joined if
   // the AD account mapping is available.
   if (is_ad_user) {
@@ -439,7 +436,6 @@ HRESULT FindExistingUserSidIfAvailable(const std::string& refresh_token,
     LOGFN(ERROR) << "GetExistingAccountMappingFromCD hr=" << putHR(hr);
     return hr;
   }
-  LOGFN(VERBOSE) << "sam_account_name=" << sam_account_name;
 
   std::wstring existing_sid = std::wstring();
   hr = GetUserAndDomainInfo(sam_account_name, local_account_names,
@@ -774,7 +770,7 @@ HRESULT CreateNewUser(OSUserManager* manager,
   DCHECK(final_username);
   DCHECK(sid);
   wchar_t new_username[kWindowsUsernameBufferLength];
-  errno_t err = wcscpy_s(new_username, base::size(new_username), base_username);
+  errno_t err = wcscpy_s(new_username, std::size(new_username), base_username);
   if (err != 0) {
     LOGFN(ERROR) << "wcscpy_s errno=" << err;
     return E_FAIL;
@@ -804,7 +800,7 @@ HRESULT CreateNewUser(OSUserManager* manager,
       LOGFN(VERBOSE) << "Username '" << new_username
                      << "' already exists. Trying '" << next_username << "'";
 
-      err = wcscpy_s(new_username, base::size(new_username),
+      err = wcscpy_s(new_username, std::size(new_username),
                      next_username.c_str());
       if (err != 0) {
         LOGFN(ERROR) << "wcscpy_s errno=" << err;
@@ -892,13 +888,13 @@ HRESULT CGaiaCredentialBase::OnDllRegisterServer() {
   // step fails, assume that a new user needs to be created.
   wchar_t gaia_username[kWindowsUsernameBufferLength];
   HRESULT hr = policy->RetrievePrivateData(kLsaKeyGaiaUsername, gaia_username,
-                                           base::size(gaia_username));
+                                           std::size(gaia_username));
 
   if (SUCCEEDED(hr)) {
     LOGFN(VERBOSE) << "Expecting gaia user '" << gaia_username << "' to exist.";
     wchar_t password[32];
     hr = policy->RetrievePrivateData(kLsaKeyGaiaPassword, password,
-                                     base::size(password));
+                                     std::size(password));
     if (SUCCEEDED(hr)) {
       std::wstring local_domain = OSUserManager::GetLocalDomain();
       base::win::ScopedHandle token;
@@ -920,7 +916,7 @@ HRESULT CGaiaCredentialBase::OnDllRegisterServer() {
   if (sid == nullptr) {
     // No valid existing user found, reset to default name and start generating
     // from there.
-    errno_t err = wcscpy_s(gaia_username, base::size(gaia_username),
+    errno_t err = wcscpy_s(gaia_username, std::size(gaia_username),
                            kDefaultGaiaAccountName);
     if (err != 0) {
       LOGFN(ERROR) << "wcscpy_s errno=" << err;
@@ -929,7 +925,7 @@ HRESULT CGaiaCredentialBase::OnDllRegisterServer() {
 
     // Generate a random password for the new gaia account.
     wchar_t password[32];
-    hr = manager->GenerateRandomPassword(password, base::size(password));
+    hr = manager->GenerateRandomPassword(password, std::size(password));
     if (FAILED(hr)) {
       LOGFN(ERROR) << "GenerateRandomPassword hr=" << putHR(hr);
       return hr;
@@ -996,7 +992,7 @@ HRESULT CGaiaCredentialBase::OnDllUnregisterServer() {
     wchar_t password[32];
 
     HRESULT hr = policy->RetrievePrivateData(kLsaKeyGaiaPassword, password,
-                                             base::size(password));
+                                             std::size(password));
     if (FAILED(hr))
       LOGFN(ERROR) << "policy.RetrievePrivateData hr=" << putHR(hr);
 
@@ -1009,7 +1005,7 @@ HRESULT CGaiaCredentialBase::OnDllUnregisterServer() {
 
     wchar_t gaia_username[kWindowsUsernameBufferLength];
     hr = policy->RetrievePrivateData(kLsaKeyGaiaUsername, gaia_username,
-                                     base::size(gaia_username));
+                                     std::size(gaia_username));
 
     if (SUCCEEDED(hr)) {
       hr = policy->RemovePrivateData(kLsaKeyGaiaUsername);
@@ -1824,7 +1820,7 @@ HRESULT CGaiaCredentialBase::CreateGaiaLogonToken(
 
   wchar_t gaia_username[kWindowsUsernameBufferLength];
   HRESULT hr = policy->RetrievePrivateData(kLsaKeyGaiaUsername, gaia_username,
-                                           base::size(gaia_username));
+                                           std::size(gaia_username));
 
   if (FAILED(hr)) {
     LOGFN(ERROR) << "Retrieve gaia username hr=" << putHR(hr);
@@ -1832,7 +1828,7 @@ HRESULT CGaiaCredentialBase::CreateGaiaLogonToken(
   }
   wchar_t password[32];
   hr = policy->RetrievePrivateData(kLsaKeyGaiaPassword, password,
-                                   base::size(password));
+                                   std::size(password));
   if (FAILED(hr)) {
     LOGFN(ERROR) << "Retrieve password for gaia user '" << gaia_username
                  << "' hr=" << putHR(hr);
@@ -2353,8 +2349,8 @@ HRESULT CGaiaCredentialBase::ValidateOrCreateUser(const base::Value& result,
   bool is_consumer_account = false;
   std::wstring gaia_id;
   HRESULT hr = MakeUsernameForAccount(
-      result, &gaia_id, found_username, base::size(found_username),
-      found_domain, base::size(found_domain), found_sid, base::size(found_sid),
+      result, &gaia_id, found_username, std::size(found_username), found_domain,
+      std::size(found_domain), found_sid, std::size(found_sid),
       &is_consumer_account, error_text);
   if (FAILED(hr)) {
     LOGFN(ERROR) << "MakeUsernameForAccount hr=" << putHR(hr);

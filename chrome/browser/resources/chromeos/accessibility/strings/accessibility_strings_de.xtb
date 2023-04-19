@@ -618,7 +618,6 @@
 <translation id="5170206230005240598">Braille-Untertitel aktiviert</translation>
 <translation id="5183440668879371625">Braille – vorherige Zeile</translation>
 <translation id="5189244881767082992">Zeile</translation>
-<translation id="5234747236692380506">„<ph name="TEXT" />“ eingeben</translation>
 <translation id="5263034204789987535">Mais</translation>
 <translation id="5263344797180442561">h2</translation>
 <translation id="528468243742722775">Ende</translation>
@@ -685,6 +684,8 @@
 <translation id="5623842676595125836">Protokoll</translation>
 <translation id="5628125749885014029">h4</translation>
 <translation id="5632083598315326067">Grafiksymbol</translation>
+<translation id="5648939288050772726">Glückwunsch! Jetzt kennst du die Grundlagen für die Nutzung von ChromeVox. Nicht vergessen: Du kannst das Befehlsmenü von ChromeVox jederzeit öffnen, indem du „Suche + Punkt“ drückst. Weitere Informationen zu ChromeVox und Chrome OS erhältst du in den folgenden Artikeln.
+    Wenn du die Anleitung abgeschlossen hast, gehe mit ChromeVox zur Schaltfläche „Schließen“ und klicke darauf.</translation>
 <translation id="5653397561111110475">Bedienungshilfen für den Chromebook-Touchscreen verwenden</translation>
 <translation id="5655682562155942719">Zwischen Befehlen wechseln</translation>
 <translation id="56637627897541303">Textbereich</translation>
@@ -794,6 +795,7 @@
 <translation id="641759969622533235">{COUNT,plural, =1{Doppelpunkt}other{# Doppelpunkte}}</translation>
 <translation id="6444046323172968959">Benachrichtigungsdialogfeld</translation>
 <translation id="6452403590345320472">Inhaltsverzeichnis</translation>
+<translation id="6457542714329819968">eingeben</translation>
 <translation id="6468049171101508116">Nächste Schaltfläche</translation>
 <translation id="646954774886932461">Index</translation>
 <translation id="6475604559827479857">Farbe zum Hervorheben von Wörtern:</translation>
@@ -966,8 +968,6 @@
 <translation id="7701196182766842984">autolst</translation>
 <translation id="7713139339518499741">Natürliche Stimme</translation>
 <translation id="7714340021005120797">Kein nächstes Kombinationsfeld</translation>
-<translation id="772146615414628379">Glückwunsch! Jetzt kennst du die Grundlagen für die Nutzung von ChromeVox. Nicht vergessen: Du kannst das Befehlsmenü von ChromeVox jederzeit öffnen, indem du "Suche + Punkt" drückst. Weitere Informationen zu ChromeVox und Chrome OS erhältst du in den folgenden Artikeln.
-    Wenn du die Anleitung abgeschlossen hast, gehe mit ChromeVox zur Schaltfläche "Schließen" und klicke darauf.</translation>
 <translation id="7724603315864178912">Ausschneiden</translation>
 <translation id="7731785449856576010">Kein weiteres Medien-Widget</translation>
 <translation id="7735498529470878067">Mit „Tippen &amp; Entdecken“ kannst du dir schnell einen Überblick über den Bildschirminhalt verschaffen.</translation>

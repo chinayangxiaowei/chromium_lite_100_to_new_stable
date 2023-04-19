@@ -1110,7 +1110,7 @@
               "cpu": "x86-64",
               "display_attached": "1",
               "gpu": "8086:3e9b",
-              "os": "Mac-11.5.2"
+              "os": "Mac-11.5.2|Mac-12.4"
             }
           ],
           "idempotent": false,
@@ -1145,7 +1145,7 @@
               "cpu": "x86-64",
               "display_attached": "1",
               "gpu": "8086:3e9b",
-              "os": "Mac-11.5.2"
+              "os": "Mac-11.5.2|Mac-12.4"
             }
           ],
           "idempotent": false,
@@ -1180,7 +1180,7 @@
               "cpu": "x86-64",
               "display_attached": "1",
               "gpu": "8086:3e9b",
-              "os": "Mac-11.5.2"
+              "os": "Mac-11.5.2|Mac-12.4"
             }
           ],
           "idempotent": false,
@@ -1224,7 +1224,7 @@
               "cpu": "x86-64",
               "display_attached": "1",
               "gpu": "8086:3e9b",
-              "os": "Mac-11.5.2"
+              "os": "Mac-11.5.2|Mac-12.4"
             }
           ],
           "idempotent": false,
@@ -1268,7 +1268,7 @@
               "cpu": "x86-64",
               "display_attached": "1",
               "gpu": "8086:3e9b",
-              "os": "Mac-11.5.2"
+              "os": "Mac-11.5.2|Mac-12.4"
             }
           ],
           "idempotent": false,
@@ -1304,7 +1304,7 @@
               "cpu": "x86-64",
               "display_attached": "1",
               "gpu": "8086:3e9b",
-              "os": "Mac-11.5.2"
+              "os": "Mac-11.5.2|Mac-12.4"
             }
           ],
           "idempotent": false,
@@ -1339,7 +1339,7 @@
               "cpu": "x86-64",
               "display_attached": "1",
               "gpu": "8086:3e9b",
-              "os": "Mac-11.5.2"
+              "os": "Mac-11.5.2|Mac-12.4"
             }
           ],
           "idempotent": false,
@@ -1376,7 +1376,7 @@
               "cpu": "x86-64",
               "display_attached": "1",
               "gpu": "8086:3e9b",
-              "os": "Mac-11.5.2"
+              "os": "Mac-11.5.2|Mac-12.4"
             }
           ],
           "idempotent": false,
@@ -1413,7 +1413,7 @@
               "cpu": "x86-64",
               "display_attached": "1",
               "gpu": "8086:3e9b",
-              "os": "Mac-11.5.2"
+              "os": "Mac-11.5.2|Mac-12.4"
             }
           ],
           "idempotent": false,
@@ -1459,7 +1459,8 @@
     "isolated_scripts": [
       {
         "args": [
-          "--num-retries=3"
+          "--num-retries=3",
+          "--git-revision=${got_revision}"
         ],
         "isolate_name": "blink_web_tests",
         "merge": {
@@ -1469,6 +1470,11 @@
           "script": "//third_party/blink/tools/merge_web_test_results.py"
         },
         "name": "blink_web_tests",
+        "precommit_args": [
+          "--gerrit-issue=${patch_issue}",
+          "--gerrit-patchset=${patch_set}",
+          "--buildbucket-id=${buildbucket_build_id}"
+        ],
         "resultdb": {
           "enable": true
         },
@@ -1515,6 +1521,7 @@
       {
         "args": [
           "--num-retries=3",
+          "--git-revision=${got_revision}",
           "-t",
           "Debug",
           "--release"
@@ -1527,6 +1534,11 @@
           "script": "//third_party/blink/tools/merge_web_test_results.py"
         },
         "name": "blink_web_tests",
+        "precommit_args": [
+          "--gerrit-issue=${patch_issue}",
+          "--gerrit-patchset=${patch_set}",
+          "--buildbucket-id=${buildbucket_build_id}"
+        ],
         "resultdb": {
           "enable": true
         },
@@ -1573,6 +1585,7 @@
       {
         "args": [
           "--num-retries=3",
+          "--git-revision=${got_revision}",
           "--flag-specific=future-js"
         ],
         "isolate_name": "blink_web_tests",
@@ -1583,6 +1596,11 @@
           "script": "//third_party/blink/tools/merge_web_test_results.py"
         },
         "name": "blink_web_tests",
+        "precommit_args": [
+          "--gerrit-issue=${patch_issue}",
+          "--gerrit-patchset=${patch_set}",
+          "--buildbucket-id=${buildbucket_build_id}"
+        ],
         "resultdb": {
           "enable": true
         },
@@ -1629,7 +1647,8 @@
     "isolated_scripts": [
       {
         "args": [
-          "--num-retries=3"
+          "--num-retries=3",
+          "--git-revision=${got_revision}"
         ],
         "isolate_name": "blink_web_tests",
         "merge": {
@@ -1639,6 +1658,11 @@
           "script": "//third_party/blink/tools/merge_web_test_results.py"
         },
         "name": "blink_web_tests",
+        "precommit_args": [
+          "--gerrit-issue=${patch_issue}",
+          "--gerrit-patchset=${patch_set}",
+          "--buildbucket-id=${buildbucket_build_id}"
+        ],
         "resultdb": {
           "enable": true
         },
@@ -1665,7 +1689,8 @@
     "isolated_scripts": [
       {
         "args": [
-          "--num-retries=3"
+          "--num-retries=3",
+          "--git-revision=${got_revision}"
         ],
         "isolate_name": "blink_web_tests",
         "merge": {
@@ -1675,6 +1700,11 @@
           "script": "//third_party/blink/tools/merge_web_test_results.py"
         },
         "name": "blink_web_tests",
+        "precommit_args": [
+          "--gerrit-issue=${patch_issue}",
+          "--gerrit-patchset=${patch_set}",
+          "--buildbucket-id=${buildbucket_build_id}"
+        ],
         "resultdb": {
           "enable": true
         },

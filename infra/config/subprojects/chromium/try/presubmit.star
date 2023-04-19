@@ -7,16 +7,16 @@ load("//lib/builders.star", "os")
 load("//lib/branches.star", "branches")
 load("//lib/try.star", "try_")
 load("//lib/consoles.star", "consoles")
-load("//project.star", "BRANCH_TYPES", "branch_type")
+load("//project.star", "PLATFORMS", "platform")
 load("../fallback-cq.star", "fallback_cq")
 
 try_.defaults.set(
-    cores = 8,
-    execution_timeout = 15 * time.minute,
-    list_view = "presubmit",
-    main_list_view = "try",
-    os = os.LINUX_DEFAULT,
     pool = try_.DEFAULT_POOL,
+    cores = 8,
+    os = os.LINUX_DEFAULT,
+    list_view = "presubmit",
+    execution_timeout = 15 * time.minute,
+    main_list_view = "try",
     # Default priority for buildbucket is 30, see
     # https://chromium.googlesource.com/infra/infra/+/bb68e62b4380ede486f65cd32d9ff3f1bbe288e4/appengine/cr-buildbucket/creation.py#42
     # This will improve our turnaround time for landing infra/config changes
@@ -27,7 +27,7 @@ try_.defaults.set(
 
 consoles.list_view(
     name = "presubmit",
-    branch_selector = branches.ALL_BRANCHES,
+    branch_selector = branches.selector.ALL_BRANCHES,
     title = "presubmit builders",
 )
 
@@ -58,21 +58,19 @@ def branch_configs():
       A list of objects that can be used as the value of the "branch_configs"
       property for the branch_configuration/tester recipe. See
       https://chromium.googlesource.com/chromium/tools/build/+/refs/heads/main/recipes/recipes/branch_configuration/tester.proto
-      The returned configs will cover standard branches and every combination of
-      post-stable branches.
+      The returned configs will cover the common branch configurations and each
+      platform individually.
     """
-    type_combos = []
-    for t in BRANCH_TYPES:
-        # The standard branch type can only appear alone, so add it afterwards
-        if t == branch_type.STANDARD:
-            continue
-        type_combos = type_combos + [[t]] + [c + [t] for c in type_combos]
-
-    type_combos = [[branch_type.STANDARD]] + sorted(type_combos, key = lambda x: (len(x), x))
     return [{
-        "name": " + ".join(c),
-        "branch_types": c,
-    } for c in type_combos]
+        "name": "standard branch",
+        "platforms": [p for p in PLATFORMS if p != platform.CROS_LTS],
+    }, {
+        "name": "desktop extended stable branch",
+        "platforms": [platform.MAC, platform.WINDOWS],
+    }] + [{
+        "name": p,
+        "platforms": [p],
+    } for p in PLATFORMS]
 
 presubmit_builder(
     name = "branch-config-verifier",
@@ -83,7 +81,7 @@ presubmit_builder(
         "starlark_entry_points": ["infra/config/main.star", "infra/config/dev.star"],
     },
     tryjob = try_.job(
-        location_regexp = [r".+/[+]/infra/config/.+"],
+        location_filters = ["infra/config/.+"],
     ),
 )
 
@@ -105,7 +103,10 @@ presubmit_builder(
         ],
     },
     tryjob = try_.job(
-        location_regexp = [r".+/[+]/tools/clang/scripts/update.py"],
+        location_filters = [
+            "tools/clang/scripts/update.py",
+            "DEPS",
+        ],
     ),
 )
 
@@ -117,15 +118,21 @@ presubmit_builder(
         "builder_config_directory": "infra/config/generated/builders",
     },
     tryjob = try_.job(
-        location_regexp = [r".+/[+]/infra/config/generated/builders/.*"],
+        location_filters = ["infra/config/generated/builders/.*"],
     ),
 )
 
 presubmit_builder(
     name = "chromium_presubmit",
-    branch_selector = branches.ALL_BRANCHES,
+    branch_selector = branches.selector.ALL_BRANCHES,
     executable = "recipe:presubmit",
     execution_timeout = 40 * time.minute,
+    # TODO(crbug.com/1366979) Changes to remove py2 dependencies from presubmit
+    # scripts haven't been cherry-picked back, so this prevents failures in
+    # presubmit
+    experiments = {
+        "luci.buildbucket.omit_python2": 0,
+    },
     properties = {
         "$depot_tools/presubmit": {
             "runhooks": True,
@@ -138,8 +145,8 @@ presubmit_builder(
 
 presubmit_builder(
     name = "requires-testing-checker",
-    cq_group = fallback_cq.GROUP,
     description_html = "prevents CLs that requires testing from landing on branches with no CQ",
     executable = "recipe:requires_testing_checker",
+    cq_group = fallback_cq.GROUP,
     tryjob = try_.job(),
 )

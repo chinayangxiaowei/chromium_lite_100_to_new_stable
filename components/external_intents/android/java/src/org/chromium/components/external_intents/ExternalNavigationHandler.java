@@ -38,6 +38,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.appcompat.app.AlertDialog;
 
+import org.chromium.base.BuildInfo;
 import org.chromium.base.CommandLine;
 import org.chromium.base.ContextUtils;
 import org.chromium.base.IntentUtils;
@@ -195,11 +196,13 @@ public class ExternalNavigationHandler {
      * Result types for checking if we should override URL loading.
      * NOTE: this enum is used in UMA, do not reorder values. Changes should be append only.
      * Values should be numerated from 0 and can't have gaps.
+     * NOTE: NUM_ENTRIES must be added inside the IntDef{} to work around crbug.com/1300585. It
+     * should be removed from the IntDef{} if an alternate solution for that bug is found.
      */
     @IntDef({OverrideUrlLoadingResultType.OVERRIDE_WITH_EXTERNAL_INTENT,
             OverrideUrlLoadingResultType.OVERRIDE_WITH_CLOBBERING_TAB,
             OverrideUrlLoadingResultType.OVERRIDE_WITH_ASYNC_ACTION,
-            OverrideUrlLoadingResultType.NO_OVERRIDE})
+            OverrideUrlLoadingResultType.NO_OVERRIDE, OverrideUrlLoadingResultType.NUM_ENTRIES})
     @Retention(RetentionPolicy.SOURCE)
     public @interface OverrideUrlLoadingResultType {
         /* We should override the URL loading and launch an intent. */
@@ -456,13 +459,12 @@ public class ExternalNavigationHandler {
     }
 
     /**
-     * https://crbug.com/1094442: Don't allow any external navigation on AUTO_SUBFRAME navigation
-     * (eg. initial ad frame navigation).
+     * https://crbug.com/1094442: Don't allow any external navigation on subframe navigations
+     * without a user gesture (eg. initial ad frame navigation).
      */
-    private boolean blockExternalNavFromAutoSubframe(ExternalNavigationParams params) {
-        int pageTransitionCore = params.getPageTransition() & PageTransition.CORE_MASK;
-        if (pageTransitionCore == PageTransition.AUTO_SUBFRAME) {
-            if (DEBUG) Log.i(TAG, "Auto navigation in subframe");
+    private boolean shouldBlockSubframeAppLaunches(ExternalNavigationParams params) {
+        if (!params.isMainFrame() && !params.hasUserGesture()) {
+            if (DEBUG) Log.i(TAG, "Subframe navigation without user gesture.");
             return true;
         }
         return false;
@@ -658,7 +660,7 @@ public class ExternalNavigationHandler {
      */
     private boolean preferToShowIntentPicker(ExternalNavigationParams params,
             int pageTransitionCore, boolean isExternalProtocol, boolean isFormSubmit,
-            boolean linkNotFromIntent, boolean incomingIntentRedirect, boolean isFromIntent,
+            boolean incomingIntentRedirect, boolean isFromIntent,
             QueryIntentActivitiesSupplier resolveInfos) {
         // https://crbug.com/1232514: On Android S, since WebAPKs aren't verified apps they are
         // never launched as the result of a suitable Intent, the user's default browser will be
@@ -677,10 +679,26 @@ public class ExternalNavigationHandler {
         // following a form submit.
         boolean isRedirectFromFormSubmit = isFormSubmit && params.isRedirect();
 
-        if (!linkNotFromIntent && !incomingIntentRedirect && !isRedirectFromFormSubmit) {
-            if (DEBUG) Log.i(TAG, "Incoming intent (not a redirect)");
+        // TODO(https://crbug.com/1300539): Historically this was intended to prevent
+        // browser-initiated navigations like bookmarks from leaving Chrome. However, this is not a
+        // security boundary as it can be trivially (and unintentionally) subverted, including by a
+        // simple client (meta) redirect. We should decide whether or not external navigations
+        // should be blocked from browser-initiated navigations and either enforce it consistently
+        // or not enforce it at all.
+        if (!params.isRendererInitiated() && !incomingIntentRedirect && !isRedirectFromFormSubmit
+                && mDelegate.shouldEmbedderInitiatedNavigationsStayInBrowser()) {
+            if (DEBUG) Log.i(TAG, "Browser or Intent initiated and not a redirect");
             return false;
         }
+
+        // TODO(https://crbug.com/1288578): Form submits are not allowed to launch apps for probably
+        // unintentional historical reasons. We should probably allow GET requests to launch apps,
+        // but not POST requests.
+        if (isFormSubmit && !incomingIntentRedirect && !isRedirectFromFormSubmit) {
+            if (DEBUG) Log.i(TAG, "Direct form submission, not a redirect");
+            return false;
+        }
+
         // http://crbug.com/839751: Require user gestures for form submits to external
         //                          protocols.
         // TODO(tedchoc): Turn this on by default once we verify this change does
@@ -1120,7 +1138,7 @@ public class ExternalNavigationHandler {
     protected AlertDialog showLeavingIncognitoAlert(final Context context,
             final ExternalNavigationParams params, final Intent intent, final GURL fallbackUrl,
             final boolean proxy) {
-        return new AlertDialog.Builder(context, R.style.Theme_Chromium_AlertDialog)
+        return new AlertDialog.Builder(context, R.style.ThemeOverlay_BrowserUI_AlertDialog)
                 .setTitle(R.string.external_app_leave_incognito_warning_title)
                 .setMessage(R.string.external_app_leave_incognito_warning)
                 .setPositiveButton(R.string.external_app_leave_incognito_leave,
@@ -1273,10 +1291,11 @@ public class ExternalNavigationHandler {
         return true;
     }
 
-    // Check if we're navigating under conditions that should never launch an external app.
+    // Check if we're navigating under conditions that should never launch an external app,
+    // regardless of which URL we're navigating to.
     private boolean shouldBlockAllExternalAppLaunches(
             ExternalNavigationParams params, boolean incomingIntentRedirect) {
-        return blockExternalNavFromAutoSubframe(params)
+        return shouldBlockSubframeAppLaunches(params)
                 || blockExternalNavWhileBackgrounded(params, incomingIntentRedirect)
                 || blockExternalNavFromBackgroundTab(params, incomingIntentRedirect)
                 || ignoreBackForwardNav(params);
@@ -1352,7 +1371,7 @@ public class ExternalNavigationHandler {
         QueryIntentActivitiesSupplier resolvingInfos =
                 new QueryIntentActivitiesSupplier(targetIntent);
         if (!preferToShowIntentPicker(params, pageTransitionCore, isExternalProtocol, isFormSubmit,
-                    linkNotFromIntent, incomingIntentRedirect, isFromIntent, resolvingInfos)) {
+                    incomingIntentRedirect, isFromIntent, resolvingInfos)) {
             return OverrideUrlLoadingResult.forNoOverride();
         }
 
@@ -1438,19 +1457,13 @@ public class ExternalNavigationHandler {
 
         ResolveActivitySupplier resolveActivity = new ResolveActivitySupplier(targetIntent);
         boolean requiresIntentChooser = false;
-        if (isViewIntentToOtherBrowser(
-                    targetIntent, resolvingInfos, isIntentWithSupportedProtocol, resolveActivity)) {
-            RecordHistogram.recordBooleanHistogram("Android.Intent.WebIntentToOtherBrowser", true);
-            requiresIntentChooser = true;
+        if (!mDelegate.maybeSetTargetPackage(targetIntent)) {
+            requiresIntentChooser = isViewIntentToOtherBrowser(
+                    targetIntent, resolvingInfos, isIntentWithSupportedProtocol, resolveActivity);
         }
 
-        if (mDelegate.maybeSetTargetPackage(targetIntent)) {
-            // This check was not combined with the one above to preserve the value of the
-            // Android.Intent.WebIntentToOtherBrowser histogram.
-            requiresIntentChooser = false;
-        }
-
-        if (shouldAvoidShowingDisambiguationPrompt(targetIntent, resolvingInfos, resolveActivity)) {
+        if (shouldAvoidShowingDisambiguationPrompt(
+                    isExternalProtocol, targetIntent, resolvingInfos, resolveActivity)) {
             return OverrideUrlLoadingResult.forNoOverride();
         }
 
@@ -1471,9 +1484,13 @@ public class ExternalNavigationHandler {
         return false;
     }
 
-    private boolean shouldAvoidShowingDisambiguationPrompt(Intent intent,
-            QueryIntentActivitiesSupplier resolvingInfosSupplier,
+    private boolean shouldAvoidShowingDisambiguationPrompt(boolean isExternalProtocol,
+            Intent intent, QueryIntentActivitiesSupplier resolvingInfosSupplier,
             ResolveActivitySupplier resolveActivitySupplier) {
+        // For navigations Chrome can't handle, it's fine to show the disambiguation dialog
+        // regardless of the embedder's preference.
+        if (isExternalProtocol) return false;
+
         // Don't bother performing the package manager checks if the delegate is fine with the
         // disambiguation prompt.
         if (!mDelegate.shouldAvoidDisambiguationDialog(intent)) return false;
@@ -2048,6 +2065,10 @@ public class ExternalNavigationHandler {
      */
     @VisibleForTesting
     protected boolean shouldRequestFileAccess(GURL url) {
+        // TODO(https://crbug.com/1316672): Replace READ_EXTERNAL_STORAGE with READ_MEDIA_*
+        //       permissions to restore capability to open file:// on Android T.
+        if (BuildInfo.isAtLeastT()) return false;
+
         // If the tab is null, then do not attempt to prompt for access.
         if (!mDelegate.hasValidTab()) return false;
         assert url.getScheme().equals(UrlConstants.FILE_SCHEME);

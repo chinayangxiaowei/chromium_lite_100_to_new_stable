@@ -39,6 +39,7 @@
 #include "third_party/blink/renderer/bindings/core/v8/native_value_traits_impl.h"
 #include "third_party/blink/renderer/bindings/core/v8/script_function.h"
 #include "third_party/blink/renderer/bindings/core/v8/script_promise.h"
+#include "third_party/blink/renderer/bindings/core/v8/script_promise_resolver.h"
 #include "third_party/blink/renderer/bindings/core/v8/to_v8_traits.h"
 #include "third_party/blink/renderer/bindings/core/v8/v8_dom_exception.h"
 #include "third_party/blink/renderer/bindings/modules/v8/v8_avc_encoder_config.h"
@@ -67,6 +68,8 @@
 #include "third_party/blink/renderer/platform/instrumentation/use_counter.h"
 #include "third_party/blink/renderer/platform/scheduler/public/post_cross_thread_task.h"
 #include "third_party/blink/renderer/platform/scheduler/public/thread.h"
+#include "third_party/blink/renderer/platform/wtf/cross_thread_copier_base.h"
+#include "third_party/blink/renderer/platform/wtf/cross_thread_copier_std.h"
 #include "third_party/blink/renderer/platform/wtf/cross_thread_functional.h"
 
 #if BUILDFLAG(ENABLE_LIBAOM)
@@ -97,16 +100,6 @@ namespace {
 
 constexpr const char kCategory[] = "media";
 constexpr int kMaxActiveEncodes = 5;
-
-// Use this function in cases when we can't immediately delete |ptr| because
-// there might be its methods on the call stack.
-template <typename T>
-void DeleteLater(ScriptState* state, std::unique_ptr<T> ptr) {
-  DCHECK(state->ContextIsValid());
-  auto* context = ExecutionContext::From(state);
-  auto runner = context->GetTaskRunner(TaskType::kInternalDefault);
-  runner->DeleteSoon(FROM_HERE, std::move(ptr));
-}
 
 bool IsAcceleratedConfigurationSupported(
     media::VideoCodecProfile profile,
@@ -479,8 +472,8 @@ VideoEncoder::CreateAcceleratedVideoEncoder(
 
   return std::make_unique<
       media::AsyncDestroyVideoEncoder<media::VideoEncodeAcceleratorAdapter>>(
-      std::make_unique<media::VideoEncodeAcceleratorAdapter>(gpu_factories,
-                                                             callback_runner_));
+      std::make_unique<media::VideoEncodeAcceleratorAdapter>(
+          gpu_factories, logger_->log()->Clone(), callback_runner_));
 }
 
 std::unique_ptr<media::VideoEncoder> CreateAv1VideoEncoder() {
@@ -986,6 +979,7 @@ void VideoEncoder::ResetInternal() {
 }
 
 static void isConfigSupportedWithSoftwareOnly(
+    ScriptState* script_state,
     ScriptPromiseResolver* resolver,
     VideoEncoderSupport* support,
     VideoEncoderTraits::ParsedConfig* config) {
@@ -1010,22 +1004,25 @@ static void isConfigSupportedWithSoftwareOnly(
     return;
   }
 
-  auto done_callback = [](std::unique_ptr<media::VideoEncoder> sw_encoder,
+  auto done_callback = [](std::unique_ptr<media::VideoEncoder> encoder,
                           ScriptPromiseResolver* resolver,
+                          scoped_refptr<base::SingleThreadTaskRunner> runner,
                           VideoEncoderSupport* support,
                           media::EncoderStatus status) {
     support->setSupported(status.is_ok());
     resolver->Resolve(support);
-    DeleteLater(resolver->GetScriptState(), std::move(sw_encoder));
+    runner->DeleteSoon(FROM_HERE, std::move(encoder));
   };
 
+  auto* context = ExecutionContext::From(script_state);
+  auto runner = context->GetTaskRunner(TaskType::kInternalDefault);
   auto* software_encoder_raw = software_encoder.get();
   software_encoder_raw->Initialize(
       config->profile, config->options, base::DoNothing(),
-      ConvertToBaseOnceCallback(
-          CrossThreadBindOnce(done_callback, std::move(software_encoder),
-                              WrapCrossThreadPersistent(resolver),
-                              WrapCrossThreadPersistent(support))));
+      ConvertToBaseOnceCallback(CrossThreadBindOnce(
+          done_callback, std::move(software_encoder),
+          WrapCrossThreadPersistent(resolver), std::move(runner),
+          WrapCrossThreadPersistent(support))));
 }
 
 static void isConfigSupportedWithHardwareOnly(
@@ -1112,7 +1109,8 @@ ScriptPromise VideoEncoder::isConfigSupported(ScriptState* script_state,
     promises.push_back(resolver->Promise());
     auto* support = VideoEncoderSupport::Create();
     support->setConfig(config_copy);
-    isConfigSupportedWithSoftwareOnly(resolver, support, parsed_config);
+    isConfigSupportedWithSoftwareOnly(script_state, resolver, support,
+                                      parsed_config);
   }
 
   // Wait for all |promises| to resolve and check if any of them have

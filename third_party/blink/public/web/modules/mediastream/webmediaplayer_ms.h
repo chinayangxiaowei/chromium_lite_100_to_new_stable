@@ -12,6 +12,7 @@
 #include "base/synchronization/lock.h"
 #include "base/task/single_thread_task_runner.h"
 #include "base/threading/thread_checker.h"
+#include "base/time/time.h"
 #include "build/build_config.h"
 #include "media/renderers/paint_canvas_video_renderer.h"
 #include "media/video/gpu_video_accelerator_factories.h"
@@ -207,6 +208,8 @@ class BLINK_MODULES_EXPORT WebMediaPlayerMS
   static const gfx::Size kUseGpuMemoryBufferVideoFramesMinResolution;
 #endif  // BUILDFLAG(IS_WIN)
 
+  void ReplaceCurrentFrameWithACopy();
+
   bool IsInPictureInPicture() const;
 
   // Switch to SurfaceLayer, either initially or from VideoLayer.
@@ -310,7 +313,7 @@ class BLINK_MODULES_EXPORT WebMediaPlayerMS
   // Used for DCHECKs to ensure methods calls executed in the correct thread.
   THREAD_CHECKER(thread_checker_);
 
-  scoped_refptr<WebMediaPlayerMSCompositor> compositor_;
+  std::unique_ptr<WebMediaPlayerMSCompositor> compositor_;
 
   const WebString initial_audio_output_device_id_;
 

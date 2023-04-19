@@ -15,6 +15,7 @@
 #include "base/test/scoped_command_line.h"
 #include "base/test/scoped_feature_list.h"
 #include "base/version.h"
+#include "build/branding_buildflags.h"
 #include "build/build_config.h"
 #include "components/embedder_support/pref_names.h"
 #include "components/prefs/pref_registry_simple.h"
@@ -199,9 +200,8 @@ void CheckUserAgentStringOrdering(bool mobile_device) {
   }
 #elif BUILDFLAG(IS_FUCHSIA)
   // X11; Fuchsia
-  ASSERT_EQ(2u, pieces.size());
-  ASSERT_EQ("X11", pieces[0]);
-  ASSERT_EQ("Fuchsia", pieces[1]);
+  ASSERT_EQ(1u, pieces.size());
+  ASSERT_EQ("Fuchsia", pieces[0]);
 #else
 #error Unsupported platform
 #endif
@@ -467,9 +467,10 @@ TEST_F(UserAgentUtilsTest, UserAgentStringReduced) {
       {});
   {
     std::string buffer = GetReducedUserAgent(kForceDisabled);
-    EXPECT_EQ(buffer,
-              base::StringPrintf(content::frozen_user_agent_strings::kDesktop,
-                                 content::GetUnifiedPlatform().c_str(), "100"));
+    EXPECT_EQ(buffer, base::StringPrintf(
+                          content::frozen_user_agent_strings::kDesktop,
+                          content::GetUnifiedPlatform().c_str(),
+                          version_info::GetMajorVersionNumber().c_str()));
   }
 #endif
 
@@ -603,12 +604,35 @@ TEST_F(UserAgentUtilsTest, UserAgentMetadata) {
 #endif
   // This makes sure no extra information is added to the platform version.
   EXPECT_EQ(metadata.platform_version.find(";"), std::string::npos);
-  // TODO(crbug.com/1103047): This can be removed/re-refactored once we use
-  // "macOS" by default
-#if BUILDFLAG(IS_MAC)
+  // If you're here because your change to GetOSType broke this test, it likely
+  // means that GetPlatformForUAMetadata needs a new special case to prevent
+  // breaking client hints. Check with the code owners for further guidance.
+#if BUILDFLAG(IS_WIN)
+  EXPECT_EQ(metadata.platform, "Windows");
+#elif BUILDFLAG(IS_IOS)
+  EXPECT_EQ(metadata.platform, "iOS");
+#elif BUILDFLAG(IS_MAC)
   EXPECT_EQ(metadata.platform, "macOS");
+#elif BUILDFLAG(IS_CHROMEOS)
+# if BUILDFLAG(GOOGLE_CHROME_BRANDING)
+  EXPECT_EQ(metadata.platform, "Chrome OS");
+# else
+  EXPECT_EQ(metadata.platform, "Chromium OS");
+# endif
+#elif BUILDFLAG(IS_ANDROID)
+  EXPECT_EQ(metadata.platform, "Android");
+#elif BUILDFLAG(IS_LINUX)
+  EXPECT_EQ(metadata.platform, "Linux");
+#elif BUILDFLAG(IS_FREEBSD)
+  EXPECT_EQ(metadata.platform, "FreeBSD");
+#elif BUILDFLAG(IS_OPENBSD)
+  EXPECT_EQ(metadata.platform, "OpenBSD");
+#elif BUILDFLAG(IS_SOLARIS)
+  EXPECT_EQ(metadata.platform, "Solaris");
+#elif BUILDFLAG(IS_FUCHSIA)
+  EXPECT_EQ(metadata.platform, "Fuchsia");
 #else
-  EXPECT_EQ(metadata.platform, version_info::GetOSType());
+  EXPECT_EQ(metadata.platform, "Unknown");
 #endif
   EXPECT_EQ(metadata.architecture, content::GetLowEntropyCpuArchitecture());
   EXPECT_EQ(metadata.model, content::BuildModelInfo());
@@ -897,41 +921,97 @@ TEST_F(UserAgentUtilsTest, GetGreasedUserAgentBrandVersion) {
   }
 }
 
-TEST_F(UserAgentUtilsTest, GetProduct) {
+TEST_F(UserAgentUtilsTest, GetProductAndVersion) {
   base::test::ScopedFeatureList scoped_feature_list;
-  scoped_feature_list.InitAndDisableFeature(
-      blink::features::kForceMajorVersionInMinorPositionInUserAgent);
+  scoped_feature_list.InitWithFeatures(
+      /*enabled_features=*/{}, /*disabled_features=*/{
+          blink::features::kForceMajorVersionInMinorPositionInUserAgent,
+          blink::features::kReduceUserAgentMinorVersion});
 
-  std::string product = GetProduct(/*allow_override=*/false);
+  std::string product = GetProductAndVersion();
   std::string major_version;
-  EXPECT_TRUE(
-      re2::RE2::FullMatch(product, kChromeProductVersionRegex, &major_version));
+  std::string minor_version;
+  EXPECT_TRUE(re2::RE2::FullMatch(product, kChromeProductVersionRegex,
+                                  &major_version, &minor_version));
   EXPECT_EQ(major_version, version_info::GetMajorVersionNumber());
-
-  // Ensure the policy is ignored if allow_override is false
-  product = GetProduct(/*allow_override=*/false,
-                       /*force_major_to_minor=*/kForceEnabled);
-  EXPECT_TRUE(
-      re2::RE2::FullMatch(product, kChromeProductVersionRegex, &major_version));
-  EXPECT_EQ(major_version, version_info::GetMajorVersionNumber());
+  EXPECT_EQ(minor_version, "0");
 
   // Ensure policy is respected if ForceMajorToMinor is force enabled
-  product = GetProduct(/*allow_override=*/true,
-                       /*force_major_to_minor=*/kForceEnabled);
-  EXPECT_TRUE(
-      re2::RE2::FullMatch(product, kChromeProductVersionRegex, &major_version));
+  product = GetProductAndVersion(/*force_major_to_minor=*/kForceEnabled);
+  EXPECT_TRUE(re2::RE2::FullMatch(product, kChromeProductVersionRegex,
+                                  &major_version, &minor_version));
   EXPECT_EQ(major_version, "99");
+  EXPECT_EQ(minor_version, version_info::GetMajorVersionNumber());
+
+  // Ensure the build version FeatureParam is used when set.
+  scoped_feature_list.Reset();
+  scoped_feature_list.InitWithFeaturesAndParameters(
+      /*enabled_features=*/{{blink::features::kReduceUserAgentMinorVersion,
+                             {{{"build_version", "5555"}}}}},
+      /*disabled_features=*/{
+          blink::features::kForceMajorVersionInMinorPositionInUserAgent});
+  product = GetProductAndVersion();
+  std::string build_version;
+  std::string patch_version;
+  EXPECT_TRUE(re2::RE2::FullMatch(product, kChromeProductVersionRegex,
+                                  &major_version, &minor_version,
+                                  &build_version, &patch_version));
+  EXPECT_EQ(major_version, version_info::GetMajorVersionNumber());
+  EXPECT_EQ(minor_version, "0");
+  EXPECT_EQ(build_version, "5555");
+  EXPECT_EQ(patch_version, "0");
 
   // Ensure policy is respected if ForcemajorToMinor is force disabled, even if
   // the respective Blink feature is enabled.
   scoped_feature_list.Reset();
-  scoped_feature_list.InitAndEnableFeature(
-      blink::features::kForceMajorVersionInMinorPositionInUserAgent);
-  product = GetProduct(/*allow_override=*/true,
-                       /*force_major_to_minor=*/kForceDisabled);
-  EXPECT_TRUE(
-      re2::RE2::FullMatch(product, kChromeProductVersionRegex, &major_version));
+  scoped_feature_list.InitWithFeatures(
+      /*enabled_features=*/{blink::features::
+                                kForceMajorVersionInMinorPositionInUserAgent},
+      /*disabled_features=*/{blink::features::kReduceUserAgentMinorVersion});
+  product = GetProductAndVersion(/*force_major_to_minor=*/kForceDisabled);
+  EXPECT_TRUE(re2::RE2::FullMatch(product, kChromeProductVersionRegex,
+                                  &major_version, &minor_version,
+                                  &build_version));
   EXPECT_EQ(major_version, version_info::GetMajorVersionNumber());
+  EXPECT_EQ(minor_version, "0");
+  EXPECT_NE(build_version, "9999");
+
+  product = GetProductAndVersion();
+  EXPECT_TRUE(re2::RE2::FullMatch(product, kChromeProductVersionRegex,
+                                  &major_version, &minor_version,
+                                  &build_version));
+  EXPECT_EQ(major_version, "99");
+  EXPECT_EQ(minor_version, version_info::GetMajorVersionNumber());
+  EXPECT_NE(build_version, "0");
+
+  scoped_feature_list.Reset();
+  scoped_feature_list.InitWithFeatures(
+      /*enabled_features=*/{blink::features::kReduceUserAgentMinorVersion},
+      /*disabled_features=*/{
+          blink::features::kForceMajorVersionInMinorPositionInUserAgent});
+  product = GetProductAndVersion();
+  EXPECT_TRUE(re2::RE2::FullMatch(product, kChromeProductVersionRegex,
+                                  &major_version, &minor_version,
+                                  &build_version, &patch_version));
+  EXPECT_EQ(major_version, version_info::GetMajorVersionNumber());
+  EXPECT_EQ(minor_version, "0");
+  EXPECT_EQ(build_version, "0");
+  EXPECT_EQ(patch_version, "0");
+
+  scoped_feature_list.Reset();
+  scoped_feature_list.InitWithFeatures(
+      /*enabled_features=*/{blink::features::kReduceUserAgentMinorVersion,
+                            blink::features::
+                                kForceMajorVersionInMinorPositionInUserAgent},
+      /*disabled_features=*/{});
+  product = GetProductAndVersion();
+  EXPECT_TRUE(re2::RE2::FullMatch(product, kChromeProductVersionRegex,
+                                  &major_version, &minor_version,
+                                  &build_version, &patch_version));
+  EXPECT_EQ(major_version, "99");
+  EXPECT_EQ(minor_version, version_info::GetMajorVersionNumber());
+  EXPECT_EQ(build_version, "0");
+  EXPECT_EQ(patch_version, "0");
 }
 
 TEST_F(UserAgentUtilsTest, GetUserAgent) {

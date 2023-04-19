@@ -1,9 +1,12 @@
 {
-    "project": "chromium-m100",
-    "project_title": "Chromium M100",
-    "ref": "refs/branch-heads/4896",
-    "chrome_project": "chrome-m100",
-    "branch_types": [
-        "fuchsia-lts"
-    ]
+    "project": "chromium-m102",
+    "project_title": "Chromium M102",
+    "ref": "refs/branch-heads/5005",
+    "chrome_project": "chrome-m102",
+    "is_main": false,
+    "platforms": {
+        "cros-lts": {
+            "description": "CrOS LTS"
+        }
+    }
 }

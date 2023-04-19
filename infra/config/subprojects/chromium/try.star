@@ -11,6 +11,7 @@ load("./fallback-cq.star", "fallback_cq")
 
 try_.defaults.set(
     bucket = "try",
+    cpu = cpu.X86_64,
     build_numbers = True,
     caches = [
         swarming.cache(
@@ -18,7 +19,6 @@ try_.defaults.set(
             path = "win_toolchain",
         ),
     ],
-    cpu = cpu.X86_64,
     cq_group = "cq",
     # Max. pending time for builds. CQ considers builds pending >2h as timed
     # out: http://shortn/_8PaHsdYmlq. Keep this in sync.
@@ -37,15 +37,15 @@ luci.bucket(
         ),
         acl.entry(
             roles = acl.BUILDBUCKET_TRIGGERER,
-            users = [
-                "findit-for-me@appspot.gserviceaccount.com",
-                "tricium-prod@appspot.gserviceaccount.com",
-            ],
             groups = [
                 "project-chromium-tryjob-access",
                 # Allow Pinpoint to trigger builds for bisection
                 "service-account-chromeperf",
                 "service-account-cq",
+            ],
+            users = [
+                "findit-for-me@appspot.gserviceaccount.com",
+                "tricium-prod@appspot.gserviceaccount.com",
             ],
             projects = [
                 "angle",
@@ -62,10 +62,46 @@ luci.bucket(
     ],
 )
 
+# Shadow bucket of `try`, for led builds.
+luci.bucket(
+    name = "try.shadow",
+    shadows = "try",
+    constraints = luci.bucket_constraints(
+        pools = ["luci.chromium.try", "luci.chromium.try.orchestrator"],
+        service_accounts = [
+            "chromium-cipd-try-builder@chops-service-accounts.iam.gserviceaccount.com",
+            "chromium-orchestrator@chops-service-accounts.iam.gserviceaccount.com",
+            "chromium-try-builder@chops-service-accounts.iam.gserviceaccount.com",
+            "chromium-try-gpu-builder@chops-service-accounts.iam.gserviceaccount.com",
+        ],
+    ),
+    bindings = [
+        luci.binding(
+            roles = "role/buildbucket.creator",
+            groups = [
+                "mdb/chrome-troopers",
+                "chromium-led-users",
+            ],
+            users = [
+                "chromium-orchestrator@chops-service-accounts.iam.gserviceaccount.com",
+                "infra-try-recipes-tester@chops-service-accounts.iam.gserviceaccount.com",
+            ],
+        ),
+        # Allow try builders to create invocations in their own builds.
+        luci.binding(
+            roles = "role/resultdb.invocationCreator",
+            groups = [
+                "project-chromium-try-task-accounts",
+                "project-chromium-tryjob-access",
+            ],
+        ),
+    ],
+    dynamic = True,
+)
+
 luci.cq_group(
     name = "cq",
     retry_config = cq.RETRY_ALL_FAILURES,
-    tree_status_host = "chromium-status.appspot.com" if settings.is_main else None,
     watch = cq.refset(
         repo = "https://chromium.googlesource.com/chromium/src",
         # The chromium project's CQ covers all of the refs under refs/heads,
@@ -86,6 +122,7 @@ luci.cq_group(
     additional_modes = [
         cq.run_mode(cq.MODE_QUICK_DRY_RUN, 1, "Quick-Run", 1),
     ],
+    tree_status_host = "chromium-status.appspot.com" if settings.is_main else None,
 )
 
 # Declare a CQ group that watches all branch heads, excluding the active
@@ -119,13 +156,13 @@ branches.cq_group(
 
 consoles.list_view(
     name = "try",
-    branch_selector = branches.ALL_BRANCHES,
+    branch_selector = branches.selector.ALL_BRANCHES,
     title = "{} CQ Console".format(settings.project_title),
 )
 
 consoles.list_view(
     name = "luci.chromium.try",
-    branch_selector = branches.ALL_BRANCHES,
+    branch_selector = branches.selector.ALL_BRANCHES,
 )
 
 exec("./try/presubmit.star")
@@ -184,6 +221,28 @@ chrome_internal_verifier(
     builder = "chromeos-eve-compile-chrome",
 )
 
+# TODO(crbug.com/1295085): Migrate to gitfooter based trigger
+# During Nearby Connection library autoroller uprev, we want
+# chromeos-jacuzzi-nearby-chrome-fyi to run as an experimental builder
+# and not block the auto-submission of the CL.
+# Currently there is no support for gitfooter based trigger like
+# "Cq-Include-Trybots" for experimental builders, we are using the following
+# workaround until the support is available.
+# Autoroller generated CL keeps an additional githash bookkeeping in
+# third_party/nearby/README.chromium. This file serves as a unique marker for
+# Nearby uprev and is used to trigger the Nearby builder.
+branches.cq_tryjob_verifier(
+    builder = "{}:try/{}".format(settings.chrome_project, "chromeos-jacuzzi-nearby-chrome-fyi"),
+    cq_group = "cq",
+    experiment_percentage = 100,
+    includable_only = False,
+    location_filters = [cq.location_filter(path_regexp = "third_party/nearby/README.chromium")],
+    owner_whitelist = [
+        "googlers",
+        "project-chromium-robot-committers",
+    ],
+)
+
 chrome_internal_verifier(
     builder = "chromeos-kevin-chrome",
 )
@@ -217,6 +276,7 @@ chrome_internal_verifier(
 )
 
 chrome_internal_verifier(
+    branch_selector = branches.selector.CROS_BRANCHES,
     builder = "lacros-amd64-generic-chrome-skylab",
 )
 
@@ -229,13 +289,8 @@ chrome_internal_verifier(
 )
 
 chrome_internal_verifier(
+    branch_selector = branches.selector.LINUX_BRANCHES,
     builder = "linux-chrome",
-    branch_selector = branches.STANDARD_MILESTONE,
-)
-
-chrome_internal_verifier(
-    builder = "linux-chrome-stable",
-    branch_selector = branches.STANDARD_MILESTONE,
 )
 
 chrome_internal_verifier(
@@ -247,28 +302,23 @@ chrome_internal_verifier(
 )
 
 chrome_internal_verifier(
+    branch_selector = branches.selector.LINUX_BRANCHES,
     builder = "linux-pgo",
-    branch_selector = branches.STANDARD_MILESTONE,
 )
 
 chrome_internal_verifier(
+    branch_selector = branches.selector.MAC_BRANCHES,
     builder = "mac-chrome",
-    branch_selector = branches.DESKTOP_EXTENDED_STABLE_MILESTONE,
 )
 
 chrome_internal_verifier(
-    builder = "mac-chrome-stable",
-    branch_selector = branches.DESKTOP_EXTENDED_STABLE_MILESTONE,
-)
-
-chrome_internal_verifier(
+    branch_selector = branches.selector.MAC_BRANCHES,
     builder = "mac-arm-pgo",
-    branch_selector = branches.STANDARD_MILESTONE,
 )
 
 chrome_internal_verifier(
+    branch_selector = branches.selector.MAC_BRANCHES,
     builder = "mac-pgo",
-    branch_selector = branches.STANDARD_MILESTONE,
 )
 
 chrome_internal_verifier(
@@ -276,31 +326,21 @@ chrome_internal_verifier(
 )
 
 chrome_internal_verifier(
+    branch_selector = branches.selector.WINDOWS_BRANCHES,
     builder = "win-chrome",
-    branch_selector = branches.DESKTOP_EXTENDED_STABLE_MILESTONE,
 )
 
 chrome_internal_verifier(
-    builder = "win-chrome-stable",
-    branch_selector = branches.DESKTOP_EXTENDED_STABLE_MILESTONE,
-)
-
-chrome_internal_verifier(
+    branch_selector = branches.selector.WINDOWS_BRANCHES,
     builder = "win32-pgo",
-    branch_selector = branches.STANDARD_MILESTONE,
 )
 
 chrome_internal_verifier(
+    branch_selector = branches.selector.WINDOWS_BRANCHES,
     builder = "win64-chrome",
-    branch_selector = branches.DESKTOP_EXTENDED_STABLE_MILESTONE,
 )
 
 chrome_internal_verifier(
-    builder = "win64-chrome-stable",
-    branch_selector = branches.DESKTOP_EXTENDED_STABLE_MILESTONE,
-)
-
-chrome_internal_verifier(
+    branch_selector = branches.selector.WINDOWS_BRANCHES,
     builder = "win64-pgo",
-    branch_selector = branches.STANDARD_MILESTONE,
 )

@@ -65,6 +65,7 @@ public class TabSwitcherModeTopToolbar extends OptimizedFrameLayout
     private ObjectAnimator mVisiblityAnimator;
 
     private boolean mIsGridTabSwitcherEnabled;
+    private boolean mIsFullscreenToolbar;
     private boolean mShowZoomingAnimation;
 
     public TabSwitcherModeTopToolbar(Context context, AttributeSet attrs) {
@@ -88,9 +89,10 @@ public class TabSwitcherModeTopToolbar extends OptimizedFrameLayout
         mNewTabViewButton.setOnClickListener(this);
     }
 
-    void initialize(boolean isGridTabSwitcherEnabled, boolean isTabToGtsAnimationEnabled,
-            BooleanSupplier isIncognitoModeEnabledSupplier) {
+    void initialize(boolean isGridTabSwitcherEnabled, boolean isFullscreenToolbar,
+            boolean isTabToGtsAnimationEnabled, BooleanSupplier isIncognitoModeEnabledSupplier) {
         mIsGridTabSwitcherEnabled = isGridTabSwitcherEnabled;
+        mIsFullscreenToolbar = isFullscreenToolbar;
         mShowZoomingAnimation = isGridTabSwitcherEnabled && isTabToGtsAnimationEnabled;
         mIsIncognitoModeEnabledSupplier = isIncognitoModeEnabledSupplier;
 
@@ -136,6 +138,19 @@ public class TabSwitcherModeTopToolbar extends OptimizedFrameLayout
      * @param inTabSwitcherMode Whether or not tab switcher mode should be shown or hidden.
      */
     void setTabSwitcherMode(boolean inTabSwitcherMode) {
+        // TODO(https://crbug.com/914868): Use consistent logic here for setting clickable/enabled
+        // on mIncognitoToggleTabLayout & mNewTabButton?
+        if (!inTabSwitcherMode) {
+            if (mIncognitoToggleTabLayout != null) mIncognitoToggleTabLayout.setClickable(false);
+        } else {
+            if (mNewTabImageButton != null) mNewTabImageButton.setEnabled(true);
+            if (mNewTabViewButton != null) mNewTabViewButton.setEnabled(true);
+        }
+
+        // Skip the animations and visibility logic when Tablet GTS polish param is enabled, since
+        // they will instead be handled by the container view.
+        if (mIsFullscreenToolbar) return;
+
         if (mVisiblityAnimator != null) mVisiblityAnimator.cancel();
 
         setVisibility(View.VISIBLE);
@@ -151,15 +166,6 @@ public class TabSwitcherModeTopToolbar extends OptimizedFrameLayout
         mVisiblityAnimator.setDuration(duration);
         if (mShowZoomingAnimation && inTabSwitcherMode) mVisiblityAnimator.setStartDelay(duration);
         mVisiblityAnimator.setInterpolator(Interpolators.LINEAR_INTERPOLATOR);
-
-        // TODO(https://crbug.com/914868): Use consistent logic here for setting clickable/enabled
-        // on mIncognitoToggleTabLayout & mNewTabButton?
-        if (!inTabSwitcherMode) {
-            if (mIncognitoToggleTabLayout != null) mIncognitoToggleTabLayout.setClickable(false);
-        } else {
-            if (mNewTabImageButton != null) mNewTabImageButton.setEnabled(true);
-            if (mNewTabViewButton != null) mNewTabViewButton.setEnabled(true);
-        }
 
         mVisiblityAnimator.addListener(new CancelAwareAnimatorListener() {
             @Override
@@ -253,14 +259,11 @@ public class TabSwitcherModeTopToolbar extends OptimizedFrameLayout
 
     /** Called when incognito tab existence changes. */
     void onIncognitoTabsExistenceChanged(boolean doesExist) {
+        setIncognitoToggleVisibility(doesExist);
         boolean shouldShowNewTabVariation = shouldShowNewTabVariation(doesExist);
         if (shouldShowNewTabVariation == mShouldShowNewTabVariation) return;
 
         mShouldShowNewTabVariation = shouldShowNewTabVariation;
-
-        if (mIncognitoToggleTabLayout != null) {
-            mIncognitoToggleTabLayout.setVisibility(mShouldShowNewTabVariation ? GONE : VISIBLE);
-        }
         updateNewTabButtonVisibility();
     }
 
@@ -348,6 +351,7 @@ public class TabSwitcherModeTopToolbar extends OptimizedFrameLayout
     }
 
     private void setIncognitoToggleVisibility(boolean showIncognitoToggle) {
+        if (!shouldShowIncognitoToggle()) return;
         if (mIncognitoToggleTabLayout == null) {
             if (showIncognitoToggle) inflateIncognitoToggle();
         } else {
@@ -366,7 +370,8 @@ public class TabSwitcherModeTopToolbar extends OptimizedFrameLayout
      */
     private boolean shouldShowIncognitoToggle() {
         return mIsGridTabSwitcherEnabled && mIsIncognitoModeEnabledSupplier.getAsBoolean()
-                && !DeviceFormFactor.isNonMultiDisplayContextOnTablet(getContext());
+                && (!DeviceFormFactor.isNonMultiDisplayContextOnTablet(getContext())
+                        || mIsFullscreenToolbar);
     }
 
     /**

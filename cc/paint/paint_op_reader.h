@@ -12,6 +12,8 @@
 #include "cc/paint/transfer_cache_deserialize_helper.h"
 #include "third_party/abseil-cpp/absl/types/optional.h"
 
+class SkColorSpace;
+
 namespace gpu {
 struct Mailbox;
 }
@@ -66,6 +68,7 @@ class CC_PAINT_EXPORT PaintOpReader {
   void Read(PaintImage* image);
   void Read(sk_sp<SkData>* data);
   void Read(sk_sp<SkTextBlob>* blob);
+  void Read(sk_sp<GrSlug>* slug);
   void Read(sk_sp<PaintFilter>* filter);
   void Read(sk_sp<PaintShader>* shader);
   void Read(SkMatrix* matrix);
@@ -180,8 +183,9 @@ class CC_PAINT_EXPORT PaintOpReader {
     kSharedImageProviderNoAccess = 50,
     kSharedImageProviderSkImageCreationFailed = 51,
     kZeroSkColorFilterBytes = 52,
+    kInsufficientPixelData = 53,
 
-    kMaxValue = kZeroSkColorFilterBytes,
+    kMaxValue = kInsufficientPixelData
   };
 
   template <typename T>

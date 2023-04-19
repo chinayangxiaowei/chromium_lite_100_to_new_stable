@@ -235,7 +235,7 @@ ImageBitmap* OffscreenCanvas::transferToImageBitmap(
 void OffscreenCanvas::RecordIdentifiabilityMetric(
     const blink::IdentifiableSurface& surface,
     const IdentifiableToken& token) const {
-  if (!IdentifiabilityStudySettings::Get()->ShouldSample(surface))
+  if (!IdentifiabilityStudySettings::Get()->ShouldSampleSurface(surface))
     return;
   blink::IdentifiabilityMetricBuilder(GetExecutionContext()->UkmSourceID())
       .Add(surface, token)
@@ -297,6 +297,10 @@ CanvasRenderingContext* OffscreenCanvas::GetCanvasRenderingContext(
     const String& id,
     const CanvasContextCreationAttributesCore& attributes) {
   DCHECK_EQ(execution_context, GetTopExecutionContext());
+
+  if (execution_context->IsContextDestroyed())
+    return nullptr;
+
   CanvasRenderingContext::CanvasRenderingAPI rendering_api =
       CanvasRenderingContext::RenderingAPIFromId(id, execution_context);
 
@@ -307,9 +311,6 @@ CanvasRenderingContext* OffscreenCanvas::GetCanvasRenderingContext(
   if (auto* window = DynamicTo<LocalDOMWindow>(GetExecutionContext())) {
     if (attributes.color_space != PredefinedColorSpace::kSRGB)
       UseCounter::Count(window->document(), WebFeature::kCanvasUseColorSpace);
-
-    if (RuntimeEnabledFeatures::NewCanvas2DAPIEnabled(GetTopExecutionContext()))
-      UseCounter::Count(window->document(), WebFeature::kNewCanvas2DAPI);
   }
 
   CanvasRenderingContextFactory* factory =
@@ -548,6 +549,9 @@ FontSelector* OffscreenCanvas::GetFontSelector() {
   if (auto* window = DynamicTo<LocalDOMWindow>(GetExecutionContext())) {
     return window->document()->GetStyleEngine().GetFontSelector();
   }
+  // TODO(crbug.com/1334864): Temporary mitigation.  Remove the following
+  // CHECK once a more comprehensive solution has been implemented.
+  CHECK(GetExecutionContext()->IsWorkerGlobalScope());
   return To<WorkerGlobalScope>(GetExecutionContext())->GetFontSelector();
 }
 

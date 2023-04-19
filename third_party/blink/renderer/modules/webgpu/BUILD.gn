@@ -83,11 +83,27 @@ blink_modules_sources("webgpu") {
     "gpu_uncaptured_error_event.h",
     "gpu_validation_error.cc",
     "gpu_validation_error.h",
+    "texture_utils.cc",
+    "texture_utils.h",
   ]
   deps = [
     "//gpu/command_buffer/client:webgpu_interface",
     "//services/metrics/public/cpp:ukm_builders",
     "//third_party/blink/renderer/modules/webcodecs:webcodecs",
     "//third_party/dawn/include/dawn:headers",
+  ]
+}
+
+source_set("unit_tests") {
+  testonly = true
+  sources = [ "gpu_context_lost_test.cc" ]
+
+  deps = [
+    "//base/test:test_support",
+    "//third_party/blink/renderer/controller:blink_bindings_test_sources",
+    "//third_party/blink/renderer/core",
+    "//third_party/blink/renderer/core:testing",
+    "//third_party/blink/renderer/modules",
+    "//third_party/blink/renderer/platform:test_support",
   ]
 }

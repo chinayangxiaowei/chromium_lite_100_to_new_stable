@@ -3,18 +3,17 @@
 # found in the LICENSE file.
 """Definitions of builders in the chromium.swangle builder group."""
 
-load("//lib/builders.star", "goma", "sheriff_rotations")
+load("//lib/builders.star", "goma", "reclient", "sheriff_rotations")
 load("//lib/ci.star", "ci")
 load("//lib/consoles.star", "consoles")
 
 ci.defaults.set(
-    builder_group = "chromium.swangle",
     executable = "recipe:angle_chromium",
-    execution_timeout = ci.DEFAULT_EXECUTION_TIMEOUT,
-    goma_backend = goma.backend.RBE_PROD,
+    builder_group = "chromium.swangle",
     pool = ci.gpu.POOL,
-    service_account = ci.gpu.SERVICE_ACCOUNT,
     sheriff_rotations = sheriff_rotations.CHROMIUM_GPU,
+    execution_timeout = ci.DEFAULT_EXECUTION_TIMEOUT,
+    service_account = ci.gpu.SERVICE_ACCOUNT,
 )
 
 consoles.console_view(
@@ -38,11 +37,14 @@ consoles.console_view(
 
 ci.gpu.linux_builder(
     name = "linux-swangle-chromium-x64",
+    executable = ci.DEFAULT_EXECUTABLE,
     console_view_entry = consoles.console_view_entry(
         category = "Chromium|Linux",
         short_name = "x64",
     ),
-    executable = ci.DEFAULT_EXECUTABLE,
+    goma_backend = None,
+    reclient_instance = reclient.instance.DEFAULT_TRUSTED,
+    reclient_jobs = reclient.jobs.HIGH_JOBS_FOR_CI,
 )
 
 ci.gpu.linux_builder(
@@ -51,6 +53,9 @@ ci.gpu.linux_builder(
         category = "ToT ANGLE|Linux",
         short_name = "x64",
     ),
+    goma_backend = None,
+    reclient_instance = reclient.instance.DEFAULT_TRUSTED,
+    reclient_jobs = reclient.jobs.HIGH_JOBS_FOR_CI,
 )
 
 ci.gpu.linux_builder(
@@ -59,33 +64,43 @@ ci.gpu.linux_builder(
         category = "ToT SwiftShader|Linux",
         short_name = "x64",
     ),
+    goma_backend = None,
+    reclient_instance = reclient.instance.DEFAULT_TRUSTED,
+    reclient_jobs = reclient.jobs.HIGH_JOBS_FOR_CI,
 )
 
 ci.gpu.linux_builder(
     name = "linux-swangle-x64",
+    executable = ci.DEFAULT_EXECUTABLE,
     console_view_entry = consoles.console_view_entry(
         category = "DEPS|Linux",
         short_name = "x64",
     ),
-    executable = ci.DEFAULT_EXECUTABLE,
+    goma_backend = None,
+    reclient_instance = reclient.instance.DEFAULT_TRUSTED,
+    reclient_jobs = reclient.jobs.HIGH_JOBS_FOR_CI,
 )
 
 ci.gpu.mac_builder(
     name = "mac-swangle-chromium-x64",
+    executable = ci.DEFAULT_EXECUTABLE,
     console_view_entry = consoles.console_view_entry(
         category = "Chromium|Mac",
         short_name = "x64",
     ),
-    executable = ci.DEFAULT_EXECUTABLE,
+    goma_backend = goma.backend.RBE_PROD,
 )
 
 ci.gpu.windows_builder(
     name = "win-swangle-chromium-x86",
+    executable = ci.DEFAULT_EXECUTABLE,
     console_view_entry = consoles.console_view_entry(
         category = "Chromium|Windows",
         short_name = "x86",
     ),
-    executable = ci.DEFAULT_EXECUTABLE,
+    goma_backend = None,
+    reclient_instance = reclient.instance.DEFAULT_TRUSTED,
+    reclient_jobs = reclient.jobs.LOW_JOBS_FOR_CI,
 )
 
 ci.gpu.windows_builder(
@@ -94,6 +109,7 @@ ci.gpu.windows_builder(
         category = "ToT ANGLE|Windows",
         short_name = "x64",
     ),
+    goma_backend = goma.backend.RBE_PROD,
 )
 
 ci.gpu.windows_builder(
@@ -102,6 +118,9 @@ ci.gpu.windows_builder(
         category = "ToT ANGLE|Windows",
         short_name = "x86",
     ),
+    goma_backend = None,
+    reclient_instance = reclient.instance.DEFAULT_TRUSTED,
+    reclient_jobs = reclient.jobs.LOW_JOBS_FOR_CI,
 )
 
 ci.gpu.windows_builder(
@@ -110,6 +129,9 @@ ci.gpu.windows_builder(
         category = "ToT SwiftShader|Windows",
         short_name = "x64",
     ),
+    goma_backend = None,
+    reclient_instance = reclient.instance.DEFAULT_TRUSTED,
+    reclient_jobs = reclient.jobs.LOW_JOBS_FOR_CI,
 )
 
 ci.gpu.windows_builder(
@@ -118,22 +140,27 @@ ci.gpu.windows_builder(
         category = "ToT SwiftShader|Windows",
         short_name = "x86",
     ),
+    goma_backend = goma.backend.RBE_PROD,
 )
 
 ci.gpu.windows_builder(
     name = "win-swangle-x64",
+    executable = ci.DEFAULT_EXECUTABLE,
     console_view_entry = consoles.console_view_entry(
         category = "DEPS|Windows",
         short_name = "x64",
     ),
-    executable = ci.DEFAULT_EXECUTABLE,
+    goma_backend = None,
+    reclient_instance = reclient.instance.DEFAULT_TRUSTED,
+    reclient_jobs = reclient.jobs.LOW_JOBS_FOR_CI,
 )
 
 ci.gpu.windows_builder(
     name = "win-swangle-x86",
+    executable = ci.DEFAULT_EXECUTABLE,
     console_view_entry = consoles.console_view_entry(
         category = "DEPS|Windows",
         short_name = "x86",
     ),
-    executable = ci.DEFAULT_EXECUTABLE,
+    goma_backend = goma.backend.RBE_PROD,
 )

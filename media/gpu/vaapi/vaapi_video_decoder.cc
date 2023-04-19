@@ -795,8 +795,7 @@ void VaapiVideoDecoder::ApplyResolutionChangeWithScreenSizes(
   // TODO(b/203240043): Create a GMB directly instead of allocating a
   // VideoFrame.
   scoped_refptr<VideoFrame> dummy_frame = CreateGpuMemoryBufferVideoFrame(
-      /*gpu_memory_buffer_factory=*/nullptr, *format, decoder_pic_size,
-      decoder_visible_rect, decoder_natural_size,
+      *format, decoder_pic_size, decoder_visible_rect, decoder_natural_size,
       /*timestamp=*/base::TimeDelta(),
       cdm_context_ref_ ? gfx::BufferUsage::PROTECTED_SCANOUT_VDA_WRITE
                        : gfx::BufferUsage::SCANOUT_VDA_WRITE);
@@ -840,31 +839,32 @@ void VaapiVideoDecoder::ApplyResolutionChangeWithScreenSizes(
 CroStatus::Or<scoped_refptr<VideoFrame>>
 VaapiVideoDecoder::AllocateCustomFrameProxy(
     base::WeakPtr<VaapiVideoDecoder> decoder,
-    gpu::GpuMemoryBufferFactory* gpu_memory_buffer_factory,
     VideoPixelFormat format,
     const gfx::Size& coded_size,
     const gfx::Rect& visible_rect,
     const gfx::Size& natural_size,
     bool use_protected,
+    bool use_linear_buffers,
     base::TimeDelta timestamp) {
   if (!decoder)
     return CroStatus::Codes::kFailedToCreateVideoFrame;
-  return decoder->AllocateCustomFrame(gpu_memory_buffer_factory, format,
-                                      coded_size, visible_rect, natural_size,
-                                      use_protected, timestamp);
+  return decoder->AllocateCustomFrame(format, coded_size, visible_rect,
+                                      natural_size, use_protected,
+                                      use_linear_buffers, timestamp);
 }
 
 CroStatus::Or<scoped_refptr<VideoFrame>> VaapiVideoDecoder::AllocateCustomFrame(
-    gpu::GpuMemoryBufferFactory* gpu_memory_buffer_factory,
     VideoPixelFormat format,
     const gfx::Size& coded_size,
     const gfx::Rect& visible_rect,
     const gfx::Size& natural_size,
     bool use_protected,
+    bool use_linear_buffers,
     base::TimeDelta timestamp) {
   DVLOGF(2);
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   DCHECK(state_ == State::kChangingResolution || state_ == State::kDecoding);
+  DCHECK(!use_linear_buffers);
   if (format != PIXEL_FORMAT_NV12)
     return CroStatus::Codes::kFailedToCreateVideoFrame;
 

@@ -197,6 +197,17 @@ const std::string& GetMajorInMinorVersionNumber() {
   return *version_number;
 }
 
+const std::string& GetReducedMajorInMinorVersionNumber() {
+  static const base::NoDestructor<std::string> version_number([] {
+    std::string version_str(kVersion99);
+    version_str.append(".");
+    version_str.append(version_info::GetMajorVersionNumber());
+    version_str.append(".0.0");
+    return version_str;
+  }());
+  return *version_number;
+}
+
 std::string GetVersionNumber(const UserAgentOptions& options) {
   // Force major version to 99.
   if (ShouldForceMajorVersionToMinorPosition(options.force_major_to_minor))
@@ -211,8 +222,9 @@ const blink::UserAgentBrandList GetUserAgentBrandList(
     bool enable_updated_grease_by_policy,
     const std::string& full_version,
     blink::UserAgentBrandVersionType output_version_type) {
-  int major_version_number = 0;
-  DCHECK(base::StringToInt(major_version, &major_version_number));
+  int major_version_number;
+  bool parse_result = base::StringToInt(major_version, &major_version_number);
+  DCHECK(parse_result);
   absl::optional<std::string> brand;
 #if !BUILDFLAG(CHROMIUM_BRANDING)
   brand = version_info::GetProductName();
@@ -316,14 +328,25 @@ std::string GetMajorVersionForUserAgentString(
 
 }  // namespace
 
-std::string GetProduct(const bool allow_version_override,
-                       ForceMajorVersionToMinorPosition force_major_to_minor) {
-  // Force major version to 99 and minor version to major position.
-  if (allow_version_override &&
-      ShouldForceMajorVersionToMinorPosition(force_major_to_minor))
-    return "Chrome/" + GetMajorInMinorVersionNumber();
-
-  return version_info::GetProductNameAndVersionForUserAgent();
+std::string GetProductAndVersion(
+    ForceMajorVersionToMinorPosition force_major_to_minor) {
+  if (ShouldForceMajorVersionToMinorPosition(force_major_to_minor)) {
+    // Force major version to 99 and major version to minor version position.
+    if (base::FeatureList::IsEnabled(
+            blink::features::kReduceUserAgentMinorVersion)) {
+      return "Chrome/" + GetReducedMajorInMinorVersionNumber();
+    } else {
+      return "Chrome/" + GetMajorInMinorVersionNumber();
+    }
+  } else {
+    if (base::FeatureList::IsEnabled(
+            blink::features::kReduceUserAgentMinorVersion)) {
+      return version_info::GetProductNameAndVersionForReducedUserAgent(
+          blink::features::kUserAgentFrozenBuildVersion.Get().data());
+    } else {
+      return version_info::GetProductNameAndVersionForUserAgent();
+    }
+  }
 }
 
 std::string GetUserAgent(
@@ -355,8 +378,7 @@ std::string GetReducedUserAgent(
 
 std::string GetFullUserAgent(
     ForceMajorVersionToMinorPosition force_major_to_minor) {
-  std::string product =
-      GetProduct(/*allow_override=*/true, force_major_to_minor);
+  std::string product = GetProductAndVersion(force_major_to_minor);
 #if BUILDFLAG(IS_ANDROID)
   if (base::CommandLine::ForCurrentProcess()->HasSwitch(
           switches::kUseMobileUserAgent))
@@ -488,11 +510,21 @@ blink::UserAgentBrandVersion GetGreasedUserAgentBrandVersion(
                                            output_version_type);
   }
 }
-// TODO(crbug.com/1103047): This can be removed/re-refactored once we use
-// "macOS" by default
+
 std::string GetPlatformForUAMetadata() {
 #if BUILDFLAG(IS_MAC)
+  // TODO(crbug.com/1103047): This can be removed/re-refactored once we use
+  // "macOS" by default
   return "macOS";
+#elif BUILDFLAG(IS_CHROMEOS)
+  // TODO(crbug.com/1334198): The branding change to remove the space caused a
+  // regression that's solved here. Ideally, we would just use the new OS name
+  // without the space here too, but that needs a launch plan.
+# if BUILDFLAG(GOOGLE_CHROME_BRANDING)
+  return "Chrome OS";
+# else
+  return "Chromium OS";
+# endif
 #else
   return version_info::GetOSType();
 #endif
@@ -554,7 +586,7 @@ void SetDesktopUserAgentOverride(content::WebContents* web_contents,
 
   blink::UserAgentOverride spoofed_ua;
   spoofed_ua.ua_string_override = content::BuildUserAgentFromOSAndProduct(
-      kLinuxInfoStr, GetProduct(/*allow_override=*/true));
+      kLinuxInfoStr, GetProductAndVersion());
   spoofed_ua.ua_metadata_override = metadata;
   spoofed_ua.ua_metadata_override->platform = "Linux";
   spoofed_ua.ua_metadata_override->platform_version =

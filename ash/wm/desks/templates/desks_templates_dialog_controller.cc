@@ -4,6 +4,7 @@
 
 #include "ash/wm/desks/templates/desks_templates_dialog_controller.h"
 
+#include "ash/constants/app_types.h"
 #include "ash/public/cpp/desks_templates_delegate.h"
 #include "ash/shell.h"
 #include "ash/strings/grit/ash_strings.h"
@@ -15,6 +16,7 @@
 #include "ash/wm/overview/overview_controller.h"
 #include "ash/wm/overview/overview_grid.h"
 #include "base/bind.h"
+#include "ui/aura/client/aura_constants.h"
 #include "ui/aura/env.h"
 #include "ui/aura/window.h"
 #include "ui/base/l10n/l10n_util.h"
@@ -151,10 +153,17 @@ void DesksTemplatesDialogController::ShowUnsupportedAppsDialog(
   unsupported_apps_template_ = std::move(desk_template);
 
   size_t incognito_window_count = 0;
+  bool contains_lacros_window = false;
   auto* delegate = Shell::Get()->desks_templates_delegate();
   // TODO(shidi): The caller of  ShowUnsupportedAppsDialog should provide us
   // with the incognito window count to avoid double looping.
   for (auto* window : unsupported_apps) {
+    if (static_cast<AppType>(window->GetProperty(aura::client::kAppType)) ==
+        AppType::LACROS) {
+      contains_lacros_window = true;
+      break;
+    }
+
     if (delegate->IsIncognitoWindow(window))
       ++incognito_window_count;
   }
@@ -163,7 +172,10 @@ void DesksTemplatesDialogController::ShowUnsupportedAppsDialog(
   // are linux apps.
   std::u16string app_description;
   int app_description_id;
-  if (incognito_window_count == 0) {
+  if (contains_lacros_window) {
+    app_description_id =
+        IDS_ASH_DESKS_TEMPLATES_UNSUPPORTED_LACROS_DIALOG_DESCRIPTION;
+  } else if (incognito_window_count == 0) {
     app_description_id =
         IDS_ASH_DESKS_TEMPLATES_UNSUPPORTED_LINUX_APPS_DIALOG_DESCRIPTION;
   } else if (incognito_window_count != unsupported_apps.size()) {
@@ -215,6 +227,9 @@ void DesksTemplatesDialogController::ShowReplaceDialog(
     const std::u16string& template_name,
     base::OnceClosure on_accept_callback,
     base::OnceClosure on_cancel_callback) {
+  if (!CanShowDialog())
+    return;
+
   auto dialog = views::Builder<DesksTemplatesDialog>()
                     .SetTitleText(IDS_ASH_DESKS_TEMPLATES_REPLACE_DIALOG_TITLE)
                     .SetConfirmButtonText(
@@ -235,6 +250,9 @@ void DesksTemplatesDialogController::ShowDeleteDialog(
     aura::Window* root_window,
     const std::u16string& template_name,
     base::OnceClosure on_accept_callback) {
+  if (!CanShowDialog())
+    return;
+
   auto dialog =
       views::Builder<DesksTemplatesDialog>()
           .SetTitleText(IDS_ASH_DESKS_TEMPLATES_DELETE_DIALOG_TITLE)
@@ -278,8 +296,8 @@ void DesksTemplatesDialogController::OnWidgetDestroying(views::Widget* widget) {
 void DesksTemplatesDialogController::CreateDialogWidget(
     std::unique_ptr<DesksTemplatesDialog> dialog,
     aura::Window* root_window) {
-  if (dialog_widget_)
-    dialog_widget_->CloseNow();
+  // We should not get here with an active dialog.
+  DCHECK_EQ(dialog_widget_, nullptr);
 
   // The dialog will show on the display associated with `root_window`, and will
   // block all input since it is system modal.
@@ -287,6 +305,7 @@ void DesksTemplatesDialogController::CreateDialogWidget(
   dialog_widget_ = views::DialogDelegate::CreateDialogWidget(
       std::move(dialog),
       /*context=*/root_window, /*parent=*/nullptr);
+  dialog_widget_->GetNativeWindow()->SetName("TemplateDialogForTesting");
   dialog_widget_->Show();
   dialog_widget_observation_.Observe(dialog_widget_);
 }
@@ -296,6 +315,11 @@ void DesksTemplatesDialogController::OnUserAcceptedUnsupportedAppsDialog() {
   DCHECK(unsupported_apps_template_);
   std::move(unsupported_apps_callback_)
       .Run(std::move(unsupported_apps_template_));
+}
+
+bool DesksTemplatesDialogController::CanShowDialog() const {
+  // Cannot show a dialog while another is active.
+  return dialog_widget_ == nullptr;
 }
 
 void DesksTemplatesDialogController::OnUserCanceledUnsupportedAppsDialog() {

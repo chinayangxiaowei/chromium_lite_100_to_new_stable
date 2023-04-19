@@ -275,8 +275,6 @@ void RenderFrameDevToolsAgentHost::SetFrameTreeNode(
   auto* wc = frame_tree_node_
                  ? WebContentsImpl::FromFrameTreeNode(frame_tree_node_)
                  : nullptr;
-  if (wc)
-    page_scale_factor_ = wc->GetPrimaryPage().page_scale_factor();
   WebContentsObserver::Observe(wc);
 }
 
@@ -317,7 +315,6 @@ bool RenderFrameDevToolsAgentHost::AttachSession(DevToolsSession* session,
   auto input_handler = std::make_unique<protocol::InputHandler>(
       session->GetClient()->MayReadLocalFiles(),
       session->GetClient()->MaySendInputEventsToBrowser());
-  input_handler->OnPageScaleFactorChanged(page_scale_factor_);
   session->AddHandler(std::move(input_handler));
   session->AddHandler(std::make_unique<protocol::InspectorHandler>());
   session->AddHandler(std::make_unique<protocol::IOHandler>(GetIOContext()));
@@ -357,7 +354,9 @@ bool RenderFrameDevToolsAgentHost::AttachSession(DevToolsSession* session,
   session->AddHandler(std::make_unique<protocol::PageHandler>(
       emulation_handler_ptr, browser_handler_ptr,
       session->GetClient()->AllowUnsafeOperations(),
-      session->GetClient()->GetNavigationInitiatorOrigin()));
+      session->GetClient()->MayAttachToBrowser(),
+      session->GetClient()->GetNavigationInitiatorOrigin(),
+      session->GetClient()->MayReadLocalFiles()));
   session->AddHandler(std::make_unique<protocol::SecurityHandler>());
   if (!frame_tree_node_ || !frame_tree_node_->parent()) {
     session->AddHandler(
@@ -638,13 +637,6 @@ void RenderFrameDevToolsAgentHost::OnVisibilityChanged(
 #endif
 }
 
-void RenderFrameDevToolsAgentHost::OnPageScaleFactorChanged(
-    float page_scale_factor) {
-  page_scale_factor_ = page_scale_factor;
-  for (auto* input : protocol::InputHandler::ForAgentHost(this))
-    input->OnPageScaleFactorChanged(page_scale_factor);
-}
-
 void RenderFrameDevToolsAgentHost::OnNavigationRequestWillBeSent(
     const NavigationRequest& navigation_request) {
   GURL url = navigation_request.common_params().url;
@@ -727,6 +719,10 @@ bool RenderFrameDevToolsAgentHost::CanAccessOpener() {
 }
 
 std::string RenderFrameDevToolsAgentHost::GetType() {
+  if (IsChildFrame())
+    return kTypeFrame;
+  if (frame_tree_node_ && frame_tree_node_->IsFencedFrameRoot())
+    return kTypePage;
   if (web_contents() &&
       static_cast<WebContentsImpl*>(web_contents())->IsPortal()) {
     return kTypePage;
@@ -735,8 +731,6 @@ std::string RenderFrameDevToolsAgentHost::GetType() {
       static_cast<WebContentsImpl*>(web_contents())->GetOuterWebContents()) {
     return kTypeGuest;
   }
-  if (IsChildFrame())
-    return kTypeFrame;
   DevToolsManager* manager = DevToolsManager::GetInstance();
   if (manager->delegate() && web_contents()) {
     std::string type = manager->delegate()->GetTargetType(web_contents());

@@ -505,6 +505,17 @@ class TabSwitcherMediator implements TabSwitcher.Controller, TabListRecyclerView
             return;
         }
 
+        // The polished version of the grid tab switcher for tablets translates up over top of the
+        // browser controls.
+        if (TabUiFeatureUtilities.isTabletGridTabSwitcherPolishEnabled(mContext)) {
+            final int toolbarHeight =
+                    mContext.getResources().getDimensionPixelSize(R.dimen.toolbar_height_no_shadow);
+
+            mContainerViewModel.set(TOP_MARGIN, toolbarHeight);
+            mContainerViewModel.set(SHADOW_TOP_OFFSET, toolbarHeight);
+            return;
+        }
+
         final int contentOffset = mBrowserControlsStateProvider.getContentOffset();
 
         mContainerViewModel.set(TOP_MARGIN, contentOffset);
@@ -892,12 +903,12 @@ class TabSwitcherMediator implements TabSwitcher.Controller, TabListRecyclerView
     private void recordTabCounts() {
         final TabModel model = mTabModelSelector.getCurrentModel();
         if (model == null) return;
-        RecordHistogram.recordCountHistogram(TAB_COUNT_HISTOGRAM, model.getCount());
+        RecordHistogram.recordCount1MHistogram(TAB_COUNT_HISTOGRAM, model.getCount());
 
         final TabModelFilter filter =
                 mTabModelSelector.getTabModelFilterProvider().getCurrentTabModelFilter();
         if (filter == null) return;
-        RecordHistogram.recordCountHistogram(TAB_ENTRIES_HISTOGRAM, filter.getCount());
+        RecordHistogram.recordCount1MHistogram(TAB_ENTRIES_HISTOGRAM, filter.getCount());
     }
 
     private int getTabCount() {

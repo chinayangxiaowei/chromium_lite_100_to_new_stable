@@ -18,6 +18,7 @@
 #include "ash/wm/splitview/split_view_drag_indicators.h"
 #include "ash/wm/splitview/split_view_utils.h"
 #include "ash/wm/tablet_mode/tablet_mode_browser_window_drag_session_windows_hider.h"
+#include "ash/wm/wm_metrics.h"
 #include "base/pickle.h"
 #include "base/strings/utf_string_conversions.h"
 #include "chromeos/crosapi/cpp/lacros_startup_state.h"
@@ -113,6 +114,9 @@ TabDragDropDelegate::TabDragDropDelegate(
 TabDragDropDelegate::~TabDragDropDelegate() {
   tab_dragging_recorder_.reset();
 
+  if (source_window_->is_destroying())
+    return;
+
   if (!source_window_->GetProperty(kIsSourceWindowForDrag))
     return;
 
@@ -163,16 +167,20 @@ void TabDragDropDelegate::OnNewBrowserWindowCreated(
     const gfx::Point& location_in_screen,
     aura::Window* new_window) {
   auto is_lacros = IsLacrosWindow(source_window_);
-  if (!new_window && is_lacros &&
-      !crosapi::lacros_startup_state::IsLacrosPrimaryEnabled()) {
-    LOG(ERROR)
-        << "New browser window creation for tab detaching failed.\n"
-        << "Check whether about:flags#lacros-primary is enabled or "
-        << "--enable-features=LacrosPrimary is passed in when launching Ash";
+
+  // https://crbug.com/1286203:
+  // It's possible new window is created when the dragged WebContents
+  // closes itself during the drag session.
+  if (!new_window) {
+    if (is_lacros && !crosapi::lacros_startup_state::IsLacrosPrimaryEnabled()) {
+      LOG(ERROR)
+          << "New browser window creation for tab detaching failed.\n"
+          << "Check whether about:flags#lacros-primary is enabled or "
+          << "--enable-features=LacrosPrimary is passed in when launching Ash";
+    }
     return;
   }
 
-  DCHECK(new_window) << "New browser window creation for tab detaching failed.";
   const gfx::Rect area =
       screen_util::GetDisplayWorkAreaBoundsInScreenForActiveDeskContainer(
           root_window_);
@@ -224,6 +232,8 @@ void TabDragDropDelegate::OnNewBrowserWindowCreated(
           snap_position) {
     overview_session->MergeWindowIntoOverviewForWebUITabStrip(new_window);
   } else {
+    WindowState::Get(new_window)
+        ->set_snap_action_source(WindowSnapActionSource::kDragTabToSnap);
     split_view_controller->SnapWindow(new_window, snap_position,
                                       /*activate_window=*/true);
   }
@@ -243,6 +253,8 @@ void TabDragDropDelegate::OnNewBrowserWindowCreated(
   // |source_window_| is itself a child window of the browser since it
   // hosts web content (specifically, the tab strip WebUI). Snap its
   // toplevel window which is the browser window.
+  WindowState::Get(new_window)
+      ->set_snap_action_source(WindowSnapActionSource::kDragTabToSnap);
   split_view_controller->SnapWindow(source_window_, opposite_position);
 }
 

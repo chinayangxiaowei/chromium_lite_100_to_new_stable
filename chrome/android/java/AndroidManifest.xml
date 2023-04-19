@@ -64,7 +64,6 @@ by a child template that "extends" this file.
     <uses-permission-sdk-23 android:name="android.permission.REQUEST_INSTALL_PACKAGES"/>
 
     <uses-permission android:name="android.permission.CAMERA" />
-    <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
     <uses-permission android:name="android.permission.DOWNLOAD_WITHOUT_NOTIFICATION" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.GET_ACCOUNTS"/>
@@ -75,6 +74,8 @@ by a child template that "extends" this file.
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+    <uses-permission-sdk-23 android:name="android.permission.READ_MEDIA_IMAGES"/>
+    <uses-permission-sdk-23 android:name="android.permission.READ_MEDIA_VIDEO"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <uses-permission android:name="android.permission.RECORD_AUDIO"/>
     <uses-permission android:name="android.permission.USE_CREDENTIALS"/>
@@ -324,10 +325,6 @@ by a child template that "extends" this file.
             </intent-filter>
             <intent-filter>
                 <action android:name="com.sec.android.airview.HOVER" />
-            </intent-filter>
-            <intent-filter>
-                <action android:name="android.web.action.APP_ATTRIBUTION" />
-                <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
             <meta-data android:name="android.app.searchable"
                 android:resource="@xml/searchable" />
@@ -909,9 +906,20 @@ by a child template that "extends" this file.
         android:exported="true"
         android:excludeFromRecents="true"
         android:launchMode="singleTop">
-            <!-- This activity can be started by GMSCore, and is thus exported
-            with a permission set, or can be started by the Android system in
-            the case that a USB device is attached. -->
+        </activity>
+
+        <!-- configChanges is set here to prevent the destruction of the
+             activity after configuration changes. Since the bulk of this
+             activity's logic is in a feature module, restoring the activity
+             via a Bundle doesn't work. -->
+        <activity
+        android:name="org.chromium.chrome.browser.webauth.authenticator.CableAuthenticatorUSBActivity"
+        android:configChanges="density|fontScale|keyboard|keyboardHidden|layoutDirection|locale|mcc|mnc|navigation|orientation|screenLayout|screenSize|smallestScreenSize|touchscreen|uiMode"
+        android:theme="@style/Theme.Chromium.Activity.Fullscreen"
+        android:label="@string/cablev2_activity_title"
+        android:exported="false"
+        android:excludeFromRecents="true"
+        android:launchMode="singleTop">
             <intent-filter>
                  <action android:name="android.hardware.usb.action.USB_ACCESSORY_ATTACHED" />
             </intent-filter>
@@ -1043,6 +1051,14 @@ by a child template that "extends" this file.
             </intent-filter>
         </receiver>
 
+        <!-- Android Notification permission metrics -->
+        <receiver android:name="org.chromium.chrome.browser.notifications.permissions.NotificationPermissionChangeReceiver"
+                  android:exported="false">
+          <intent-filter>
+            <action android:name="android.app.action.APP_BLOCK_STATE_CHANGED"/>
+          </intent-filter>
+        </receiver>
+
         <!-- Android Notification job service -->
         <service android:name="org.chromium.chrome.browser.notifications.NotificationJobService"
             android:exported="false"
@@ -1117,6 +1133,16 @@ by a child template that "extends" this file.
               <action android:name="org.chromium.intent.action.UPDATE_PAYMENT_DETAILS" />
             </intent-filter>
         </service>
+
+        <service
+            android:name="org.chromium.chrome.browser.webapps.WebApkInstallCoordinatorService"
+            android:exported="true"
+            tools:ignore="ExportedService">
+            <intent-filter>
+              <action android:name="org.chromium.intent.action.INSTALL_WEB_APK" />
+            </intent-filter>
+        </service>
+
 
         <receiver android:name="org.chromium.chrome.browser.announcement.AnnouncementNotificationManager$Receiver"
             android:exported="false"/>
@@ -1318,7 +1344,7 @@ by a child template that "extends" this file.
       </provider>
 
       <!-- Provider for image data from Drag and Drop. -->
-      <provider android:name="org.chromium.ui.base.DropDataContentProvider"
+      <provider android:name="org.chromium.ui.dragdrop.DropDataContentProvider"
           android:authorities="{{ manifest_package }}.DropDataProvider"
           android:exported="false"
           android:grantUriPermissions="true">
@@ -1348,14 +1374,6 @@ by a child template that "extends" this file.
           android:exported="true">
           <path-permission android:path="/bookmarks/search_suggest_query"
                   android:readPermission="android.permission.GLOBAL_SEARCH" />
-      </provider>
-
-      <!-- Provider for App to Web impression attribution.
-           TODO(https://crbug.com/1210171): Gate this provider behind a custom permission? -->
-      <provider android:name="org.chromium.chrome.browser.attribution_reporting.AttributionReportingProvider"
-          android:authorities="{{ manifest_package }}.AttributionReporting"
-          android:exported="true"
-          tools:ignore="ExportedContentProvider">
       </provider>
 
       {% block base_application_definitions %}

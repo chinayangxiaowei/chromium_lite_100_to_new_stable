@@ -8,12 +8,14 @@
 #include "base/gtest_prod_util.h"
 #include "base/threading/thread_checker.h"
 #include "base/types/pass_key.h"
+#include "base/values.h"
 #include "mojo/public/cpp/bindings/receiver.h"
 #include "mojo/public/cpp/bindings/remote.h"
 #include "third_party/blink/public/mojom/peerconnection/peer_connection_tracker.mojom-blink.h"
 #include "third_party/blink/renderer/core/frame/local_dom_window.h"
 #include "third_party/blink/renderer/modules/mediastream/media_stream.h"
 #include "third_party/blink/renderer/modules/modules_export.h"
+#include "third_party/blink/renderer/platform/mojo/heap_mojo_receiver.h"
 #include "third_party/blink/renderer/platform/peerconnection/rtc_peer_connection_handler_client.h"
 #include "third_party/blink/renderer/platform/peerconnection/rtc_rtp_transceiver_platform.h"
 #include "third_party/blink/renderer/platform/peerconnection/rtc_session_description_platform.h"
@@ -256,6 +258,11 @@ class MODULES_EXPORT PeerConnectionTracker
   virtual void TrackRtcEventLogWrite(RTCPeerConnectionHandler* pc_handler,
                                      const WTF::Vector<uint8_t>& output);
 
+  void Trace(Visitor* visitor) const override {
+    visitor->Trace(receiver_);
+    Supplement<LocalDOMWindow>::Trace(visitor);
+  }
+
  private:
   FRIEND_TEST_ALL_PREFIXES(PeerConnectionTrackerTest, OnSuspend);
   FRIEND_TEST_ALL_PREFIXES(PeerConnectionTrackerTest, OnThermalStateChange);
@@ -311,8 +318,8 @@ class MODULES_EXPORT PeerConnectionTracker
                                 const String& callback_type,
                                 const String& value);
 
-  void AddStandardStats(int lid, base::Value value);
-  void AddLegacyStats(int lid, base::Value value);
+  void AddStandardStats(int lid, base::Value::List value);
+  void AddLegacyStats(int lid, base::Value::List value);
 
   // This map stores the local ID assigned to each RTCPeerConnectionHandler.
   typedef WTF::HashMap<RTCPeerConnectionHandler*, int> PeerConnectionLocalIdMap;
@@ -324,7 +331,9 @@ class MODULES_EXPORT PeerConnectionTracker
   THREAD_CHECKER(main_thread_);
   mojo::Remote<blink::mojom::blink::PeerConnectionTrackerHost>
       peer_connection_tracker_host_;
-  mojo::Receiver<blink::mojom::blink::PeerConnectionManager> receiver_{this};
+  HeapMojoReceiver<blink::mojom::blink::PeerConnectionManager,
+                   PeerConnectionTracker>
+      receiver_;
 
   scoped_refptr<base::SingleThreadTaskRunner> main_thread_task_runner_;
 };

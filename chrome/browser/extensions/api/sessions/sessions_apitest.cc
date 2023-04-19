@@ -10,7 +10,6 @@
 #include "base/bind.h"
 #include "base/callback_helpers.h"
 #include "base/command_line.h"
-#include "base/cxx17_backports.h"
 #include "base/memory/ptr_util.h"
 #include "base/path_service.h"
 #include "base/strings/pattern.h"
@@ -20,6 +19,7 @@
 #include "build/chromeos_buildflags.h"
 #include "chrome/browser/extensions/api/sessions/sessions_api.h"
 #include "chrome/browser/extensions/api/tabs/tabs_api.h"
+#include "chrome/browser/extensions/api/tabs/tabs_constants.h"
 #include "chrome/browser/extensions/extension_apitest.h"
 #include "chrome/browser/extensions/extension_function_test_utils.h"
 #include "chrome/browser/profiles/profile_manager.h"
@@ -27,6 +27,7 @@
 #include "chrome/common/chrome_paths.h"
 #include "chrome/common/chrome_switches.h"
 #include "chrome/test/base/in_process_browser_test.h"
+#include "chrome/test/base/test_browser_window.h"
 #include "chrome/test/base/testing_browser_process.h"
 #include "chrome/test/base/ui_test_utils.h"
 #include "components/sync/base/client_tag_hash.h"
@@ -129,7 +130,7 @@ testing::AssertionResult CheckSessionModels(const base::ListValue& devices,
       return testing::AssertionFailure()
              << "window dictionary does not contain a tabs list entry";
     }
-    EXPECT_EQ(base::size(kTabIDs), tabs->GetListDeprecated().size());
+    EXPECT_EQ(std::size(kTabIDs), tabs->GetListDeprecated().size());
     for (size_t j = 0; j < tabs->GetListDeprecated().size(); ++j) {
       const base::Value::DictStorage tab =
           utils::ToDictionary(tabs->GetListDeprecated()[j]);
@@ -228,12 +229,12 @@ void ExtensionSessionsTest::CreateSessionModels() {
 
   const base::Time time_now = base::Time::Now();
   syncer::SyncDataList initial_data;
-  for (size_t index = 0; index < base::size(kSessionTags); ++index) {
+  for (size_t index = 0; index < std::size(kSessionTags); ++index) {
     // Fill an instance of session specifics with a foreign session's data.
     sync_pb::EntitySpecifics header_entity;
     BuildSessionSpecifics(kSessionTags[index], header_entity.mutable_session());
     std::vector<SessionID::id_type> tab_list(kTabIDs,
-                                             kTabIDs + base::size(kTabIDs));
+                                             kTabIDs + std::size(kTabIDs));
     BuildWindowSpecifics(index, tab_list, header_entity.mutable_session());
     std::vector<sync_pb::SessionSpecifics> tabs(tab_list.size());
     for (size_t i = 0; i < tab_list.size(); ++i) {
@@ -351,6 +352,27 @@ IN_PROC_BROWSER_TEST_F(ExtensionSessionsTest, RestoreInIncognito) {
           CreateFunction<SessionsRestoreFunction>(true).get(), "[\"1\"]",
           CreateIncognitoBrowser()),
       "Can not restore sessions in incognito mode."));
+}
+
+IN_PROC_BROWSER_TEST_F(ExtensionSessionsTest, RestoreNonEditableTabstrip) {
+  CreateSessionModels();
+
+  // Set up a browser with a non-editable tabstrip, simulating one in the midst
+  // of a tab dragging session.
+  std::unique_ptr<TestBrowserWindow> browser_window =
+      std::make_unique<TestBrowserWindow>();
+  Browser::CreateParams params(browser()->profile(), true);
+  params.type = Browser::TYPE_NORMAL;
+  params.window = browser_window.get();
+  std::unique_ptr<Browser> browser =
+      std::unique_ptr<Browser>(Browser::Create(params));
+  browser_window->SetIsTabStripEditable(false);
+
+  EXPECT_TRUE(base::MatchPattern(
+      utils::RunFunctionAndReturnError(
+          CreateFunction<SessionsRestoreFunction>(true).get(), "[\"1\"]",
+          browser.get()),
+      tabs_constants::kTabStripNotEditableError));
 }
 
 IN_PROC_BROWSER_TEST_F(ExtensionSessionsTest, GetRecentlyClosedIncognito) {

@@ -15,13 +15,14 @@
 #include "base/check_op.h"
 #include "base/compiler_specific.h"
 #include "base/component_export.h"
+#include "base/containers/span.h"
 #include "base/location.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/ref_counted.h"
 #include "base/memory/weak_ptr.h"
 #include "base/sequence_checker.h"
+#include "base/strings/string_piece.h"
 #include "base/synchronization/lock.h"
-#include "base/synchronization/waitable_event.h"
 #include "base/task/sequenced_task_runner.h"
 #include "base/time/time.h"
 #include "base/timer/timer.h"
@@ -33,6 +34,7 @@
 #include "mojo/public/cpp/bindings/lib/control_message_proxy.h"
 #include "mojo/public/cpp/bindings/message.h"
 #include "mojo/public/cpp/bindings/message_dispatcher.h"
+#include "mojo/public/cpp/bindings/message_metadata_helpers.h"
 #include "mojo/public/cpp/bindings/scoped_interface_endpoint_handle.h"
 #include "mojo/public/cpp/bindings/thread_safe_proxy.h"
 #include "third_party/abseil-cpp/absl/types/optional.h"
@@ -56,10 +58,12 @@ class COMPONENT_EXPORT(MOJO_CPP_BINDINGS) InterfaceEndpointClient
   InterfaceEndpointClient(ScopedInterfaceEndpointHandle handle,
                           MessageReceiverWithResponderStatus* receiver,
                           std::unique_ptr<MessageReceiver> payload_validator,
-                          bool expect_sync_requests,
+                          base::span<const uint32_t> sync_method_ordinals,
                           scoped_refptr<base::SequencedTaskRunner> task_runner,
                           uint32_t interface_version,
-                          const char* interface_name);
+                          const char* interface_name,
+                          MessageToStableIPCHashCallback ipc_hash_callback,
+                          MessageToMethodNameCallback method_name_callback);
 
   InterfaceEndpointClient(const InterfaceEndpointClient&) = delete;
   InterfaceEndpointClient& operator=(const InterfaceEndpointClient&) = delete;
@@ -110,7 +114,7 @@ class COMPONENT_EXPORT(MOJO_CPP_BINDINGS) InterfaceEndpointClient
   // and notifies all interfaces running on this pipe.
   void RaiseError();
 
-  void CloseWithReason(uint32_t custom_reason, const std::string& description);
+  void CloseWithReason(uint32_t custom_reason, base::StringPiece description);
 
   // Used by ControlMessageProxy to send messages through this endpoint.
   void SendControlMessage(Message* message);
@@ -191,6 +195,12 @@ class COMPONENT_EXPORT(MOJO_CPP_BINDINGS) InterfaceEndpointClient
   void MaybeSendNotifyIdle();
 
   const char* interface_name() const { return interface_name_; }
+  MessageToStableIPCHashCallback ipc_hash_callback() const {
+    return ipc_hash_callback_;
+  }
+  MessageToMethodNameCallback method_name_callback() const {
+    return method_name_callback_;
+  }
 
 #if DCHECK_IS_ON()
   void SetNextCallLocation(const base::Location& location) {
@@ -212,21 +222,37 @@ class COMPONENT_EXPORT(MOJO_CPP_BINDINGS) InterfaceEndpointClient
   // The router lock must be held when calling this.
   void ForgetAsyncRequest(uint64_t request_id);
 
+  base::span<const uint32_t> sync_method_ordinals() const {
+    return sync_method_ordinals_;
+  }
+
  private:
-  // Maps from the id of a response to the MessageReceiver that handles the
-  // response.
-  using AsyncResponderMap =
-      std::map<uint64_t, std::unique_ptr<MessageReceiver>>;
+  struct PendingAsyncResponse {
+   public:
+    PendingAsyncResponse(uint32_t request_message_name,
+                         std::unique_ptr<MessageReceiver> responder);
+    PendingAsyncResponse(PendingAsyncResponse&&);
+    PendingAsyncResponse(const PendingAsyncResponse&) = delete;
+    PendingAsyncResponse& operator=(PendingAsyncResponse&&);
+    PendingAsyncResponse& operator=(const PendingAsyncResponse&) = delete;
+    ~PendingAsyncResponse();
+
+    uint32_t request_message_name;
+    std::unique_ptr<MessageReceiver> responder;
+  };
+
+  using AsyncResponderMap = std::map<uint64_t, PendingAsyncResponse>;
 
   struct SyncResponseInfo {
    public:
-    explicit SyncResponseInfo(bool* in_response_received);
+    SyncResponseInfo(uint32_t request_message_name, bool* in_response_received);
 
     SyncResponseInfo(const SyncResponseInfo&) = delete;
     SyncResponseInfo& operator=(const SyncResponseInfo&) = delete;
 
     ~SyncResponseInfo();
 
+    uint32_t request_message_name;
     Message response;
 
     // Points to a stack-allocated variable.
@@ -261,7 +287,7 @@ class COMPONENT_EXPORT(MOJO_CPP_BINDINGS) InterfaceEndpointClient
 
   bool HandleValidatedMessage(Message* message);
 
-  const bool expect_sync_requests_ = false;
+  const base::span<const uint32_t> sync_method_ordinals_;
 
   // The callback to invoke when our peer endpoint sends us NotifyIdle and we
   // have no outstanding unacked messages. If null, no callback has been set and
@@ -318,6 +344,8 @@ class COMPONENT_EXPORT(MOJO_CPP_BINDINGS) InterfaceEndpointClient
   internal::ControlMessageProxy control_message_proxy_{this};
   internal::ControlMessageHandler control_message_handler_;
   const char* interface_name_;
+  const MessageToStableIPCHashCallback ipc_hash_callback_;
+  const MessageToMethodNameCallback method_name_callback_;
 
 #if DCHECK_IS_ON()
   // The code location of the the most recent call into a method on this

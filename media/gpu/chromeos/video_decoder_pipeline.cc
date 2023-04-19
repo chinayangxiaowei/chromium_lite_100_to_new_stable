@@ -9,7 +9,6 @@
 #include "base/bind.h"
 #include "base/containers/contains.h"
 #include "base/memory/ptr_util.h"
-#include "base/task/post_task.h"
 #include "base/task/sequenced_task_runner.h"
 #include "base/task/task_traits.h"
 #include "base/task/thread_pool.h"
@@ -118,6 +117,8 @@ absl::optional<SupportedVideoDecoderConfigs>
 VideoDecoderPipeline::GetSupportedConfigs(
     const gpu::GpuDriverBugWorkarounds& workarounds) {
   absl::optional<SupportedVideoDecoderConfigs> configs =
+  // TODO(b/195769334): figure out the best way to query the supported
+  // configurations when using an out-of-process video decoder.
 #if BUILDFLAG(USE_VAAPI)
       VaapiVideoDecoder::GetSupportedConfigs();
 #elif BUILDFLAG(USE_V4L2_CODEC)
@@ -731,13 +732,8 @@ VideoDecoderPipeline::PickDecoderOutputFormat(
 
   if (need_aux_frame_pool) {
     // Initialize the auxiliary frame pool with the input format of the image
-    // processor. Note that we pass nullptr as the GpuMemoryBufferFactory. That
-    // way, the pool will allocate buffers using minigbm directly instead of
-    // going through Ozone which means it won't create DRM/KMS framebuffers for
-    // those buffers. This is good because these buffers don't end up as
-    // overlays anyway.
-    auxiliary_frame_pool_ = std::make_unique<PlatformVideoFramePool>(
-        /*gpu_memory_buffer_factory=*/nullptr);
+    // processor.
+    auxiliary_frame_pool_ = std::make_unique<PlatformVideoFramePool>();
 
     auxiliary_frame_pool_->set_parent_task_runner(decoder_task_runner_);
     CroStatus::Or<GpuBufferLayout> status_or_layout =
