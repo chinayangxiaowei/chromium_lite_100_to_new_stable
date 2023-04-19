@@ -2,10 +2,10 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+from __future__ import print_function
 import argparse
 import codecs
 import contextlib
-import io
 import json
 import os
 import logging
@@ -13,16 +13,22 @@ import platform
 import subprocess
 import sys
 import tempfile
-import time
 import traceback
 
 logging.basicConfig(level=logging.INFO)
 
 # Add src/testing/ into sys.path for importing xvfb and test_env.
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.append(
+    os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
 import test_env
 if sys.platform.startswith('linux'):
   import xvfb
+
+# Unfortunately we need to copy these variables from ../test_env.py.
+# Importing it and using its get_sandbox_env breaks test runs on Linux
+# (it seems to unset DISPLAY).
+CHROME_SANDBOX_ENV = 'CHROME_DEVEL_SANDBOX'
+CHROME_SANDBOX_PATH = '/opt/chromium/chrome_sandbox'
 
 
 SCRIPT_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -59,6 +65,8 @@ CORRECT_ACL_VARIANTS = [
     'APPLICATION PACKAGE AUTHORITY' \
     '\\ALL RESTRICTED APPLICATION PACKAGES:(I)(OI)(CI)(RX)'
 ]
+
+# pylint: disable=useless-object-inheritance
 
 
 def set_lpac_acls(acl_dir, is_test_script=False):
@@ -148,9 +156,9 @@ def run_script(argv, funcs):
 
 
 def run_command(argv, env=None, cwd=None):
-  print('Running %r in %r (env: %r)' % (argv, cwd, env))
+  print('Running %r in %r (env: %r)' % (argv, cwd, env), file=sys.stderr)
   rc = test_env.run_command(argv, env=env, cwd=cwd)
-  print('Command %r returned exit code %d' % (argv, rc))
+  print('Command %r returned exit code %d' % (argv, rc), file=sys.stderr)
   return rc
 
 
@@ -387,8 +395,8 @@ class BaseIsolatedScriptArgsAdapter(object):
   def generate_test_also_run_disabled_tests_args(self):
     raise RuntimeError('this method is not yet implemented')
 
-  def generate_sharding_args(self, total_shard, shard_index):
-    del total_shard, shard_index  # unused
+  def generate_sharding_args(self, total_shards, shard_index):
+    del total_shards, shard_index  # unused
     raise RuntimeError('this method is not yet implemented')
 
   def select_python_executable(self):
@@ -453,6 +461,10 @@ class BaseIsolatedScriptArgsAdapter(object):
 
     env = os.environ.copy()
 
+    # Assume we want to set up the sandbox environment variables all the
+    # time; doing so is harmless on non-Linux platforms and is needed
+    # all the time on Linux.
+    env[CHROME_SANDBOX_ENV] = CHROME_SANDBOX_PATH
     valid = True
     try:
       env['CHROME_HEADLESS'] = '1'

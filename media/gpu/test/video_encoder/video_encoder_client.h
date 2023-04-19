@@ -22,6 +22,10 @@
 #include "media/gpu/test/video_encoder/video_encoder.h"
 #include "media/video/video_encode_accelerator.h"
 
+namespace gpu {
+class GpuMemoryBufferFactory;
+}
+
 namespace media {
 
 class Video;
@@ -116,11 +120,15 @@ class VideoEncoderClient : public VideoEncodeAccelerator::Client {
 
   ~VideoEncoderClient() override;
 
-  // Return an instance of the VideoEncoderClient. The |event_cb| will be called
-  // whenever an event occurs (e.g. frame encoded) and should be thread-safe.
+  // Return an instance of the VideoEncoderClient. The
+  // |gpu_memory_buffer_factory| will not be owned by the encoder client, the
+  // caller should guarantee it outlives the encoder client. The |event_cb| will
+  // be called whenever an event occurs (e.g. frame encoded) and should be
+  // thread-safe.
   static std::unique_ptr<VideoEncoderClient> Create(
       const VideoEncoder::EventCallback& event_cb,
       std::vector<std::unique_ptr<BitstreamProcessor>> bitstream_processors,
+      gpu::GpuMemoryBufferFactory* const gpu_memory_buffer_factory,
       const VideoEncoderClientConfig& config);
 
   // Initialize the video encode accelerator for the specified |video|.
@@ -171,6 +179,7 @@ class VideoEncoderClient : public VideoEncodeAccelerator::Client {
   VideoEncoderClient(
       const VideoEncoder::EventCallback& event_cb,
       std::vector<std::unique_ptr<BitstreamProcessor>> bitstream_processors,
+      gpu::GpuMemoryBufferFactory* const gpu_memory_buffer_factory,
       const VideoEncoderClientConfig& config);
 
   // Destroy the video encoder client.
@@ -272,6 +281,8 @@ class VideoEncoderClient : public VideoEncodeAccelerator::Client {
 
   VideoEncoderStats current_stats_ GUARDED_BY(stats_lock_);
   mutable base::Lock stats_lock_;
+
+  gpu::GpuMemoryBufferFactory* const gpu_memory_buffer_factory_;
 
   SEQUENCE_CHECKER(test_sequence_checker_);
   SEQUENCE_CHECKER(encoder_client_sequence_checker_);

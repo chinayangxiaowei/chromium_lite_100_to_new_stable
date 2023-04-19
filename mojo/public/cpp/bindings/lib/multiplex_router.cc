@@ -303,7 +303,7 @@ class MultiplexRouter::MessageWrapper {
  private:
   // `router_` is not a raw_ptr<...> for performance reasons (based on analysis
   // of sampling profiler data and tab_search:top100:2020).
-  MultiplexRouter* router_ = nullptr;
+  RAW_PTR_EXCLUSION MultiplexRouter* router_ = nullptr;
 
   Message value_;
 };
@@ -1067,12 +1067,6 @@ bool MultiplexRouter::ProcessIncomingMessage(
 
   bool can_direct_call;
   if (message->has_flag(Message::kFlagIsSync)) {
-    if (!message->has_flag(Message::kFlagIsResponse) &&
-        !base::Contains(endpoint->client()->sync_method_ordinals(),
-                        message->name())) {
-      RaiseErrorInNonTestingMode();
-      return true;
-    }
     can_direct_call = client_call_behavior != NO_DIRECT_CLIENT_CALLS &&
                       endpoint->task_runner()->RunsTasksInCurrentSequence();
   } else {

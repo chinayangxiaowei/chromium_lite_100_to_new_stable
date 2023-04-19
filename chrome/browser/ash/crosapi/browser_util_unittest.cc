@@ -4,8 +4,10 @@
 
 #include "chrome/browser/ash/crosapi/browser_util.h"
 
+#include "ash/components/arc/test/arc_util_test_support.h"
 #include "ash/constants/ash_features.h"
 #include "ash/constants/ash_switches.h"
+#include "base/command_line.h"
 #include "base/containers/fixed_flat_map.h"
 #include "base/files/file_util.h"
 #include "base/files/scoped_temp_dir.h"
@@ -13,11 +15,16 @@
 #include "base/test/scoped_command_line.h"
 #include "base/test/scoped_feature_list.h"
 #include "base/values.h"
+#include "chrome/browser/ash/crosapi/crosapi_util.h"
+#include "chrome/browser/ash/crosapi/environment_provider.h"
+#include "chrome/browser/ash/crosapi/idle_service_ash.h"
 #include "chrome/browser/ash/login/users/fake_chrome_user_manager.h"
 #include "chrome/browser/ash/profiles/profile_helper.h"
 #include "chrome/browser/policy/profile_policy_connector.h"
+#include "chrome/test/base/scoped_testing_local_state.h"
 #include "chrome/test/base/testing_browser_process.h"
 #include "chrome/test/base/testing_profile.h"
+#include "chromeos/crosapi/mojom/crosapi.mojom.h"
 #include "components/account_id/account_id.h"
 #include "components/policy/policy_constants.h"
 #include "components/user_manager/scoped_user_manager.h"
@@ -33,7 +40,6 @@ using version_info::Channel;
 
 namespace crosapi {
 
-namespace {
 // This implementation of RAII for LacrosAvailability is to make it easy reset
 // the state between runs.
 class ScopedLacrosAvailabilityCache {
@@ -60,16 +66,6 @@ class ScopedLacrosAvailabilityCache {
     browser_util::CacheLacrosAvailability(policy);
   }
 };
-
-class ScopedSetLacrosEnabled {
- public:
-  ScopedSetLacrosEnabled() { browser_util::SetLacrosEnabledForTest(true); }
-  ~ScopedSetLacrosEnabled() { browser_util::SetLacrosEnabledForTest(false); }
-  ScopedSetLacrosEnabled(const ScopedSetLacrosEnabled&) = delete;
-  ScopedSetLacrosEnabled& operator=(const ScopedSetLacrosEnabled&) = delete;
-};
-
-}  // namespace
 
 class BrowserUtilTest : public testing::Test {
  public:
@@ -694,13 +690,14 @@ TEST_F(BrowserUtilTest, IsProfileMigrationCompletedForUser) {
 
 TEST_F(BrowserUtilTest, IsAshBrowserSyncEnabled) {
   {
+    browser_util::SetLacrosEnabledForTest(false);
     EXPECT_FALSE(browser_util::IsLacrosEnabled());
     EXPECT_TRUE(browser_util::IsAshWebBrowserEnabled());
     EXPECT_TRUE(browser_util::IsAshBrowserSyncEnabled());
   }
 
   {
-    ScopedSetLacrosEnabled scoped_enabled;
+    browser_util::SetLacrosEnabledForTest(true);
     EXPECT_TRUE(browser_util::IsLacrosEnabled());
     EXPECT_TRUE(browser_util::IsAshWebBrowserEnabled());
     EXPECT_TRUE(browser_util::IsAshBrowserSyncEnabled());
@@ -712,6 +709,7 @@ TEST_F(BrowserUtilTest, IsAshBrowserSyncEnabled) {
         {chromeos::features::kLacrosOnly, chromeos::features::kLacrosPrimary,
          chromeos::features::kLacrosSupport},
         {});
+    browser_util::SetLacrosEnabledForTest(false);
     EXPECT_FALSE(browser_util::IsLacrosEnabled());
     EXPECT_TRUE(browser_util::IsAshWebBrowserEnabled());
     EXPECT_TRUE(browser_util::IsAshBrowserSyncEnabled());
@@ -723,51 +721,14 @@ TEST_F(BrowserUtilTest, IsAshBrowserSyncEnabled) {
         {chromeos::features::kLacrosOnly, chromeos::features::kLacrosPrimary,
          chromeos::features::kLacrosSupport},
         {});
-    ScopedSetLacrosEnabled scoped_enabled;
+    browser_util::SetLacrosEnabledForTest(true);
     EXPECT_TRUE(browser_util::IsLacrosEnabled());
     EXPECT_FALSE(browser_util::IsAshWebBrowserEnabled());
     EXPECT_FALSE(browser_util::IsAshBrowserSyncEnabled());
   }
 }
 
-TEST_F(BrowserUtilTest, GetLacrosLaunchSwitchSourceNonGoogle) {
-  AddRegularUser("user@random.com");
-
-  // If LaunchSwitch is not set, the source is unknown.
-  EXPECT_EQ(LacrosLaunchSwitchSource::kUnknown,
-            browser_util::GetLacrosLaunchSwitchSource());
-
-  // If the policy says UserChoice, lacros state may be set by user.
-  {
-    ScopedLacrosAvailabilityCache cache(LacrosAvailability::kUserChoice);
-    EXPECT_EQ(LacrosLaunchSwitchSource::kPossiblySetByUser,
-              browser_util::GetLacrosLaunchSwitchSource());
-  }
-
-  // The policy cannot be ignored by command line flag.
-  {
-    ScopedLacrosAvailabilityCache cache(LacrosAvailability::kUserChoice);
-    base::test::ScopedCommandLine cmd_line;
-    cmd_line.GetProcessCommandLine()->AppendSwitch(
-        ash::switches::kLacrosAvailabilityIgnore);
-    EXPECT_EQ(LacrosLaunchSwitchSource::kPossiblySetByUser,
-              browser_util::GetLacrosLaunchSwitchSource());
-  }
-
-  // Otherwise, the LaunchSwitch is set by the policy.
-  for (const auto launch_switch :
-       {LacrosAvailability::kLacrosDisallowed, LacrosAvailability::kSideBySide,
-        LacrosAvailability::kLacrosPrimary, LacrosAvailability::kLacrosOnly}) {
-    ScopedLacrosAvailabilityCache cache(launch_switch);
-    EXPECT_EQ(LacrosLaunchSwitchSource::kForcedByPolicy,
-              browser_util::GetLacrosLaunchSwitchSource())
-        << static_cast<int>(launch_switch);
-  }
-}
-
-TEST_F(BrowserUtilTest, GetLacrosLaunchSwitchSourceGoogle) {
-  AddRegularUser("user@google.com");
-
+TEST_F(BrowserUtilTest, GetLacrosLaunchSwitchSource) {
   // If LaunchSwitch is not set, the source is unknown.
   EXPECT_EQ(LacrosLaunchSwitchSource::kUnknown,
             browser_util::GetLacrosLaunchSwitchSource());
@@ -780,6 +741,8 @@ TEST_F(BrowserUtilTest, GetLacrosLaunchSwitchSourceGoogle) {
   }
 
   // The policy can be ignored by command line flag.
+  // In the case, it is forced by user. Note that if the flag is set,
+  // LacrosAvailability is always kUserChoice.
   {
     ScopedLacrosAvailabilityCache cache(LacrosAvailability::kUserChoice);
     base::test::ScopedCommandLine cmd_line;
@@ -788,40 +751,16 @@ TEST_F(BrowserUtilTest, GetLacrosLaunchSwitchSourceGoogle) {
     EXPECT_EQ(LacrosLaunchSwitchSource::kForcedByUser,
               browser_util::GetLacrosLaunchSwitchSource());
   }
-}
 
-// Lacros availability has no effect on non-googlers
-TEST_F(BrowserUtilTest, LacrosAvailabilityIgnoreNonGoogle) {
-  AddRegularUser("user@random.com");
-
-  base::test::ScopedCommandLine cmd_line;
-  cmd_line.GetProcessCommandLine()->AppendSwitch(
-      ash::switches::kLacrosAvailabilityIgnore);
-  ScopedLacrosAvailabilityCache cache(LacrosAvailability::kLacrosDisallowed);
-  EXPECT_FALSE(browser_util::IsLacrosAllowedToBeEnabled());
-}
-
-// Lacros availability has an effect on googlers
-TEST_F(BrowserUtilTest, LacrosAvailabilityIgnoreGoogleDisableToUserChoice) {
-  AddRegularUser("user@google.com");
-
-  base::test::ScopedCommandLine cmd_line;
-  cmd_line.GetProcessCommandLine()->AppendSwitch(
-      ash::switches::kLacrosAvailabilityIgnore);
-  ScopedLacrosAvailabilityCache cache(LacrosAvailability::kLacrosDisallowed);
-  EXPECT_TRUE(browser_util::IsLacrosAllowedToBeEnabled());
-}
-
-// Lacros availability has an effect on googlers
-TEST_F(BrowserUtilTest, LacrosAvailabilityIgnoreGoogleEnableToUserChoice) {
-  AddRegularUser("user@google.com");
-
-  base::test::ScopedCommandLine cmd_line;
-  cmd_line.GetProcessCommandLine()->AppendSwitch(
-      ash::switches::kLacrosAvailabilityIgnore);
-  ScopedLacrosAvailabilityCache cache(LacrosAvailability::kLacrosOnly);
-  EXPECT_TRUE(browser_util::IsLacrosAllowedToBeEnabled());
-  EXPECT_FALSE(browser_util::IsLacrosEnabled());
+  // Otherwise, the LaunchSwitch is set by the policy.
+  for (const auto launch_switch :
+       {LacrosAvailability::kLacrosDisallowed, LacrosAvailability::kSideBySide,
+        LacrosAvailability::kLacrosPrimary, LacrosAvailability::kLacrosOnly}) {
+    ScopedLacrosAvailabilityCache cache(launch_switch);
+    EXPECT_EQ(LacrosLaunchSwitchSource::kForcedByPolicy,
+              browser_util::GetLacrosLaunchSwitchSource())
+        << static_cast<int>(launch_switch);
+  }
 }
 
 // Check that the exist configurations used for the Google rollout have the
@@ -862,6 +801,42 @@ TEST_F(BrowserUtilTest, LacrosGoogleRolloutPrimary) {
   EXPECT_TRUE(browser_util::IsLacrosEnabled());
   EXPECT_TRUE(browser_util::IsLacrosPrimaryBrowser());
   EXPECT_FALSE(browser_util::IsAshWebBrowserEnabled());
+}
+
+TEST_F(BrowserUtilTest, IsArcAvailable) {
+  arc::SetArcAvailableCommandLineForTesting(
+      base::CommandLine::ForCurrentProcess());
+  IdleServiceAsh::DisableForTesting();
+  ScopedTestingLocalState local_state(TestingBrowserProcess::GetGlobal());
+  AddRegularUser("user@google.com");
+
+  EnvironmentProvider environment_provider;
+  mojom::BrowserInitParamsPtr browser_init_params =
+      browser_util::GetBrowserInitParams(
+          &environment_provider,
+          browser_util::InitialBrowserAction(
+              crosapi::mojom::InitialBrowserAction::kDoNotOpenWindow),
+          /*is_keep_alive_enabled=*/false);
+  EXPECT_TRUE(browser_init_params->device_properties->is_arc_available);
+  EXPECT_FALSE(browser_init_params->device_properties->is_tablet_form_factor);
+}
+
+TEST_F(BrowserUtilTest, IsTabletFormFactor) {
+  base::CommandLine::ForCurrentProcess()->AppendSwitch(
+      ash::switches::kEnableTabletFormFactor);
+  IdleServiceAsh::DisableForTesting();
+  ScopedTestingLocalState local_state(TestingBrowserProcess::GetGlobal());
+  AddRegularUser("user@google.com");
+
+  EnvironmentProvider environment_provider;
+  mojom::BrowserInitParamsPtr browser_init_params =
+      browser_util::GetBrowserInitParams(
+          &environment_provider,
+          browser_util::InitialBrowserAction(
+              crosapi::mojom::InitialBrowserAction::kDoNotOpenWindow),
+          /*is_keep_alive_enabled=*/false);
+  EXPECT_FALSE(browser_init_params->device_properties->is_arc_available);
+  EXPECT_TRUE(browser_init_params->device_properties->is_tablet_form_factor);
 }
 
 }  // namespace crosapi

@@ -65,31 +65,25 @@ builder(
 
 builder(
     name = "WebRTC Chromium Mac Builder",
-    os = os.MAC_ANY,
     goma_backend = goma.backend.RBE_PROD,
+    os = os.MAC_ANY,
 )
 
 builder(
     name = "WebRTC Chromium Mac Tester",
-    triggered_by = ["WebRTC Chromium Mac Builder"],
     os = os.MAC_ANY,
+    triggered_by = ["WebRTC Chromium Mac Builder"],
 )
 
 builder(
     name = "WebRTC Chromium Win Builder",
-    os = os.WINDOWS_ANY,
     goma_backend = goma.backend.RBE_PROD,
     goma_enable_ats = True,
+    os = os.WINDOWS_ANY,
 )
 
 builder(
     name = "WebRTC Chromium Win10 Tester",
-    triggered_by = ["WebRTC Chromium Win Builder"],
     os = os.WINDOWS_ANY,
-)
-
-builder(
-    name = "WebRTC Chromium Win7 Tester",
     triggered_by = ["WebRTC Chromium Win Builder"],
-    os = os.WINDOWS_ANY,
 )

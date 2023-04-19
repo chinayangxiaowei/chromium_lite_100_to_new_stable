@@ -15,7 +15,6 @@
 #include "third_party/blink/renderer/core/frame/local_dom_window.h"
 #include "third_party/blink/renderer/modules/mediastream/media_stream.h"
 #include "third_party/blink/renderer/modules/modules_export.h"
-#include "third_party/blink/renderer/platform/mojo/heap_mojo_receiver.h"
 #include "third_party/blink/renderer/platform/peerconnection/rtc_peer_connection_handler_client.h"
 #include "third_party/blink/renderer/platform/peerconnection/rtc_rtp_transceiver_platform.h"
 #include "third_party/blink/renderer/platform/peerconnection/rtc_session_description_platform.h"
@@ -125,13 +124,8 @@ class MODULES_EXPORT PeerConnectionTracker
   // the |constraints| is the media constraints used to create the offer/answer.
   virtual void TrackCreateOffer(RTCPeerConnectionHandler* pc_handler,
                                 RTCOfferOptionsPlatform* options);
-  // TODO(hta): Get rid of the version below.
-  virtual void TrackCreateOffer(RTCPeerConnectionHandler* pc_handler,
-                                const MediaConstraints& options);
   virtual void TrackCreateAnswer(RTCPeerConnectionHandler* pc_handler,
                                  blink::RTCAnswerOptionsPlatform* options);
-  virtual void TrackCreateAnswer(RTCPeerConnectionHandler* pc_handler,
-                                 const MediaConstraints& constraints);
 
   // Sends an update when setLocalDescription or setRemoteDescription is called.
   virtual void TrackSetSessionDescription(RTCPeerConnectionHandler* pc_handler,
@@ -258,11 +252,6 @@ class MODULES_EXPORT PeerConnectionTracker
   virtual void TrackRtcEventLogWrite(RTCPeerConnectionHandler* pc_handler,
                                      const WTF::Vector<uint8_t>& output);
 
-  void Trace(Visitor* visitor) const override {
-    visitor->Trace(receiver_);
-    Supplement<LocalDOMWindow>::Trace(visitor);
-  }
-
  private:
   FRIEND_TEST_ALL_PREFIXES(PeerConnectionTrackerTest, OnSuspend);
   FRIEND_TEST_ALL_PREFIXES(PeerConnectionTrackerTest, OnThermalStateChange);
@@ -331,9 +320,7 @@ class MODULES_EXPORT PeerConnectionTracker
   THREAD_CHECKER(main_thread_);
   mojo::Remote<blink::mojom::blink::PeerConnectionTrackerHost>
       peer_connection_tracker_host_;
-  HeapMojoReceiver<blink::mojom::blink::PeerConnectionManager,
-                   PeerConnectionTracker>
-      receiver_;
+  mojo::Receiver<blink::mojom::blink::PeerConnectionManager> receiver_{this};
 
   scoped_refptr<base::SingleThreadTaskRunner> main_thread_task_runner_;
 };

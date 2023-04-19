@@ -17,6 +17,7 @@
 #include "ash/public/cpp/resources/grit/ash_public_unscaled_resources.h"
 #include "ash/services/cellular_setup/public/mojom/esim_manager.mojom.h"
 #include "ash/services/multidevice_setup/multidevice_setup_service.h"
+#include "ash/shell.h"
 #include "base/bind.h"
 #include "base/command_line.h"
 #include "base/containers/contains.h"
@@ -135,6 +136,8 @@
 #include "ui/base/webui/web_ui_util.h"
 #include "ui/chromeos/resources/grit/ui_chromeos_resources.h"
 #include "ui/display/display.h"
+#include "ui/display/manager/display_manager.h"
+#include "ui/display/screen.h"
 #include "ui/events/devices/device_data_manager.h"
 #include "ui/events/devices/input_device.h"
 #include "ui/resources/grit/webui_generated_resources.h"
@@ -298,19 +301,14 @@ void AddTestAPIResources(content::WebUIDataSource* source) {
 // Default and non-shared resource definition for kOobeDisplay display type.
 // chrome://oobe/oobe
 void AddOobeDisplayTypeDefaultResources(content::WebUIDataSource* source) {
-  if (features::IsOobePolymer3Enabled()) {
-    // TODO(crbug.com/1279339): Separate ChromeOS Flex screens resources.
-    source->SetDefaultResource(IDR_OOBE_POLY3_HTML);
+  if (switches::IsOsInstallAllowed()) {
+    source->SetDefaultResource(IDR_OS_INSTALL_OOBE_HTML);
+    source->AddResourcePath(kCustomElementsHTMLPath,
+                            IDR_CUSTOM_ELEMENTS_OS_INSTALL_OOBE_HTML);
   } else {
-    if (switches::IsOsInstallAllowed()) {
-      source->SetDefaultResource(IDR_OS_INSTALL_OOBE_HTML);
-      source->AddResourcePath(kCustomElementsHTMLPath,
-                              IDR_CUSTOM_ELEMENTS_OS_INSTALL_OOBE_HTML);
-    } else {
-      source->SetDefaultResource(IDR_OOBE_HTML);
-      source->AddResourcePath(kCustomElementsHTMLPath,
-                              IDR_CUSTOM_ELEMENTS_OOBE_HTML);
-    }
+    source->SetDefaultResource(IDR_OOBE_HTML);
+    source->AddResourcePath(kCustomElementsHTMLPath,
+                            IDR_CUSTOM_ELEMENTS_OOBE_HTML);
   }
   source->AddResourcePath(kOobeJSPath, IDR_OOBE_JS);
 }
@@ -318,21 +316,15 @@ void AddOobeDisplayTypeDefaultResources(content::WebUIDataSource* source) {
 // Default and non-shared resource definition for kLoginDisplay display type.
 // chrome://oobe/login
 void AddLoginDisplayTypeDefaultResources(content::WebUIDataSource* source) {
-  if (features::IsOobePolymer3Enabled()) {
-    // TODO(crbug.com/1279339): Separate ChromeOS Flex screens resources.
-    source->SetDefaultResource(IDR_MD_LOGIN_POLY3_HTML);
+  if (switches::IsOsInstallAllowed()) {
+    source->SetDefaultResource(IDR_OS_INSTALL_LOGIN_HTML);
+    source->AddResourcePath(kCustomElementsHTMLPath,
+                            IDR_CUSTOM_ELEMENTS_OS_INSTALL_LOGIN_HTML);
   } else {
-    if (switches::IsOsInstallAllowed()) {
-      source->SetDefaultResource(IDR_OS_INSTALL_LOGIN_HTML);
-      source->AddResourcePath(kCustomElementsHTMLPath,
-                              IDR_CUSTOM_ELEMENTS_OS_INSTALL_LOGIN_HTML);
-    } else {
-      source->SetDefaultResource(IDR_MD_LOGIN_HTML);
-      source->AddResourcePath(kCustomElementsHTMLPath,
-                              IDR_CUSTOM_ELEMENTS_LOGIN_HTML);
-    }
+    source->SetDefaultResource(IDR_MD_LOGIN_HTML);
+    source->AddResourcePath(kCustomElementsHTMLPath,
+                            IDR_CUSTOM_ELEMENTS_LOGIN_HTML);
   }
-
   source->AddResourcePath(kLoginJSPath, IDR_OOBE_JS);
 }
 
@@ -340,6 +332,11 @@ void AddLoginDisplayTypeDefaultResources(content::WebUIDataSource* source) {
 content::WebUIDataSource* CreateOobeUIDataSource(
     const base::Value::Dict& localized_strings,
     const std::string& display_type) {
+  // Cannot exist for the lock screen.
+  if (display_type == OobeUI::kLockDisplay) {
+    NOTREACHED();
+  }
+
   base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
 
   content::WebUIDataSource* source =
@@ -351,12 +348,18 @@ content::WebUIDataSource* CreateOobeUIDataSource(
 
   // First, configure default and non-shared resources for the current display
   // type.
-  if (display_type == OobeUI::kOobeDisplay) {
-    AddOobeDisplayTypeDefaultResources(source);
-  } else if (display_type == OobeUI::kLockDisplay) {
-    NOTREACHED();
+  if (features::IsOobePolymer3Enabled()) {
+    source->SetDefaultResource(IDR_OOBE_POLY3_HTML);
+    // Add boolean variables that are used by Polymer3 to add screens
+    // dynamically.
+    source->AddBoolean("isOsInstallAllowed", switches::IsOsInstallAllowed());
+    source->AddBoolean("isOobeFlow", display_type == OobeUI::kOobeDisplay);
   } else {
-    AddLoginDisplayTypeDefaultResources(source);
+    if (display_type == OobeUI::kOobeDisplay) {
+      AddOobeDisplayTypeDefaultResources(source);
+    } else {
+      AddLoginDisplayTypeDefaultResources(source);
+    }
   }
 
   // Configure shared resources
@@ -403,6 +406,14 @@ std::string GetDisplayType(const GURL& url) {
 }
 
 }  // namespace
+
+struct DisplayScaleFactor {
+  int longest_side;
+  float scale_factor;
+};
+
+const DisplayScaleFactor k4KDisplay = {3840, 1.5f},
+                         kMediumDisplay = {1440, 4.f / 3};
 
 // static
 const char OobeUI::kAppLaunchSplashDisplay[] = "app-launch-splash";
@@ -488,8 +499,8 @@ void OobeUI::ConfigureOobeDisplay() {
   auto password_change_handler =
       std::make_unique<ActiveDirectoryPasswordChangeScreenHandler>();
 
-  AddScreenHandler(std::make_unique<GaiaScreenHandler>(
-      core_handler_, network_state_informer_));
+  AddScreenHandler(
+      std::make_unique<GaiaScreenHandler>(network_state_informer_));
 
   AddScreenHandler(std::make_unique<SamlConfirmPasswordHandler>());
 
@@ -564,6 +575,9 @@ void OobeUI::ConfigureOobeDisplay() {
   content::URLDataSource::Add(profile,
                               std::make_unique<chromeos::VideoSource>());
 
+  if (ShouldUpScaleOobe())
+    UpScaleOobe();
+
   if (policy::EnrollmentRequisitionManager::IsRemoraRequisition())
     oobe_display_chooser_ = std::make_unique<OobeDisplayChooser>();
 }
@@ -604,7 +618,7 @@ OobeUI::OobeUI(content::WebUI* web_ui, const GURL& url)
   LOG(WARNING) << "OobeUI created";
   display_type_ = GetDisplayType(url);
 
-  auto core_handler = std::make_unique<CoreOobeHandler>();
+  auto core_handler = std::make_unique<CoreOobeHandler>(display_type_);
   core_handler_ = core_handler.get();
 
   AddWebUIHandler(std::move(core_handler));
@@ -777,9 +791,35 @@ void OobeUI::RemoveObserver(Observer* observer) {
   observer_list_.RemoveObserver(observer);
 }
 
+bool OobeUI::ShouldUpScaleOobe() {
+  const int64_t display_id =
+      display::Screen::GetScreen()->GetPrimaryDisplay().id();
+  return primary_display_id_ != display_id &&
+         ash::switches::ShouldScaleOobe() &&
+         policy::EnrollmentRequisitionManager::IsMeetDevice();
+}
+
+void OobeUI::UpScaleOobe() {
+  primary_display_id_ = display::Screen::GetScreen()->GetPrimaryDisplay().id();
+  display::DisplayManager* display_manager =
+      ash::Shell::Get()->display_manager();
+  const gfx::Size size =
+      display::Screen::GetScreen()->GetPrimaryDisplay().work_area_size();
+  const int longest_side = std::max(size.width(), size.height());
+  if (longest_side >= k4KDisplay.longest_side) {
+    display_manager->UpdateZoomFactor(primary_display_id_,
+                                      k4KDisplay.scale_factor);
+  } else if (longest_side >= kMediumDisplay.longest_side) {
+    display_manager->UpdateZoomFactor(primary_display_id_,
+                                      kMediumDisplay.scale_factor);
+  }
+}
+
 void OobeUI::OnDisplayConfigurationChanged() {
   if (oobe_display_chooser_)
     oobe_display_chooser_->TryToPlaceUiOnTouchDisplay();
+  if (ShouldUpScaleOobe())
+    UpScaleOobe();
 }
 
 void OobeUI::SetLoginUserCount(int user_count) {

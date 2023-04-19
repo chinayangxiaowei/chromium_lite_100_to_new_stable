@@ -10,17 +10,17 @@ load("//lib/try.star", "try_")
 load("//lib/consoles.star", "consoles")
 
 try_.defaults.set(
-    executable = try_.DEFAULT_EXECUTABLE,
     builder_group = "tryserver.blink",
-    pool = try_.DEFAULT_POOL,
     cores = 8,
+    executable = try_.DEFAULT_EXECUTABLE,
     execution_timeout = try_.DEFAULT_EXECUTION_TIMEOUT,
+    pool = try_.DEFAULT_POOL,
     service_account = try_.DEFAULT_SERVICE_ACCOUNT,
 )
 
 consoles.list_view(
     name = "tryserver.blink",
-    branch_selector = branches.selector.DESKTOP_BRANCHES,
+    branch_selector = branches.STANDARD_MILESTONE,
 )
 
 def blink_mac_builder(*, name, **kwargs):
@@ -36,13 +36,13 @@ def blink_mac_builder(*, name, **kwargs):
 
 try_.builder(
     name = "linux-blink-optional-highdpi-rel",
-    os = os.LINUX_DEFAULT,
     goma_backend = goma.backend.RBE_PROD,
+    os = os.LINUX_DEFAULT,
 )
 
 try_.builder(
     name = "linux-blink-rel",
-    branch_selector = branches.selector.LINUX_BRANCHES,
+    branch_selector = branches.STANDARD_MILESTONE,
     builder_spec = builder_config.builder_spec(
         gclient_config = builder_config.gclient_config(
             config = "chromium",
@@ -59,38 +59,38 @@ try_.builder(
     try_settings = builder_config.try_settings(
         retry_failed_shards = False,
     ),
-    os = os.LINUX_DEFAULT,
     goma_backend = goma.backend.RBE_PROD,
     main_list_view = "try",
+    os = os.LINUX_DEFAULT,
     tryjob = try_.job(
-        location_filters = [
-            "cc/.+",
-            "third_party/blink/renderer/core/paint/.+",
-            "third_party/blink/renderer/core/svg/.+",
-            "third_party/blink/renderer/platform/graphics/.+",
+        location_regexp = [
+            ".+/[+]/cc/.+",
+            ".+/[+]/third_party/blink/renderer/core/paint/.+",
+            ".+/[+]/third_party/blink/renderer/core/svg/.+",
+            ".+/[+]/third_party/blink/renderer/platform/graphics/.+",
         ],
     ),
 )
 
 try_.builder(
     name = "win10.20h2-blink-rel",
-    builderless = True,
-    os = os.WINDOWS_ANY,
     goma_backend = goma.backend.RBE_PROD,
+    os = os.WINDOWS_ANY,
+    builderless = True,
 )
 
 try_.builder(
     name = "win11-blink-rel",
-    builderless = True,
-    os = os.WINDOWS_ANY,
     goma_backend = goma.backend.RBE_PROD,
+    os = os.WINDOWS_ANY,
+    builderless = True,
 )
 
 try_.builder(
     name = "win7-blink-rel",
-    builderless = True,
-    os = os.WINDOWS_ANY,
     goma_backend = goma.backend.RBE_PROD,
+    os = os.WINDOWS_ANY,
+    builderless = True,
 )
 
 blink_mac_builder(

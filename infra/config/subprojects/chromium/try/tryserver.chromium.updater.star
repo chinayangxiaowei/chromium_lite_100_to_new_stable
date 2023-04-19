@@ -8,12 +8,12 @@ load("//lib/try.star", "try_")
 load("//lib/consoles.star", "consoles")
 
 try_.defaults.set(
-    executable = try_.DEFAULT_EXECUTABLE,
     builder_group = "tryserver.chromium.updater",
-    pool = try_.DEFAULT_POOL,
     builderless = True,
+    executable = try_.DEFAULT_EXECUTABLE,
     execution_timeout = try_.DEFAULT_EXECUTION_TIMEOUT,
     goma_backend = goma.backend.RBE_PROD,
+    pool = try_.DEFAULT_POOL,
     service_account = try_.DEFAULT_SERVICE_ACCOUNT,
 )
 
@@ -34,8 +34,8 @@ updater_mac_builder(
     name = "mac-updater-try-builder-dbg",
     main_list_view = "try",
     tryjob = try_.job(
-        location_filters = [
-            "chrome/updater/.+",
+        location_regexp = [
+            ".+/[+]/chrome/updater/.+",
         ],
     ),
 )
@@ -44,8 +44,8 @@ updater_mac_builder(
     name = "mac-updater-try-builder-rel",
     main_list_view = "try",
     tryjob = try_.job(
-        location_filters = [
-            "chrome/updater/.+",
+        location_regexp = [
+            ".+/[+]/chrome/updater/.+",
         ],
     ),
 )
@@ -54,18 +54,22 @@ updater_windows_builder(
     name = "win-updater-try-builder-dbg",
     main_list_view = "try",
     tryjob = try_.job(
-        location_filters = [
-            "chrome/updater/.+",
+        location_regexp = [
+            ".+/[+]/chrome/updater/.+",
         ],
     ),
 )
 
 updater_windows_builder(
     name = "win-updater-try-builder-rel",
+    mirrors = [
+        "ci/win-updater-builder-rel",
+        "ci/win10-updater-tester-rel",
+    ],
     main_list_view = "try",
     tryjob = try_.job(
-        location_filters = [
-            "chrome/updater/.+",
+        location_regexp = [
+            ".+/[+]/chrome/updater/.+",
         ],
     ),
 )

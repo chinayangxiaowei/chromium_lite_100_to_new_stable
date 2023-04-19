@@ -5,8 +5,6 @@
 #ifndef MOJO_PUBLIC_CPP_BINDINGS_LIB_BINDING_STATE_H_
 #define MOJO_PUBLIC_CPP_BINDINGS_LIB_BINDING_STATE_H_
 
-#include <stdint.h>
-
 #include <memory>
 #include <utility>
 
@@ -14,7 +12,6 @@
 #include "base/callback.h"
 #include "base/check.h"
 #include "base/component_export.h"
-#include "base/containers/span.h"
 #include "base/memory/ptr_util.h"
 #include "base/memory/ref_counted.h"
 #include "base/strings/string_piece.h"
@@ -26,7 +23,6 @@
 #include "mojo/public/cpp/bindings/interface_id.h"
 #include "mojo/public/cpp/bindings/lib/multiplex_router.h"
 #include "mojo/public/cpp/bindings/lib/pending_receiver_state.h"
-#include "mojo/public/cpp/bindings/lib/sync_method_traits.h"
 #include "mojo/public/cpp/bindings/message_header_validator.h"
 #include "mojo/public/cpp/bindings/pending_flush.h"
 #include "mojo/public/cpp/bindings/pending_receiver.h"
@@ -94,7 +90,7 @@ class COMPONENT_EXPORT(MOJO_CPP_BINDINGS) BindingStateBase {
                     const char* interface_name,
                     std::unique_ptr<MessageReceiver> request_validator,
                     bool passes_associated_kinds,
-                    base::span<const uint32_t> sync_method_ordinals,
+                    bool has_sync_methods,
                     MessageReceiverWithResponderStatus* stub,
                     uint32_t interface_version,
                     MessageToStableIPCHashCallback ipc_hash_callback,
@@ -125,9 +121,9 @@ class BindingState : public BindingStateBase {
     BindingStateBase::BindInternal(
         std::move(receiver_state), runner, Interface::Name_,
         std::make_unique<typename Interface::RequestValidator_>(),
-        Interface::PassesAssociatedKinds_,
-        SyncMethodTraits<Interface>::GetOrdinals(), &stub_, Interface::Version_,
-        Interface::MessageToStableIPCHash_, Interface::MessageToMethodName_);
+        Interface::PassesAssociatedKinds_, Interface::HasSyncMethods_, &stub_,
+        Interface::Version_, Interface::MessageToStableIPCHash_,
+        Interface::MessageToMethodName_);
   }
 
   PendingReceiver<Interface> Unbind() {

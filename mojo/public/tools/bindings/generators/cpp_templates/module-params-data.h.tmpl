@@ -17,14 +17,12 @@
 #pragma clang diagnostic ignored "-Wunused-private-field"
 #endif
 
-namespace mojo::internal {
-class ValidationContext;
-}
-
 {%- for namespace in namespaces_as_array %}
 namespace {{namespace}} {
 {%- endfor %}
 namespace internal {
+
+class ValidationContext;
 
 {#--- Interface parameter definitions #}
 {%- for interface in interfaces %}

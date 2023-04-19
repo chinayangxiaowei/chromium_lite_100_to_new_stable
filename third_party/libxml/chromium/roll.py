@@ -69,7 +69,6 @@ PATCHES = [
     'chromium-issue-628581.patch',
     'libxml2-2.9.4-security-xpath-nodetab-uaf.patch',
     'chromium-issue-708434.patch',
-    'undo-sax-deprecation.patch',
 ]
 
 
@@ -107,6 +106,7 @@ SHARED_XML_CONFIGURE_OPTIONS = [
     ('--without-modules', 'modules=no'),
     ('--without-pattern', 'pattern=no'),
     ('--without-regexps', 'regexps=no'),
+    ('--without-run-debug', 'run_debug=no'),
     ('--without-schemas', 'schemas=no'),
     ('--without-schematron', 'schematron=no'),
     ('--without-threads', 'threads=no'),

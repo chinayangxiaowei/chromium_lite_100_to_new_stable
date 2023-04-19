@@ -25,6 +25,7 @@ namespace {
 
 template <uint64_t modifier>
 CroStatus::Or<scoped_refptr<VideoFrame>> CreateGpuMemoryBufferVideoFrame(
+    gpu::GpuMemoryBufferFactory* factory,
     VideoPixelFormat format,
     const gfx::Size& coded_size,
     const gfx::Rect& visible_rect,
@@ -49,7 +50,7 @@ class PlatformVideoFramePoolTest
  public:
   PlatformVideoFramePoolTest()
       : task_environment_(base::test::TaskEnvironment::TimeSource::MOCK_TIME),
-        pool_(new PlatformVideoFramePool()) {
+        pool_(new PlatformVideoFramePool(nullptr)) {
     SetCreateFrameCB(
         base::BindRepeating(&CreateGpuMemoryBufferVideoFrame<
                             gfx::NativePixmapHandle::kNoModifier>));
@@ -293,10 +294,10 @@ TEST_P(PlatformVideoFramePoolTest, InitializeFail) {
   const auto fourcc = Fourcc::FromVideoPixelFormat(GetParam());
   ASSERT_TRUE(fourcc.has_value());
   SetCreateFrameCB(base::BindRepeating(
-      [](VideoPixelFormat format, const gfx::Size& coded_size,
-         const gfx::Rect& visible_rect, const gfx::Size& natural_size,
-         bool use_protected, bool use_linear_buffers,
-         base::TimeDelta timestamp) {
+      [](gpu::GpuMemoryBufferFactory* factory, VideoPixelFormat format,
+         const gfx::Size& coded_size, const gfx::Rect& visible_rect,
+         const gfx::Size& natural_size, bool use_protected,
+         bool use_linear_buffers, base::TimeDelta timestamp) {
         return CroStatus::Or<scoped_refptr<VideoFrame>>(
             CroStatus::Codes::kFailedToCreateVideoFrame);
       }));

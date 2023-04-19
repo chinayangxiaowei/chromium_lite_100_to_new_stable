@@ -12,21 +12,19 @@
 #include <utility>
 
 #include "base/callback.h"
-#include "base/check_op.h"
-#include "base/compiler_specific.h"
 #include "base/component_export.h"
-#include "base/containers/span.h"
+#include "base/dcheck_is_on.h"
 #include "base/location.h"
 #include "base/memory/raw_ptr.h"
-#include "base/memory/ref_counted.h"
+#include "base/memory/scoped_refptr.h"
 #include "base/memory/weak_ptr.h"
 #include "base/sequence_checker.h"
-#include "base/strings/string_piece.h"
+#include "base/strings/string_piece_forward.h"
 #include "base/synchronization/lock.h"
 #include "base/task/sequenced_task_runner.h"
+#include "base/thread_annotations.h"
 #include "base/time/time.h"
 #include "base/timer/timer.h"
-#include "mojo/public/cpp/bindings/associated_group.h"
 #include "mojo/public/cpp/bindings/connection_error_callback.h"
 #include "mojo/public/cpp/bindings/connection_group.h"
 #include "mojo/public/cpp/bindings/disconnect_reason.h"
@@ -58,7 +56,7 @@ class COMPONENT_EXPORT(MOJO_CPP_BINDINGS) InterfaceEndpointClient
   InterfaceEndpointClient(ScopedInterfaceEndpointHandle handle,
                           MessageReceiverWithResponderStatus* receiver,
                           std::unique_ptr<MessageReceiver> payload_validator,
-                          base::span<const uint32_t> sync_method_ordinals,
+                          bool expect_sync_requests,
                           scoped_refptr<base::SequencedTaskRunner> task_runner,
                           uint32_t interface_version,
                           const char* interface_name,
@@ -222,10 +220,6 @@ class COMPONENT_EXPORT(MOJO_CPP_BINDINGS) InterfaceEndpointClient
   // The router lock must be held when calling this.
   void ForgetAsyncRequest(uint64_t request_id);
 
-  base::span<const uint32_t> sync_method_ordinals() const {
-    return sync_method_ordinals_;
-  }
-
  private:
   struct PendingAsyncResponse {
    public:
@@ -287,7 +281,7 @@ class COMPONENT_EXPORT(MOJO_CPP_BINDINGS) InterfaceEndpointClient
 
   bool HandleValidatedMessage(Message* message);
 
-  const base::span<const uint32_t> sync_method_ordinals_;
+  const bool expect_sync_requests_ = false;
 
   // The callback to invoke when our peer endpoint sends us NotifyIdle and we
   // have no outstanding unacked messages. If null, no callback has been set and
@@ -321,11 +315,12 @@ class COMPONENT_EXPORT(MOJO_CPP_BINDINGS) InterfaceEndpointClient
   std::unique_ptr<AssociatedGroup> associated_group_;
   // `controller_` is not a raw_ptr<...> for performance reasons (based on
   // analysis of sampling profiler data).
-  InterfaceEndpointController* controller_ = nullptr;
+  RAW_PTR_EXCLUSION InterfaceEndpointController* controller_ = nullptr;
 
   // `incoming_receiver_` is not a raw_ptr<...> for performance reasons (based
   // on analysis of sampling profiler data).
-  MessageReceiverWithResponderStatus* const incoming_receiver_ = nullptr;
+  RAW_PTR_EXCLUSION MessageReceiverWithResponderStatus* const
+      incoming_receiver_ = nullptr;
   HandleIncomingMessageThunk thunk_{this};
   MessageDispatcher dispatcher_;
 

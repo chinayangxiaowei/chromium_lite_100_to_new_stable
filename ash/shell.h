@@ -134,11 +134,11 @@ class GeolocationController;
 class HighContrastController;
 class HighlighterController;
 class HoldingSpaceController;
-class HpsNotifyController;
-class HpsOrientationController;
+class HumanPresenceOrientationController;
 class ImeControllerImpl;
-class InSessionAuthDialogControllerImpl;
+class WebAuthNDialogControllerImpl;
 class KeyAccessibilityEnabler;
+class KeyboardBacklightColorController;
 class KeyboardBrightnessControlDelegate;
 class KeyboardControllerImpl;
 class LaserPointerController;
@@ -147,7 +147,6 @@ class LockStateController;
 class LogoutConfirmationController;
 class LoginScreenController;
 class LoginUnlockThroughputRecorder;
-class MarkerController;
 class MediaNotificationProviderImpl;
 class TabClusterUIController;
 class TabletModeController;
@@ -198,6 +197,7 @@ struct ShellInitParams;
 class ShellObserver;
 class ShutdownControllerImpl;
 class SmsObserver;
+class SnoopingProtectionController;
 class StickyKeysController;
 class SystemGestureEventFilter;
 class SystemModalContainerEventFilter;
@@ -321,9 +321,6 @@ class ASH_EXPORT Shell : public SessionObserver,
   // Called when a root window is created.
   void OnRootWindowAdded(aura::Window* root_window);
 
-  // Called when a root window is about to shutdown.
-  void OnRootWindowWillShutdown(aura::Window* root_window);
-
   // Called when dictation is activated.
   void OnDictationStarted();
 
@@ -356,6 +353,9 @@ class ASH_EXPORT Shell : public SessionObserver,
   ::wm::ActivationClient* activation_client();
   AppListControllerImpl* app_list_controller() {
     return app_list_controller_.get();
+  }
+  AdaptiveChargingController* adaptive_charging_controller() {
+    return adaptive_charging_controller_.get();
   }
   AmbientController* ambient_controller() { return ambient_controller_.get(); }
   AssistantControllerImpl* assistant_controller() {
@@ -451,18 +451,18 @@ class ASH_EXPORT Shell : public SessionObserver,
   HighContrastController* high_contrast_controller() {
     return high_contrast_controller_.get();
   }
-  HpsNotifyController* hps_notify_controller() {
-    return hps_notify_controller_.get();
-  }
-  HpsOrientationController* hps_orientation_controller() {
-    return hps_orientation_controller_.get();
+  HumanPresenceOrientationController* human_presence_orientation_controller() {
+    return human_presence_orientation_controller_.get();
   }
   ImeControllerImpl* ime_controller() { return ime_controller_.get(); }
-  InSessionAuthDialogControllerImpl* in_session_auth_dialog_controller() {
-    return in_session_auth_dialog_controller_.get();
+  WebAuthNDialogControllerImpl* webauthn_dialog_controller() {
+    return webauthn_dialog_controller_.get();
   }
   KeyAccessibilityEnabler* key_accessibility_enabler() {
     return key_accessibility_enabler_.get();
+  }
+  KeyboardBacklightColorController* keyboard_backlight_color_controller() {
+    return keyboard_backlight_color_controller_.get();
   }
   KeyboardBrightnessControlDelegate* keyboard_brightness_control_delegate() {
     return keyboard_brightness_control_delegate_.get();
@@ -485,7 +485,6 @@ class ASH_EXPORT Shell : public SessionObserver,
   LogoutConfirmationController* logout_confirmation_controller() {
     return logout_confirmation_controller_.get();
   }
-  MarkerController* marker_controller() { return marker_controller_.get(); }
   MediaControllerImpl* media_controller() { return media_controller_.get(); }
   MessageCenterAshImpl* message_center_ash_impl() {
     return message_center_ash_impl_.get();
@@ -537,6 +536,9 @@ class ASH_EXPORT Shell : public SessionObserver,
   ResolutionNotificationController* resolution_notification_controller() {
     return resolution_notification_controller_.get();
   }
+  RgbKeyboardManager* rgb_keyboard_manager() {
+    return rgb_keyboard_manager_.get();
+  }
   ScreenLayoutObserver* screen_layout_observer() {
     return screen_layout_observer_.get();
   }
@@ -563,6 +565,9 @@ class ASH_EXPORT Shell : public SessionObserver,
   ShellDelegate* shell_delegate() { return shell_delegate_.get(); }
   ShutdownControllerImpl* shutdown_controller() {
     return shutdown_controller_.get();
+  }
+  SnoopingProtectionController* snooping_protection_controller() {
+    return snooping_protection_controller_.get();
   }
   StickyKeysController* sticky_keys_controller() {
     return sticky_keys_controller_.get();
@@ -789,12 +794,14 @@ class ASH_EXPORT Shell : public SessionObserver,
   std::unique_ptr<GeolocationController> geolocation_controller_;
   std::unique_ptr<HoldingSpaceController> holding_space_controller_;
   std::unique_ptr<PowerPrefs> power_prefs_;
-  std::unique_ptr<HpsNotifyController> hps_notify_controller_;
-  std::unique_ptr<HpsOrientationController> hps_orientation_controller_;
+  std::unique_ptr<SnoopingProtectionController> snooping_protection_controller_;
+  std::unique_ptr<HumanPresenceOrientationController>
+      human_presence_orientation_controller_;
   std::unique_ptr<ImeControllerImpl> ime_controller_;
   std::unique_ptr<chromeos::ImmersiveContext> immersive_context_;
-  std::unique_ptr<InSessionAuthDialogControllerImpl>
-      in_session_auth_dialog_controller_;
+  std::unique_ptr<WebAuthNDialogControllerImpl> webauthn_dialog_controller_;
+  std::unique_ptr<KeyboardBacklightColorController>
+      keyboard_backlight_color_controller_;
   std::unique_ptr<KeyboardBrightnessControlDelegate>
       keyboard_brightness_control_delegate_;
   std::unique_ptr<LocaleUpdateControllerImpl> locale_update_controller_;
@@ -861,7 +868,6 @@ class ASH_EXPORT Shell : public SessionObserver,
   std::unique_ptr<HighContrastController> high_contrast_controller_;
   std::unique_ptr<FullscreenMagnifierController>
       fullscreen_magnifier_controller_;
-  std::unique_ptr<MarkerController> marker_controller_;
   std::unique_ptr<AutoclickController> autoclick_controller_;
   std::unique_ptr<::wm::FocusController> focus_controller_;
 

@@ -7,11 +7,6 @@ load("//lib/try.star", "try_")
 
 try_.defaults.set(
     bucket = "try",
-    executable = "recipe:chromium_trybot",
-    pool = "luci.chromium.try",
-    cores = 8,
-    os = os.LINUX_DEFAULT,
-    cpu = cpu.X86_64,
     build_numbers = True,
     caches = [
         swarming.cache(
@@ -19,11 +14,16 @@ try_.defaults.set(
             path = "win_toolchain",
         ),
     ],
+    cores = 8,
+    cpu = cpu.X86_64,
     cq_group = "cq",
+    executable = "recipe:chromium_trybot",
     execution_timeout = 6 * time.hour,
     # Max. pending time for builds. CQ considers builds pending >2h as timed
     # out: http://shortn/_8PaHsdYmlq. Keep this in sync.
     expiration_timeout = 2 * time.hour,
+    os = os.LINUX_DEFAULT,
+    pool = "luci.chromium.try",
     service_account = "chromium-try-gpu-builder@chops-service-accounts.iam.gserviceaccount.com",
     subproject_list_view = "luci.chromium.try",
     task_template_canary_percentage = 5,
@@ -83,10 +83,10 @@ gpu_android_builder(
 
 gpu_android_builder(
     name = "gpu-try-android-m-nexus-5x-64",
+    pool = "luci.chromium.gpu.android.nexus5x.try",
     mirrors = [
         "ci/Android Release (Nexus 5X)",
     ],
-    pool = "luci.chromium.gpu.android.nexus5x.try",
 )
 
 def gpu_chromeos_builder(*, name, **kwargs):
@@ -152,19 +152,11 @@ gpu_linux_builder(
 
 gpu_linux_builder(
     name = "gpu-fyi-try-linux-intel-exp",
-    mirrors = [
-        "ci/GPU FYI Linux Builder",
-        "ci/Linux FYI Experimental Release (Intel UHD 630)",
-    ],
     pool = "luci.chromium.gpu.linux.intel.try",
 )
 
 gpu_linux_builder(
     name = "gpu-fyi-try-linux-intel-rel",
-    mirrors = [
-        "ci/GPU FYI Linux Builder",
-        "ci/Linux FYI Release (Intel UHD 630)",
-    ],
     pool = "luci.chromium.gpu.linux.intel.try",
 )
 
@@ -271,11 +263,11 @@ gpu_mac_builder(
 
 gpu_mac_builder(
     name = "gpu-fyi-try-mac-nvidia-retina-exp",
-    pool = "luci.chromium.gpu.mac.retina.nvidia.try",
     # This bot has one machine backing its tests at the moment.
     # If it gets more, the modified execution_timeout should be removed.
     # See crbug.com/853307 for more context.
     execution_timeout = 12 * time.hour,
+    pool = "luci.chromium.gpu.mac.retina.nvidia.try",
 )
 
 gpu_mac_builder(
@@ -347,21 +339,6 @@ gpu_win_builder(
 gpu_win_builder(
     name = "gpu-fyi-try-win10-nvidia-rel-64",
     pool = "luci.chromium.gpu.win10.nvidia.try",
-)
-
-gpu_win_builder(
-    name = "gpu-fyi-try-win7-amd-rel-32",
-    pool = "luci.chromium.gpu.win7.amd.try",
-)
-
-gpu_win_builder(
-    name = "gpu-fyi-try-win7-nvidia-rel-32",
-    pool = "luci.chromium.gpu.win7.nvidia.try",
-)
-
-gpu_win_builder(
-    name = "gpu-fyi-try-win7-nvidia-rel-64",
-    pool = "luci.chromium.gpu.win7.nvidia.try",
 )
 
 gpu_win_builder(

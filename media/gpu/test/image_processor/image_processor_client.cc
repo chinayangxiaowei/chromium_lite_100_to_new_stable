@@ -148,7 +148,8 @@ scoped_refptr<VideoFrame> ImageProcessorClient::CreateInputFrame(
   ASSERT_TRUE_OR_RETURN_NULLPTR(input_layout);
 
   if (VideoFrame::IsStorageTypeMappable(input_storage_type)) {
-    return CloneVideoFrame(CreateVideoFrameFromImage(input_image).get(),
+    return CloneVideoFrame(gpu_memory_buffer_factory_.get(),
+                           CreateVideoFrameFromImage(input_image).get(),
                            *input_layout, VideoFrame::STORAGE_OWNED_MEMORY);
   } else {
     ASSERT_TRUE_OR_RETURN_NULLPTR(
@@ -161,7 +162,8 @@ scoped_refptr<VideoFrame> ImageProcessorClient::CreateInputFrame(
         (PIXEL_FORMAT_NV12 == input_image.PixelFormat())
             ? gfx::BufferUsage::VEA_READ_CAMERA_AND_CPU_READ_WRITE
             : gfx::BufferUsage::GPU_READ_CPU_READ_WRITE;
-    return CloneVideoFrame(CreateVideoFrameFromImage(input_image).get(),
+    return CloneVideoFrame(gpu_memory_buffer_factory_.get(),
+                           CreateVideoFrameFromImage(input_image).get(),
                            *input_layout, input_storage_type, dst_buffer_usage);
   }
 }
@@ -188,13 +190,15 @@ scoped_refptr<VideoFrame> ImageProcessorClient::CreateOutputFrame(
       output_storage_type == VideoFrame::STORAGE_DMABUFS ||
       output_storage_type == VideoFrame::STORAGE_GPU_MEMORY_BUFFER);
   scoped_refptr<VideoFrame> output_frame = CreatePlatformVideoFrame(
-      output_layout->format(), output_layout->coded_size(),
-      gfx::Rect(output_image.Size()), output_image.Size(), base::TimeDelta(),
+      gpu_memory_buffer_factory_.get(), output_layout->format(),
+      output_layout->coded_size(), gfx::Rect(output_image.Size()),
+      output_image.Size(), base::TimeDelta(),
       gfx::BufferUsage::GPU_READ_CPU_READ_WRITE);
 
   if (output_storage_type == VideoFrame::STORAGE_GPU_MEMORY_BUFFER) {
     output_frame = CreateGpuMemoryBufferVideoFrame(
-        output_frame.get(), gfx::BufferUsage::GPU_READ_CPU_READ_WRITE);
+        gpu_memory_buffer_factory_.get(), output_frame.get(),
+        gfx::BufferUsage::GPU_READ_CPU_READ_WRITE);
   }
   return output_frame;
 }

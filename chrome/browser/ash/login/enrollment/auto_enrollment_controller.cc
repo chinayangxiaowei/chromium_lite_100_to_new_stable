@@ -26,10 +26,10 @@
 #include "chrome/browser/browser_process.h"
 #include "chrome/browser/browser_process_platform_part.h"
 #include "chrome/browser/net/system_network_context_manager.h"
+#include "chromeos/ash/components/dbus/system_clock/system_clock_client.h"
+#include "chromeos/ash/components/dbus/system_clock/system_clock_sync_observation.h"
 #include "chromeos/dbus/cryptohome/rpc.pb.h"
 #include "chromeos/dbus/dbus_thread_manager.h"
-#include "chromeos/dbus/system_clock/system_clock_client.h"
-#include "chromeos/dbus/system_clock/system_clock_sync_observation.h"
 #include "chromeos/dbus/userdataauth/install_attributes_client.h"
 #include "chromeos/system/statistics_provider.h"
 #include "components/device_event_log/device_event_log.h"
@@ -172,56 +172,7 @@ bool AutoEnrollmentController::ShouldUseFakePsmRlweClient() {
       switches::kEnterpriseUseFakePsmRlweClientForTesting);
 }
 
-EnrollmentFwmpHelper::EnrollmentFwmpHelper(
-    ash::InstallAttributesClient* install_attributes_client)
-    : install_attributes_client_(install_attributes_client) {}
-
-EnrollmentFwmpHelper::~EnrollmentFwmpHelper() = default;
-
-void EnrollmentFwmpHelper::DetermineDevDisableBoot(
-    ResultCallback result_callback) {
-  // D-Bus services may not be available yet, so we call
-  // WaitForServiceToBeAvailable. See https://crbug.com/841627.
-  install_attributes_client_->WaitForServiceToBeAvailable(base::BindOnce(
-      &EnrollmentFwmpHelper::RequestFirmwareManagementParameters,
-      weak_ptr_factory_.GetWeakPtr(), std::move(result_callback)));
-}
-
-void EnrollmentFwmpHelper::RequestFirmwareManagementParameters(
-    ResultCallback result_callback,
-    bool service_is_ready) {
-  if (!service_is_ready) {
-    LOG(ERROR) << "Failed waiting for cryptohome D-Bus service availability.";
-    return std::move(result_callback).Run(false);
-  }
-
-  user_data_auth::GetFirmwareManagementParametersRequest request;
-  install_attributes_client_->GetFirmwareManagementParameters(
-      request,
-      base::BindOnce(
-          &EnrollmentFwmpHelper::OnGetFirmwareManagementParametersReceived,
-          weak_ptr_factory_.GetWeakPtr(), std::move(result_callback)));
-}
-
-void EnrollmentFwmpHelper::OnGetFirmwareManagementParametersReceived(
-    ResultCallback result_callback,
-    absl::optional<user_data_auth::GetFirmwareManagementParametersReply>
-        reply) {
-  if (!reply.has_value() ||
-      reply->error() !=
-          user_data_auth::CryptohomeErrorCode::CRYPTOHOME_ERROR_NOT_SET) {
-    LOG(ERROR) << "Failed to retrieve firmware management parameters.";
-    return std::move(result_callback).Run(false);
-  }
-
-  const bool dev_disable_boot =
-      (reply->fwmp().flags() & cryptohome::DEVELOPER_DISABLE_BOOT);
-
-  std::move(result_callback).Run(dev_disable_boot);
-}
-
-AutoEnrollmentController::AutoEnrollmentController()
-    : enrollment_fwmp_helper_(ash::InstallAttributesClient::Get()) {
+AutoEnrollmentController::AutoEnrollmentController() {
   // Create the PSM (private set membership) RLWE client factory depending on
   // whether switches::kEnterpriseUseFakePsmRlweClient is set.
   if (ShouldUseFakePsmRlweClient()) {
@@ -269,24 +220,13 @@ void AutoEnrollmentController::Start() {
   // The system clock sync state is not known yet, and this
   // `AutoEnrollmentController` could wait for it if requested.
   system_clock_sync_state_ = SystemClockSyncState::kCanWaitForSync;
-
-  enrollment_fwmp_helper_.DetermineDevDisableBoot(
-      base::BindOnce(&AutoEnrollmentController::OnDevDisableBootDetermined,
-                     weak_ptr_factory_.GetWeakPtr()));
-}
-
-void AutoEnrollmentController::OnDevDisableBootDetermined(
-    bool dev_disable_boot) {
-  dev_disable_boot_ = dev_disable_boot;
-
   StartWithSystemClockSyncState();
 }
 
 void AutoEnrollmentController::StartWithSystemClockSyncState() {
   auto_enrollment_check_type_ =
       policy::AutoEnrollmentTypeChecker::DetermineAutoEnrollmentCheckType(
-          IsSystemClockSynchronized(system_clock_sync_state_),
-          dev_disable_boot_);
+          IsSystemClockSynchronized(system_clock_sync_state_));
   if (auto_enrollment_check_type_ ==
       policy::AutoEnrollmentTypeChecker::CheckType::kNone) {
     UpdateState(policy::AUTO_ENROLLMENT_STATE_NO_ENROLLMENT);

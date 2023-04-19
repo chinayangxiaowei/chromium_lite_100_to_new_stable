@@ -355,10 +355,7 @@ void MultidevicePhoneHubHandler::EnableRealPhoneHubManager() {
 }
 
 void MultidevicePhoneHubHandler::EnableFakePhoneHubManager() {
-  // Don't create FakePhoneHubManager if it already exists to prevent UAF.
-  if (fake_phone_hub_manager_)
-    return;
-
+  DCHECK(!fake_phone_hub_manager_);
   PA_LOG(VERBOSE) << "Setting fake Phone Hub Manager";
   fake_phone_hub_manager_ = std::make_unique<phonehub::FakePhoneHubManager>();
   ash::SystemTray::Get()->SetPhoneHubManager(fake_phone_hub_manager_.get());

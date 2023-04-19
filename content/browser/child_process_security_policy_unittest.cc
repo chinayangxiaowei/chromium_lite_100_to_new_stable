@@ -3037,7 +3037,6 @@ TEST_F(ChildProcessSecurityPolicyTest, NoBrowsingInstanceIDs_OriginKeyed) {
             UrlInfo::OriginIsolationRequest::kOriginAgentCluster |
             UrlInfo::OriginIsolationRequest::kRequiresOriginKeyedProcess);
     UrlInfo url_info(UrlInfoInit(foo.GetURL())
-                         .WithOrigin(foo)
                          .WithOriginIsolationRequest(origin_isolation_request));
     scoped_refptr<SiteInstanceImpl> foo_instance =
         SiteInstanceImpl::CreateForUrlInfo(&context, url_info,
@@ -3094,7 +3093,7 @@ TEST_F(ChildProcessSecurityPolicyTest, NoBrowsingInstanceIDs_SiteKeyed) {
     p->AddFutureIsolatedOrigins({url::Origin::Create(GURL("https://foo.com"))},
                                 IsolatedOriginSource::TEST, &context);
 
-    UrlInfo url_info(UrlInfoInit(foo.GetURL()).WithOrigin(foo));
+    UrlInfo url_info(UrlInfoInit(foo.GetURL()));
     scoped_refptr<SiteInstanceImpl> foo_instance =
         SiteInstanceImpl::CreateForUrlInfo(&context, url_info,
                                            /*is_guest=*/false);
@@ -3185,7 +3184,8 @@ TEST_F(ChildProcessSecurityPolicyTest, NoBrowsingInstanceIDs_UnlockedProcess) {
     EXPECT_TRUE(foo_instance->HasSite());
     EXPECT_EQ(foo_instance->GetSiteInfo(),
               SiteInfo::CreateForDefaultSiteInstance(
-                  &context, StoragePartitionConfig::CreateDefault(&context),
+                  foo_instance->GetIsolationContext(),
+                  StoragePartitionConfig::CreateDefault(&context),
                   WebExposedIsolationInfo::CreateNonIsolated()));
     EXPECT_FALSE(foo_instance->RequiresDedicatedProcess());
   }

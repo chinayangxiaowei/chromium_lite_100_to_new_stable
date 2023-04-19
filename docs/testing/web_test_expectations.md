@@ -249,8 +249,6 @@ files. You can follow the steps below for easier review.
 * [SlowTests](../../third_party/blink/web_tests/SlowTests): Tests that take
   longer than the usual timeout to run. Slow tests are given 5x the usual
   timeout.
-* [SmokeTests](../../third_party/blink/web_tests/SmokeTests): A small subset
-  of tests that we run on the Fuchsia bots.
 * [StaleTestExpectations](../../third_party/blink/web_tests/StaleTestExpectations):
   Platform-specific lines that have been in TestExpectations for many months.
   They're moved here to get them out of the way of people doing rebaselines
@@ -311,8 +309,8 @@ The syntax of a line is roughly:
   `ALL_SYSTEMS` macro in
   [third_party/blink/tools/blinkpy/web_tests/port/base.py](../../third_party/blink/tools/blinkpy/web_tests/port/base.py)
   for an up-to-date list.
-* Some modifiers are meta keywords, e.g. `Win` represents both `Win7` and
-  `Win10.20h2`. See the `CONFIGURATION_SPECIFIER_MACROS` dictionary in
+* Some modifiers are meta keywords, e.g. `Win` represents `Win7`,
+  `Win10.20h2` and `Win11`. See the `CONFIGURATION_SPECIFIER_MACROS` dictionary in
   [third_party/blink/tools/blinkpy/web_tests/port/base.py](../../third_party/blink/tools/blinkpy/web_tests/port/base.py)
   for the meta keywords and which modifiers they represent.
 * Expectations can be one or more of `Crash`, `Failure`, `Pass`, `Rebaseline`,

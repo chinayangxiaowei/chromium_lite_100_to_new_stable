@@ -14,6 +14,7 @@
 #include "base/strings/string_number_conversions.h"
 #include "gpu/config/gpu_driver_bug_workarounds.h"
 #include "gpu/config/gpu_preferences.h"
+#include "gpu/ipc/service/gpu_memory_buffer_factory.h"
 #include "media/base/bind_to_current_loop.h"
 #include "media/base/bitrate.h"
 #include "media/base/media_log.h"
@@ -157,6 +158,7 @@ void VideoEncoderStats::Reset() {
 VideoEncoderClient::VideoEncoderClient(
     const VideoEncoder::EventCallback& event_cb,
     std::vector<std::unique_ptr<BitstreamProcessor>> bitstream_processors,
+    gpu::GpuMemoryBufferFactory* gpu_memory_buffer_factory,
     const VideoEncoderClientConfig& config)
     : event_cb_(event_cb),
       bitstream_processors_(std::move(bitstream_processors)),
@@ -165,7 +167,8 @@ VideoEncoderClient::VideoEncoderClient(
       encoder_client_state_(VideoEncoderClientState::kUninitialized),
       current_stats_(encoder_client_config_.framerate,
                      config.num_temporal_layers,
-                     config.num_spatial_layers) {
+                     config.num_spatial_layers),
+      gpu_memory_buffer_factory_(gpu_memory_buffer_factory) {
   DETACH_FROM_SEQUENCE(encoder_client_sequence_checker_);
 
   weak_this_ = weak_this_factory_.GetWeakPtr();
@@ -181,9 +184,11 @@ VideoEncoderClient::~VideoEncoderClient() {
 std::unique_ptr<VideoEncoderClient> VideoEncoderClient::Create(
     const VideoEncoder::EventCallback& event_cb,
     std::vector<std::unique_ptr<BitstreamProcessor>> bitstream_processors,
+    gpu::GpuMemoryBufferFactory* const gpu_memory_buffer_factory,
     const VideoEncoderClientConfig& config) {
-  return base::WrapUnique(new VideoEncoderClient(
-      event_cb, std::move(bitstream_processors), config));
+  return base::WrapUnique(
+      new VideoEncoderClient(event_cb, std::move(bitstream_processors),
+                             gpu_memory_buffer_factory, config));
 }
 
 bool VideoEncoderClient::Initialize(const Video* video) {
@@ -316,7 +321,8 @@ void VideoEncoderClient::RequireBitstreamBuffers(
       encoder_client_config_.input_storage_type ==
               VideoEncodeAccelerator::Config::StorageType::kGpuMemoryBuffer
           ? VideoFrame::STORAGE_GPU_MEMORY_BUFFER
-          : VideoFrame::STORAGE_MOJO_SHARED_BUFFER);
+          : VideoFrame::STORAGE_MOJO_SHARED_BUFFER,
+      gpu_memory_buffer_factory_);
 
   output_buffer_size_ = output_buffer_size;
 
@@ -346,9 +352,7 @@ VideoEncoderClient::CreateBitstreamRef(
   auto it = bitstream_buffers_.find(bitstream_buffer_id);
   LOG_ASSERT(it != bitstream_buffers_.end());
   auto decoder_buffer = DecoderBuffer::FromSharedMemoryRegion(
-      base::UnsafeSharedMemoryRegion::TakeHandleForSerialization(
-          it->second.Duplicate()),
-      0u /* offset */, metadata.payload_size_bytes);
+      it->second.Duplicate(), 0u /* offset */, metadata.payload_size_bytes);
   if (!decoder_buffer)
     return nullptr;
   decoder_buffer->set_timestamp(base::Microseconds(frame_index_));

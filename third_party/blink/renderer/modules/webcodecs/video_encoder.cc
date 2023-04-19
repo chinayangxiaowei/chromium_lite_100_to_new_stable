@@ -68,7 +68,6 @@
 #include "third_party/blink/renderer/platform/instrumentation/use_counter.h"
 #include "third_party/blink/renderer/platform/scheduler/public/post_cross_thread_task.h"
 #include "third_party/blink/renderer/platform/scheduler/public/thread.h"
-#include "third_party/blink/renderer/platform/wtf/cross_thread_copier_base.h"
 #include "third_party/blink/renderer/platform/wtf/cross_thread_copier_std.h"
 #include "third_party/blink/renderer/platform/wtf/cross_thread_functional.h"
 
@@ -100,6 +99,16 @@ namespace {
 
 constexpr const char kCategory[] = "media";
 constexpr int kMaxActiveEncodes = 5;
+
+// Use this function in cases when we can't immediately delete |ptr| because
+// there might be its methods on the call stack.
+template <typename T>
+void DeleteLater(ScriptState* state, std::unique_ptr<T> ptr) {
+  DCHECK(state->ContextIsValid());
+  auto* context = ExecutionContext::From(state);
+  auto runner = context->GetTaskRunner(TaskType::kInternalDefault);
+  runner->DeleteSoon(FROM_HERE, std::move(ptr));
+}
 
 bool IsAcceleratedConfigurationSupported(
     media::VideoCodecProfile profile,
@@ -285,22 +294,10 @@ VideoEncoderTraits::ParsedConfig* ParseConfigStatic(
   return result;
 }
 
-const base::Feature kWebCodecsAv1Encoding{"WebCodecsAv1Encoding",
-                                          base::FEATURE_ENABLED_BY_DEFAULT};
-
 bool VerifyCodecSupportStatic(VideoEncoderTraits::ParsedConfig* config,
                               ExceptionState* exception_state) {
   switch (config->codec) {
     case media::VideoCodec::kAV1:
-      if (!base::FeatureList::IsEnabled(kWebCodecsAv1Encoding)) {
-        if (exception_state) {
-          exception_state->ThrowDOMException(
-              DOMExceptionCode::kNotSupportedError,
-              "AV1 encoding is not supported yet.");
-        }
-        return false;
-      }
-
       if (config->profile !=
           media::VideoCodecProfile::AV1PROFILE_PROFILE_MAIN) {
         if (exception_state) {
@@ -913,10 +910,6 @@ void VideoEncoder::CallOutputCallback(
     auto* svc_metadata = SvcOutputMetadata::Create();
     svc_metadata->setTemporalLayerId(output.temporal_id);
     metadata->setSvc(svc_metadata);
-
-    // TODO(https://crbug.com/1275024): Remove these lines after deprecating.
-    if (!base::FeatureList::IsEnabled(kRemoveWebCodecsSpecViolations))
-      metadata->setTemporalLayerId(output.temporal_id);
   }
 
   // TODO(https://crbug.com/1241448): All encoders should output color space.
@@ -979,7 +972,6 @@ void VideoEncoder::ResetInternal() {
 }
 
 static void isConfigSupportedWithSoftwareOnly(
-    ScriptState* script_state,
     ScriptPromiseResolver* resolver,
     VideoEncoderSupport* support,
     VideoEncoderTraits::ParsedConfig* config) {
@@ -1004,25 +996,22 @@ static void isConfigSupportedWithSoftwareOnly(
     return;
   }
 
-  auto done_callback = [](std::unique_ptr<media::VideoEncoder> encoder,
+  auto done_callback = [](std::unique_ptr<media::VideoEncoder> sw_encoder,
                           ScriptPromiseResolver* resolver,
-                          scoped_refptr<base::SingleThreadTaskRunner> runner,
                           VideoEncoderSupport* support,
                           media::EncoderStatus status) {
     support->setSupported(status.is_ok());
     resolver->Resolve(support);
-    runner->DeleteSoon(FROM_HERE, std::move(encoder));
+    DeleteLater(resolver->GetScriptState(), std::move(sw_encoder));
   };
 
-  auto* context = ExecutionContext::From(script_state);
-  auto runner = context->GetTaskRunner(TaskType::kInternalDefault);
   auto* software_encoder_raw = software_encoder.get();
   software_encoder_raw->Initialize(
       config->profile, config->options, base::DoNothing(),
-      ConvertToBaseOnceCallback(CrossThreadBindOnce(
-          done_callback, std::move(software_encoder),
-          WrapCrossThreadPersistent(resolver), std::move(runner),
-          WrapCrossThreadPersistent(support))));
+      ConvertToBaseOnceCallback(
+          CrossThreadBindOnce(done_callback, std::move(software_encoder),
+                              WrapCrossThreadPersistent(resolver),
+                              WrapCrossThreadPersistent(support))));
 }
 
 static void isConfigSupportedWithHardwareOnly(
@@ -1109,8 +1098,7 @@ ScriptPromise VideoEncoder::isConfigSupported(ScriptState* script_state,
     promises.push_back(resolver->Promise());
     auto* support = VideoEncoderSupport::Create();
     support->setConfig(config_copy);
-    isConfigSupportedWithSoftwareOnly(script_state, resolver, support,
-                                      parsed_config);
+    isConfigSupportedWithSoftwareOnly(resolver, support, parsed_config);
   }
 
   // Wait for all |promises| to resolve and check if any of them have

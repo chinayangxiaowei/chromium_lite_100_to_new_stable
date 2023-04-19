@@ -88,7 +88,7 @@ class BLINK_MODULES_EXPORT WebMediaPlayerMS
       const WebString& sink_id,
       CreateSurfaceLayerBridgeCB create_bridge_callback,
       std::unique_ptr<WebVideoFrameSubmitter> submitter_,
-      WebMediaPlayer::SurfaceLayerMode surface_layer_mode);
+      bool use_surface_layer);
 
   WebMediaPlayerMS(const WebMediaPlayerMS&) = delete;
   WebMediaPlayerMS& operator=(const WebMediaPlayerMS&) = delete;
@@ -154,8 +154,6 @@ class BLINK_MODULES_EXPORT WebMediaPlayerMS
   WebMediaPlayer::NetworkState GetNetworkState() const override;
   WebMediaPlayer::ReadyState GetReadyState() const override;
 
-  WebMediaPlayer::SurfaceLayerMode GetVideoSurfaceLayerMode() const override;
-
   WebString GetErrorMessage() const override;
   bool DidLoadingProgress() override;
 
@@ -208,12 +206,10 @@ class BLINK_MODULES_EXPORT WebMediaPlayerMS
   static const gfx::Size kUseGpuMemoryBufferVideoFramesMinResolution;
 #endif  // BUILDFLAG(IS_WIN)
 
-  void ReplaceCurrentFrameWithACopy();
-
   bool IsInPictureInPicture() const;
 
   // Switch to SurfaceLayer, either initially or from VideoLayer.
-  void ActivateSurfaceLayerForVideo();
+  void ActivateSurfaceLayerForVideo(media::VideoTransformation video_transform);
 
   // Need repaint due to state change.
   void RepaintInternal();
@@ -296,7 +292,6 @@ class BLINK_MODULES_EXPORT WebMediaPlayerMS
   bool pending_rvfc_request_ = false;
 
   bool paused_;
-  media::VideoTransformation video_transformation_;
 
   std::unique_ptr<media::MediaLog> media_log_;
 
@@ -313,7 +308,7 @@ class BLINK_MODULES_EXPORT WebMediaPlayerMS
   // Used for DCHECKs to ensure methods calls executed in the correct thread.
   THREAD_CHECKER(thread_checker_);
 
-  std::unique_ptr<WebMediaPlayerMSCompositor> compositor_;
+  scoped_refptr<WebMediaPlayerMSCompositor> compositor_;
 
   const WebString initial_audio_output_device_id_;
 
@@ -343,8 +338,7 @@ class BLINK_MODULES_EXPORT WebMediaPlayerMS
   std::unique_ptr<WebVideoFrameSubmitter> submitter_;
 
   // Whether the use of a surface layer instead of a video layer is enabled.
-  WebMediaPlayer::SurfaceLayerMode surface_layer_mode_ =
-      WebMediaPlayer::SurfaceLayerMode::kNever;
+  bool use_surface_layer_ = false;
 
   // Owns the weblayer and obtains/maintains SurfaceIds for
   // kUseSurfaceLayerForVideo feature.

@@ -31,7 +31,7 @@ defaults = args.defaults(
 def ci_builder(
         *,
         name,
-        branch_selector = branches.selector.MAIN,
+        branch_selector = branches.MAIN,
         console_view_entry = None,
         main_console_view = args.DEFAULT,
         cq_mirrors_console_view = args.DEFAULT,
@@ -122,12 +122,22 @@ def ci_builder(
     ]
     merged_resultdb_bigquery_exports.extend(resultdb_bigquery_exports or [])
 
-    branch_sheriff_rotations = list({
-        platform_settings.sheriff_rotation: None
-        for platform, platform_settings in settings.platforms.items()
-        if branches.matches(branch_selector, platform = platform)
-    })
-    sheriff_rotations = args.listify(sheriff_rotations, branch_sheriff_rotations)
+    sheriff_rotations = args.listify(
+        sheriff_rotations,
+        # All CI builders on standard branches should be part of the
+        # chrome_browser_release sheriff rotation
+        branches.value({branches.STANDARD_BRANCHES: "chrome_browser_release"}),
+    )
+
+    # All builders that are selected for extended stable should be part of the
+    # chrome_browser_release sheriff rotation (this is less straightforward than
+    # above because desktop extended stable can coexist with CrOS LTS and we
+    # don't want the CrOS LTS builders to appear in the chrome_browser_release
+    # tree)
+    if branches.matches(branch_selector, target = branches.DESKTOP_EXTENDED_STABLE_BRANCHES):
+        sheriff_rotations = args.listify(sheriff_rotations, branches.value({
+            branches.DESKTOP_EXTENDED_STABLE_BRANCHES: "chrome_browser_release",
+        }))
 
     goma_enable_ats = defaults.get_value_from_kwargs("goma_enable_ats", kwargs)
     if goma_enable_ats == args.COMPUTE:
@@ -289,4 +299,15 @@ ci = struct(
         SERVICE_ACCOUNT = "chromium-ci-gpu-builder@chops-service-accounts.iam.gserviceaccount.com",
         TREE_CLOSING_NOTIFIERS = ["gpu-tree-closer-email"],
     ),
+)
+
+rbe_instance = struct(
+    DEFAULT = "rbe-chromium-trusted",
+    GVISOR_SHADOW = "rbe-chromium-gvisor-shadow",
+)
+
+rbe_jobs = struct(
+    DEFAULT = 250,
+    LOW_JOBS_FOR_CI = 80,
+    HIGH_JOBS_FOR_CI = 500,
 )

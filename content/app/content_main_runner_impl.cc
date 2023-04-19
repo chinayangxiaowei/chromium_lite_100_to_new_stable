@@ -39,7 +39,6 @@
 #include "base/process/process_handle.h"
 #include "base/strings/string_number_conversions.h"
 #include "base/strings/string_util.h"
-#include "base/task/single_thread_task_runner.h"
 #include "base/task/thread_pool/thread_pool_instance.h"
 #include "base/threading/hang_watcher.h"
 #include "base/threading/platform_thread.h"
@@ -92,7 +91,6 @@
 #include "media/media_buildflags.h"
 #include "mojo/core/embedder/embedder.h"
 #include "mojo/public/cpp/bindings/self_owned_receiver.h"
-#include "mojo/public/cpp/bindings/sync_call_restrictions.h"
 #include "mojo/public/cpp/platform/platform_channel.h"
 #include "mojo/public/cpp/system/dynamic_library_support.h"
 #include "mojo/public/cpp/system/invitation.h"
@@ -145,6 +143,11 @@
 #include "third_party/skia/include/core/SkFontMgr.h"
 #include "third_party/skia/include/ports/SkFontMgr_android.h"
 #include "third_party/webrtc_overrides/init_webrtc.h"  // nogncheck
+
+#if BUILDFLAG(IS_CHROMEOS_LACROS)
+#include "chromeos/startup/browser_init_params.h"
+#include "chromeos/startup/startup_switches.h"
+#endif
 
 #if BUILDFLAG(ENABLE_PLUGINS)
 #include "content/common/pepper_plugin_list.h"
@@ -300,6 +303,20 @@ pid_t LaunchZygoteHelper(base::CommandLine* cmd_line,
   base::FileHandleMappingVector additional_remapped_fds;
   additional_remapped_fds.emplace_back(
       SandboxHostLinux::GetInstance()->GetChildSocket(), GetSandboxFD());
+
+#if BUILDFLAG(IS_CHROMEOS_LACROS)
+  // Create the file descriptor for Cros startup data and pass it.
+  // This FD will be used to obtain BrowserInitParams in Zygote process.
+  base::ScopedFD cros_startup_fd =
+      chromeos::BrowserInitParams::CreateStartupData();
+  if (cros_startup_fd.is_valid()) {
+    constexpr int kStartupDataFD =
+        kCrosStartupDataDescriptor + base::GlobalDescriptors::kBaseDescriptor;
+    cmd_line->AppendSwitchASCII(chromeos::switches::kCrosStartupDataFD,
+                                base::NumberToString(kStartupDataFD));
+    additional_remapped_fds.emplace_back(cros_startup_fd.get(), kStartupDataFD);
+  }
+#endif
 
   return ZygoteHostImpl::GetInstance()->LaunchZygote(
       cmd_line, control_fd, std::move(additional_remapped_fds));
@@ -1030,13 +1047,7 @@ int ContentMainRunnerImpl::RunBrowser(MainFunctionParams main_params,
   if (is_browser_main_loop_started_)
     return -1;
 
-  if (!base::CommandLine::ForCurrentProcess()->HasSwitch(
-          switches::kSingleProcess)) {
-    mojo::SyncCallRestrictions::DisableSyncCallInterrupts();
-  }
-
   bool should_start_minimal_browser = start_minimal_browser;
-
   if (!mojo_ipc_support_) {
     if (delegate_->ShouldCreateFeatureList()) {
       // This is intentionally leaked since it needs to live for the duration

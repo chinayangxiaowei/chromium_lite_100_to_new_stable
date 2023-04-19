@@ -15,6 +15,9 @@
 #include <stdlib.h>
 #include <errno.h>
 
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
 #ifdef HAVE_SYS_STAT_H
 #include <sys/stat.h>
 #endif
@@ -63,11 +66,8 @@
 #endif
 #include <libxml/globals.h>
 
-#include "private/buf.h"
-#include "private/enc.h"
-#include "private/error.h"
-#include "private/io.h"
-#include "private/parser.h"
+#include "buf.h"
+#include "enc.h"
 
 /* #define VERBOSE_FAILURE */
 /* #define DEBUG_EXTERNAL_ENTITIES */
@@ -111,6 +111,9 @@ typedef struct _xmlOutputCallback {
 static xmlOutputCallback xmlOutputCallbackTable[MAX_OUTPUT_CALLBACK];
 static int xmlOutputCallbackNr = 0;
 static int xmlOutputCallbackInitialized = 0;
+
+xmlOutputBufferPtr
+xmlAllocOutputBufferInternal(xmlCharEncodingHandlerPtr encoder);
 #endif /* LIBXML_OUTPUT_ENABLED */
 
 /************************************************************************
@@ -1263,7 +1266,7 @@ xmlGzfileClose (void * context) {
  *		I/O for compressed file accesses			*
  *									*
  ************************************************************************/
-#include "private/xzlib.h"
+#include "xzlib.h"
 /**
  * xmlXzfileMatch:
  * @filename:  the URI for matching
@@ -2032,7 +2035,8 @@ xmlIOHTTPCloseWrite( void * context, const char * http_mthd ) {
 		    xmlGenericError( xmlGenericErrorContext,
 			"Transmitted content saved in file:  %s\n", buffer );
 
-		    fwrite( http_content, 1, content_lgth, tst_file );
+		    fwrite( http_content, sizeof( char ),
+					content_lgth, tst_file );
 		    fclose( tst_file );
 		}
 
@@ -2046,7 +2050,7 @@ xmlIOHTTPCloseWrite( void * context, const char * http_mthd ) {
 		    while ( (avail = xmlNanoHTTPRead( http_ctxt,
 					buffer, sizeof( buffer ) )) > 0 ) {
 
-			fwrite( buffer, 1, avail, tst_file );
+			fwrite( buffer, sizeof( char ), avail, tst_file );
 		    }
 
 		    fclose( tst_file );
@@ -2342,7 +2346,7 @@ xmlAllocParserInputBuffer(xmlCharEncoding enc) {
 	xmlIOErrMemory("creating input buffer");
 	return(NULL);
     }
-    memset(ret, 0, sizeof(xmlParserInputBuffer));
+    memset(ret, 0, (size_t) sizeof(xmlParserInputBuffer));
     ret->buffer = xmlBufCreateSize(2 * xmlDefaultBufferSize);
     if (ret->buffer == NULL) {
         xmlFree(ret);
@@ -2381,7 +2385,7 @@ xmlAllocOutputBuffer(xmlCharEncodingHandlerPtr encoder) {
 	xmlIOErrMemory("creating output buffer");
 	return(NULL);
     }
-    memset(ret, 0, sizeof(xmlOutputBuffer));
+    memset(ret, 0, (size_t) sizeof(xmlOutputBuffer));
     ret->buffer = xmlBufCreate();
     if (ret->buffer == NULL) {
         xmlFree(ret);
@@ -2429,7 +2433,7 @@ xmlAllocOutputBufferInternal(xmlCharEncodingHandlerPtr encoder) {
 	xmlIOErrMemory("creating output buffer");
 	return(NULL);
     }
-    memset(ret, 0, sizeof(xmlOutputBuffer));
+    memset(ret, 0, (size_t) sizeof(xmlOutputBuffer));
     ret->buffer = xmlBufCreate();
     if (ret->buffer == NULL) {
         xmlFree(ret);
@@ -2984,8 +2988,8 @@ xmlParserInputBufferCreateStatic(const char *mem, int size,
 	xmlIOErrMemory("creating input buffer");
 	return(NULL);
     }
-    memset(ret, 0, sizeof(xmlParserInputBuffer));
-    ret->buffer = xmlBufCreateStatic((void *)mem, size);
+    memset(ret, 0, (size_t) sizeof(xmlParserInputBuffer));
+    ret->buffer = xmlBufCreateStatic((void *)mem, (size_t) size);
     if (ret->buffer == NULL) {
         xmlFree(ret);
 	return(NULL);
@@ -3492,7 +3496,7 @@ xmlEscapeContent(unsigned char* out, int *outlen,
 	    *out++ = '3';
 	    *out++ = ';';
 	} else {
-	    *out++ = *in;
+	    *out++ = (unsigned char) *in;
 	}
 	++in;
     }
@@ -3543,7 +3547,7 @@ xmlOutputBufferWriteEscape(xmlOutputBufferPtr out, const xmlChar *str,
 	 * how many bytes to consume and how many bytes to store.
 	 */
 	cons = len;
-	chunk = xmlBufAvail(out->buffer);
+	chunk = xmlBufAvail(out->buffer) - 1;
 
         /*
 	 * make sure we have enough room to save first, if this is

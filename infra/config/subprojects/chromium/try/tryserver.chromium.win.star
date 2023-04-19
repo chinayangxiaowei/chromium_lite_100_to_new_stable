@@ -10,23 +10,23 @@ load("//lib/try.star", "try_")
 load("//lib/consoles.star", "consoles")
 
 try_.defaults.set(
-    executable = try_.DEFAULT_EXECUTABLE,
     builder_group = "tryserver.chromium.win",
-    pool = try_.DEFAULT_POOL,
     builderless = True,
     cores = 8,
-    os = os.WINDOWS_DEFAULT,
+    orchestrator_cores = 2,
     compilator_cores = 32,
-    compilator_goma_jobs = goma.jobs.J300,
+    executable = try_.DEFAULT_EXECUTABLE,
     execution_timeout = try_.DEFAULT_EXECUTION_TIMEOUT,
     goma_backend = goma.backend.RBE_PROD,
-    orchestrator_cores = 2,
+    compilator_goma_jobs = goma.jobs.J300,
+    os = os.WINDOWS_DEFAULT,
+    pool = try_.DEFAULT_POOL,
     service_account = try_.DEFAULT_SERVICE_ACCOUNT,
 )
 
 consoles.list_view(
     name = "tryserver.chromium.win",
-    branch_selector = branches.selector.WINDOWS_BRANCHES,
+    branch_selector = branches.DESKTOP_EXTENDED_STABLE_MILESTONE,
 )
 
 try_.builder(
@@ -35,8 +35,11 @@ try_.builder(
 
 try_.builder(
     name = "win-asan",
-    execution_timeout = 5 * time.hour,
+    mirrors = [
+        "ci/win-asan",
+    ],
     goma_jobs = goma.jobs.J150,
+    execution_timeout = 5 * time.hour,
 )
 
 try_.builder(
@@ -58,21 +61,24 @@ try_.builder(
 
 try_.builder(
     name = "win-libfuzzer-asan-rel",
-    branch_selector = branches.selector.WINDOWS_BRANCHES,
-    executable = "recipe:chromium_libfuzzer_trybot",
+    branch_selector = branches.DESKTOP_EXTENDED_STABLE_MILESTONE,
     builderless = False,
-    os = os.WINDOWS_ANY,
+    executable = "recipe:chromium_libfuzzer_trybot",
     main_list_view = "try",
+    os = os.WINDOWS_ANY,
     tryjob = try_.job(),
 )
 
 try_.builder(
     name = "win_archive",
+    mirrors = [
+        "ci/win32-archive-rel",
+    ],
 )
 
 try_.builder(
     name = "win_chromium_compile_dbg_ng",
-    branch_selector = branches.selector.WINDOWS_BRANCHES,
+    branch_selector = branches.DESKTOP_EXTENDED_STABLE_MILESTONE,
     mirrors = [
         "ci/Win Builder (dbg)",
     ],
@@ -80,12 +86,12 @@ try_.builder(
         include_all_triggered_testers = True,
         is_compile_only = True,
     ),
-    builderless = False,
-    cores = 16,
-    ssd = True,
     goma_jobs = goma.jobs.J150,
     main_list_view = "try",
     tryjob = try_.job(),
+    builderless = False,
+    cores = 16,
+    ssd = True,
 )
 
 try_.builder(
@@ -100,10 +106,6 @@ try_.builder(
 )
 
 try_.builder(
-    name = "win_chromium_dbg_ng",
-)
-
-try_.builder(
     name = "win_chromium_x64_rel_ng",
     mirrors = [
         "ci/Win x64 Builder",
@@ -113,20 +115,27 @@ try_.builder(
 
 try_.builder(
     name = "win_upload_clang",
-    executable = "recipe:chromium_upload_clang",
     builderless = False,
     cores = 32,
+    executable = "recipe:chromium_upload_clang",
+    goma_backend = None,
     os = os.WINDOWS_ANY,
     execution_timeout = 6 * time.hour,
-    goma_backend = None,
 )
 
 try_.builder(
     name = "win_x64_archive",
+    mirrors = [
+        "ci/win-archive-rel",
+    ],
 )
 
 try_.builder(
     name = "win10_chromium_x64_dbg_ng",
+    mirrors = [
+        "ci/Win x64 Builder (dbg)",
+        "ci/Win10 Tests x64 (dbg)",
+    ],
     os = os.WINDOWS_10,
 )
 
@@ -137,9 +146,9 @@ try_.builder(
         "ci/Win11 Tests x64",
     ],
     builderless = True,
-    os = os.WINDOWS_10,
-    coverage_test_types = ["unit", "overall"],
     use_clang_coverage = True,
+    coverage_test_types = ["unit", "overall"],
+    os = os.WINDOWS_10,
 )
 
 try_.builder(
@@ -155,7 +164,8 @@ try_.builder(
 
 try_.orchestrator_builder(
     name = "win10_chromium_x64_rel_ng",
-    branch_selector = branches.selector.WINDOWS_BRANCHES,
+    compilator = "win10_chromium_x64_rel_ng-compilator",
+    branch_selector = branches.DESKTOP_EXTENDED_STABLE_MILESTONE,
     mirrors = [
         "ci/Win x64 Builder",
         "ci/Win10 Tests x64",
@@ -167,19 +177,21 @@ try_.orchestrator_builder(
             condition = builder_config.rts_condition.QUICK_RUN_ONLY,
         ),
     ),
-    compilator = "win10_chromium_x64_rel_ng-compilator",
+    use_clang_coverage = True,
     coverage_test_types = ["unit", "overall"],
     main_list_view = "try",
     tryjob = try_.job(),
-    use_clang_coverage = True,
+    experiments = {
+        "remove_src_checkout_experiment": 100,
+    },
 )
 
 try_.compilator_builder(
     name = "win10_chromium_x64_rel_ng-compilator",
-    branch_selector = branches.selector.WINDOWS_BRANCHES,
+    branch_selector = branches.DESKTOP_EXTENDED_STABLE_MILESTONE,
+    main_list_view = "try",
     # TODO (crbug.com/1245171): Revert when root issue is fixed
     grace_period = 4 * time.minute,
-    main_list_view = "try",
 )
 
 try_.builder(
@@ -190,27 +202,32 @@ try_.builder(
 
 try_.builder(
     name = "win7-rel",
-    branch_selector = branches.selector.WINDOWS_BRANCHES,
+    branch_selector = branches.DESKTOP_EXTENDED_STABLE_MILESTONE,
     mirrors = [
         "ci/Win Builder",
         "ci/Win7 Tests (1)",
     ],
     cores = 16,
-    ssd = True,
     execution_timeout = 4 * time.hour + 30 * time.minute,
     goma_jobs = goma.jobs.J300,
     main_list_view = "try",
+    ssd = True,
     tryjob = try_.job(
-        location_filters = [
-            "sandbox/win/.+",
-            "sandbox/policy/win/.+",
+        location_regexp = [
+            ".+/[+]/sandbox/win/.+",
+            ".+/[+]/sandbox/policy/win/.+",
         ],
     ),
 )
 
+try_.builder(
+    name = "win-fieldtrial-fyi-rel",
+    os = os.WINDOWS_DEFAULT,
+    mirrors = ["ci/win-fieldtrial-rel"],
+)
+
 try_.gpu.optional_tests_builder(
     name = "win_optional_gpu_tests_rel",
-    branch_selector = branches.selector.WINDOWS_BRANCHES,
     builder_spec = builder_config.builder_spec(
         gclient_config = builder_config.gclient_config(
             config = "chromium",
@@ -231,34 +248,35 @@ try_.gpu.optional_tests_builder(
     try_settings = builder_config.try_settings(
         retry_failed_shards = False,
     ),
+    branch_selector = branches.DESKTOP_EXTENDED_STABLE_MILESTONE,
     builderless = True,
-    os = os.WINDOWS_DEFAULT,
     main_list_view = "try",
+    os = os.WINDOWS_DEFAULT,
     tryjob = try_.job(
-        location_filters = [
-            "chrome/browser/vr/.+",
-            "content/browser/xr/.+",
-            "content/test/gpu/.+",
-            "device/vr/.+",
-            "gpu/.+",
-            "media/audio/.+",
-            "media/base/.+",
-            "media/capture/.+",
-            "media/filters/.+",
-            "media/gpu/.+",
-            "media/mojo/.+",
-            "media/renderers/.+",
-            "media/video/.+",
-            "testing/buildbot/chromium.gpu.fyi.json",
-            "testing/trigger_scripts/.+",
-            "third_party/blink/renderer/modules/vr/.+",
-            "third_party/blink/renderer/modules/mediastream/.+",
-            "third_party/blink/renderer/modules/webcodecs/.+",
-            "third_party/blink/renderer/modules/webgl/.+",
-            "third_party/blink/renderer/modules/xr/.+",
-            "third_party/blink/renderer/platform/graphics/gpu/.+",
-            "tools/clang/scripts/update.py",
-            "ui/gl/.+",
+        location_regexp = [
+            ".+/[+]/chrome/browser/vr/.+",
+            ".+/[+]/content/browser/xr/.+",
+            ".+/[+]/content/test/gpu/.+",
+            ".+/[+]/device/vr/.+",
+            ".+/[+]/gpu/.+",
+            ".+/[+]/media/audio/.+",
+            ".+/[+]/media/base/.+",
+            ".+/[+]/media/capture/.+",
+            ".+/[+]/media/filters/.+",
+            ".+/[+]/media/gpu/.+",
+            ".+/[+]/media/mojo/.+",
+            ".+/[+]/media/renderers/.+",
+            ".+/[+]/media/video/.+",
+            ".+/[+]/testing/buildbot/chromium.gpu.fyi.json",
+            ".+/[+]/testing/trigger_scripts/.+",
+            ".+/[+]/third_party/blink/renderer/modules/vr/.+",
+            ".+/[+]/third_party/blink/renderer/modules/mediastream/.+",
+            ".+/[+]/third_party/blink/renderer/modules/webcodecs/.+",
+            ".+/[+]/third_party/blink/renderer/modules/webgl/.+",
+            ".+/[+]/third_party/blink/renderer/modules/xr/.+",
+            ".+/[+]/third_party/blink/renderer/platform/graphics/gpu/.+",
+            ".+/[+]/tools/clang/scripts/update.py",
+            ".+/[+]/ui/gl/.+",
         ],
     ),
 )

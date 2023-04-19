@@ -177,7 +177,7 @@ class WebTransport::Stream final {
 
   ~Stream() {
     auto* stream = incoming_ ? incoming_.get() : outgoing_.get();
-    if (!stream || transport_->closing_ || transport_->torn_down_) {
+    if (!stream) {
       return;
     }
     stream->MaybeResetDueToStreamObjectGone();
@@ -399,10 +399,7 @@ WebTransport::WebTransport(
   transport_->Connect();
 }
 
-WebTransport::~WebTransport() {
-  // Ensure that we ignore all callbacks while mid-destruction.
-  torn_down_ = true;
-}
+WebTransport::~WebTransport() = default;
 
 void WebTransport::SendDatagram(base::span<const uint8_t> data,
                                 base::OnceCallback<void(bool)> callback) {

@@ -732,8 +732,13 @@ VideoDecoderPipeline::PickDecoderOutputFormat(
 
   if (need_aux_frame_pool) {
     // Initialize the auxiliary frame pool with the input format of the image
-    // processor.
-    auxiliary_frame_pool_ = std::make_unique<PlatformVideoFramePool>();
+    // processor. Note that we pass nullptr as the GpuMemoryBufferFactory. That
+    // way, the pool will allocate buffers using minigbm directly instead of
+    // going through Ozone which means it won't create DRM/KMS framebuffers for
+    // those buffers. This is good because these buffers don't end up as
+    // overlays anyway.
+    auxiliary_frame_pool_ = std::make_unique<PlatformVideoFramePool>(
+        /*gpu_memory_buffer_factory=*/nullptr);
 
     auxiliary_frame_pool_->set_parent_task_runner(decoder_task_runner_);
     CroStatus::Or<GpuBufferLayout> status_or_layout =

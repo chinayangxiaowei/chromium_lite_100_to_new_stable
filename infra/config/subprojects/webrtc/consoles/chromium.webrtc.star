@@ -6,8 +6,8 @@ load("//console-header.star", "HEADER")
 
 luci.console_view(
     name = "chromium.webrtc",
-    repo = "https://chromium.googlesource.com/chromium/src",
     header = HEADER,
+    repo = "https://chromium.googlesource.com/chromium/src",
     entries = [
         luci.console_view_entry(
             builder = "webrtc/WebRTC Chromium Android Builder",
@@ -48,11 +48,6 @@ luci.console_view(
             builder = "webrtc/WebRTC Chromium Win10 Tester",
             category = "win",
             short_name = "10",
-        ),
-        luci.console_view_entry(
-            builder = "webrtc/WebRTC Chromium Win7 Tester",
-            category = "win",
-            short_name = "7",
         ),
     ],
 )

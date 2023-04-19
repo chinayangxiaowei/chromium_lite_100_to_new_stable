@@ -180,10 +180,8 @@ typedef enum {
     /* XML_DOCB_DOCUMENT_NODE=	21 */ /* removed */
 } xmlElementType;
 
-/** DOC_DISABLE */
 /* For backward compatibility */
 #define XML_DOCB_DOCUMENT_NODE 21
-/** DOC_ENABLE */
 
 /**
  * xmlNotation:

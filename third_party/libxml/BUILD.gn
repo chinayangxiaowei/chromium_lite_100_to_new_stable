@@ -75,6 +75,7 @@ config("libxml_warnings") {
   }
 }
 
+# Please keep in sync with //build/linux/unbundle/libxml.gn.
 static_library("xml_reader") {
   # Do not expand this visibility list without first consulting with the
   # Security Team.
@@ -98,6 +99,7 @@ static_library("xml_reader") {
   configs += [ ":libxml_config" ]
 }
 
+# Please keep in sync with //build/linux/unbundle/libxml.gn.
 static_library("xml_writer") {
   # The XmlWriter is considered safe to use from any target.
   visibility = [ "*" ]
@@ -112,6 +114,7 @@ static_library("xml_writer") {
   configs += [ ":libxml_config" ]
 }
 
+# Please keep in sync with //build/linux/unbundle/libxml.gn.
 static_library("libxml_utils") {
   # Do not expand this visibility list without first consulting with the
   # Security Team.
@@ -162,6 +165,7 @@ static_library("libxml") {
     #"src/SAX.c",
     "src/SAX2.c",
     "src/buf.c",
+    "src/buf.h",
 
     #"src/c14n.c",
     #"src/catalog.c",
@@ -169,6 +173,7 @@ static_library("libxml") {
 
     #"src/debugXML.c",
     "src/dict.c",
+    "src/enc.h",
     "src/encoding.c",
     "src/entities.c",
     "src/error.c",
@@ -228,6 +233,7 @@ static_library("libxml") {
     "src/pattern.c",
 
     #"src/relaxng.c",
+    "src/save.h",
 
     #"src/schematron.c",
     "src/threads.c",
@@ -267,6 +273,7 @@ static_library("libxml") {
 
     #"src/xpointer.c",
     #"src/xzlib.c",
+    "src/xzlib.h",
   ]
 
   configs -= [ "//build/config/compiler:chromium_code" ]

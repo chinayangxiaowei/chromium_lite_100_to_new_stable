@@ -6,9 +6,9 @@ load("//console-header.star", "HEADER")
 
 luci.console_view(
     name = "chromium.webrtc.fyi",
+    header = HEADER,
     repo = "https://webrtc.googlesource.com/src",
     refs = ["refs/heads/master", "refs/heads/main"],
-    header = HEADER,
     entries = [
         luci.console_view_entry(
             builder = "webrtc.fyi/WebRTC Chromium FYI Android Builder (dbg)",
@@ -79,11 +79,6 @@ luci.console_view(
             builder = "webrtc.fyi/WebRTC Chromium FYI Win10 Tester",
             category = "win|release|tester",
             short_name = "10",
-        ),
-        luci.console_view_entry(
-            builder = "webrtc.fyi/WebRTC Chromium FYI Win7 Tester",
-            category = "win|release|tester",
-            short_name = "7",
         ),
         luci.console_view_entry(
             builder = "webrtc.fyi/WebRTC Chromium FYI ios-device",

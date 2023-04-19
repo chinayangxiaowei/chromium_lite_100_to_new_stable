@@ -68,10 +68,6 @@
 #include "services/network/web_bundle/web_bundle_manager.h"
 #include "third_party/abseil-cpp/absl/types/optional.h"
 
-#if BUILDFLAG(IS_CHROMEOS_ASH)
-#include "crypto/scoped_nss_types.h"
-#endif
-
 #if BUILDFLAG(ENABLE_REPORTING)
 #include "net/reporting/reporting_cache_observer.h"
 #include "net/reporting/reporting_report.h"
@@ -323,7 +319,6 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) NetworkContext
       const net::X509Certificate* validated_certificate_chain,
       const net::SignedCertificateTimestampAndStatusList&
           signed_certificate_timestamps);
-  void SetCTLogListAlwaysTimelyForTesting() override;
   void SetSCTAuditingMode(mojom::SCTAuditingMode mode) override;
   void OnCTLogListUpdated(
       const std::vector<network::mojom::CTLogInfoPtr>& log_list,

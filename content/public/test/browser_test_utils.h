@@ -525,6 +525,11 @@ RenderFrameHost* ConvertToRenderFrameHost(WebContents* web_contents);
 void ExecuteScriptAsync(const ToRenderFrameHost& adapter,
                         const std::string& script);
 
+// Same as `content::ExecuteScriptAsync()`, but doesn't send a user gesture to
+// the renderer.
+void ExecuteScriptAsyncWithoutUserGesture(const ToRenderFrameHost& adapter,
+                                          const std::string& script);
+
 // The following methods execute the passed |script| in the specified frame and
 // sets |result| to the value passed to "window.domAutomationController.send" by
 // the executed script. They return true on success, false if the script
@@ -1063,9 +1068,6 @@ void UiaGetPropertyValueVtArrayVtUnknownValidate(
 // Returns the RenderWidgetHost that holds the keyboard lock.
 RenderWidgetHost* GetKeyboardLockWidget(WebContents* web_contents);
 
-// Returns the RenderWidgetHost that holds the mouse lock.
-RenderWidgetHost* GetMouseLockWidget(WebContents* web_contents);
-
 // Allows tests to drive keyboard lock functionality without requiring access
 // to the RenderWidgetHostImpl header or setting up an HTTP test server.
 // |codes| represents the set of keys to lock.  If |codes| has no value, then
@@ -1246,6 +1248,8 @@ class DOMMessageQueue : public NotificationObserver,
   // Constructs a DOMMessageQueue and begins listening for messages from the
   // DOMAutomationController. Do not construct this until the browser has
   // started.
+  // NOTE: Use one of the below constructors if observing messages for a single
+  // WebContents instance.
   DOMMessageQueue();
 
   // Same as the default constructor, but only listens for messages
@@ -1278,11 +1282,16 @@ class DOMMessageQueue : public NotificationObserver,
                const NotificationDetails& details) override;
 
   // Overridden WebContentsObserver methods.
+  void DomOperationResponse(RenderFrameHost* render_frame_host,
+                            const std::string& json_string) override;
   void PrimaryMainFrameRenderProcessGone(
       base::TerminationStatus status) override;
   void RenderFrameDeleted(RenderFrameHost* render_frame_host) override;
 
  private:
+  // Invoked when a message is received from the DomAutomationController.
+  void OnDomMessageReceived(const std::string& message);
+
   NotificationRegistrar registrar_;
   base::queue<std::string> message_queue_;
   base::OnceClosure quit_closure_;

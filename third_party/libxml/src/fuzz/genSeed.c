@@ -43,8 +43,6 @@ static struct {
     char cwd[PATH_SIZE];
 } globalData;
 
-#if defined(HAVE_SCHEMA_FUZZER) || \
-    defined(HAVE_XML_FUZZER)
 /*
  * A custom entity loader that writes all external DTDs or entities to a
  * single file in the format expected by xmlFuzzEntityLoader.
@@ -96,14 +94,13 @@ fuzzRecorderInit(FILE *out) {
 }
 
 static void
-fuzzRecorderCleanup(void) {
+fuzzRecorderCleanup() {
     xmlSetExternalEntityLoader(globalData.oldLoader);
     xmlHashFree(globalData.entities, xmlHashDefaultDeallocator);
     globalData.out = NULL;
     globalData.entities = NULL;
     globalData.oldLoader = NULL;
 }
-#endif
 
 #ifdef HAVE_XML_FUZZER
 static int
@@ -172,15 +169,11 @@ processSchema(const char *docFile, FILE *out) {
 }
 #endif
 
-#if defined(HAVE_HTML_FUZZER) || \
-    defined(HAVE_SCHEMA_FUZZER) || \
-    defined(HAVE_XML_FUZZER)
 static int
 processPattern(const char *pattern) {
     glob_t globbuf;
     int ret = 0;
-    int res;
-    size_t i;
+    int res, i;
 
     res = glob(pattern, 0, NULL, &globbuf);
     if (res == GLOB_NOMATCH)
@@ -252,7 +245,6 @@ error:
     globfree(&globbuf);
     return(ret);
 }
-#endif
 
 #ifdef HAVE_XPATH_FUZZER
 static int
@@ -290,7 +282,7 @@ processXPath(const char *testDir, const char *prefix, const char *name,
             continue;
         }
 
-        while (fgets(expr, EXPR_SIZE, in) != NULL) {
+        while (fgets(expr, EXPR_SIZE, in) > 0) {
             char outPath[PATH_SIZE];
             FILE *out;
             int j;
@@ -336,7 +328,7 @@ processXPath(const char *testDir, const char *prefix, const char *name,
     return(ret);
 }
 
-static int
+int
 processXPathDir(const char *testDir) {
     char pattern[PATH_SIZE];
     glob_t globbuf;
@@ -387,6 +379,7 @@ main(int argc, const char **argv) {
     mainFunc processArg = NULL;
     const char *fuzzer;
     int ret = 0;
+    int xpath = 0;
     int i;
 
     if (argc < 3) {

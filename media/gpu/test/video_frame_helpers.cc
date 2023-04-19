@@ -13,6 +13,7 @@
 #include "base/logging.h"
 #include "base/memory/scoped_refptr.h"
 #include "gpu/ipc/common/gpu_memory_buffer_support.h"
+#include "gpu/ipc/service/gpu_memory_buffer_factory.h"
 #include "media/base/color_plane_layout.h"
 #include "media/base/format_utils.h"
 #include "media/base/video_frame.h"
@@ -316,6 +317,7 @@ scoped_refptr<VideoFrame> ScaleVideoFrame(const VideoFrame* src_frame,
 }
 
 scoped_refptr<VideoFrame> CloneVideoFrame(
+    gpu::GpuMemoryBufferFactory* gpu_memory_buffer_factory,
     const VideoFrame* const src_frame,
     const VideoFrameLayout& dst_layout,
     VideoFrame::StorageType dst_storage_type,
@@ -337,9 +339,9 @@ scoped_refptr<VideoFrame> CloneVideoFrame(
         return nullptr;
       }
       dst_frame = CreatePlatformVideoFrame(
-          dst_layout.format(), dst_layout.coded_size(),
-          src_frame->visible_rect(), src_frame->natural_size(),
-          src_frame->timestamp(), *dst_buffer_usage);
+          gpu_memory_buffer_factory, dst_layout.format(),
+          dst_layout.coded_size(), src_frame->visible_rect(),
+          src_frame->natural_size(), src_frame->timestamp(), *dst_buffer_usage);
       break;
 #endif  // BUILDFLAG(USE_CHROMEOS_MEDIA_ACCELERATION)
     case VideoFrame::STORAGE_OWNED_MEMORY:
@@ -367,8 +369,8 @@ scoped_refptr<VideoFrame> CloneVideoFrame(
     // Here, the content in |src_frame| is already copied to |dst_frame|, which
     // is a DMABUF based VideoFrame.
     // Create GpuMemoryBuffer based VideoFrame from |dst_frame|.
-    dst_frame =
-        CreateGpuMemoryBufferVideoFrame(dst_frame.get(), *dst_buffer_usage);
+    dst_frame = CreateGpuMemoryBufferVideoFrame(
+        gpu_memory_buffer_factory, dst_frame.get(), *dst_buffer_usage);
   }
 
   return dst_frame;
@@ -397,6 +399,7 @@ scoped_refptr<VideoFrame> CreateDmabufVideoFrame(
 }
 
 scoped_refptr<VideoFrame> CreateGpuMemoryBufferVideoFrame(
+    gpu::GpuMemoryBufferFactory* gpu_memory_buffer_factory,
     const VideoFrame* const frame,
     gfx::BufferUsage buffer_usage) {
   gfx::GpuMemoryBufferHandle gmb_handle;

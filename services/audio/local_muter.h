@@ -7,7 +7,6 @@
 
 #include "base/callback.h"
 #include "base/memory/raw_ptr.h"
-#include "base/memory/weak_ptr.h"
 #include "base/sequence_checker.h"
 #include "base/unguessable_token.h"
 #include "media/mojo/mojom/audio_stream_factory.mojom.h"
@@ -47,8 +46,6 @@ class LocalMuter final : public media::mojom::LocalMuter,
 
   bool HasReceivers() { return !receivers_.empty(); }
 
-  base::WeakPtr<LocalMuter> GetWeakPtr() { return weak_factory_.GetWeakPtr(); }
-
  private:
   // Runs the |all_bindings_lost_callback_| when |bindings_| becomes empty.
   void OnBindingLost();
@@ -60,8 +57,6 @@ class LocalMuter final : public media::mojom::LocalMuter,
   base::RepeatingClosure all_bindings_lost_callback_;
 
   SEQUENCE_CHECKER(sequence_checker_);
-
-  base::WeakPtrFactory<LocalMuter> weak_factory_{this};
 };
 
 }  // namespace audio

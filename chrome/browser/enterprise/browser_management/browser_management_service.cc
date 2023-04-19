@@ -8,6 +8,12 @@
 #include "chrome/browser/enterprise/browser_management/browser_management_status_provider.h"
 #include "chrome/browser/profiles/profile.h"
 
+#if BUILDFLAG(IS_CHROMEOS_ASH)
+#include "chrome/browser/ash/policy/core/browser_policy_connector_ash.h"
+#include "chrome/browser/browser_process.h"
+#include "chrome/browser/browser_process_platform_part.h"
+#endif
+
 namespace policy {
 
 namespace {
@@ -22,7 +28,8 @@ GetManagementStatusProviders(Profile* profile) {
   providers.emplace_back(
       std::make_unique<ProfileCloudManagementStatusProvider>(profile));
 #if BUILDFLAG(IS_CHROMEOS_ASH)
-  providers.emplace_back(std::make_unique<DeviceManagementStatusProvider>());
+  providers.emplace_back(std::make_unique<DeviceManagementStatusProvider>(
+      g_browser_process->platform_part()->browser_policy_connector_ash()));
 #endif
   return providers;
 }

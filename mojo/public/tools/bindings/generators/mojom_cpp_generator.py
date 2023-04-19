@@ -403,7 +403,7 @@ class Generator(generator.Generator):
         "get_qualified_name_for_kind": self._GetQualifiedNameForKind,
         "has_callbacks": mojom.HasCallbacks,
         "has_packed_method_ordinals": HasPackedMethodOrdinals,
-        "get_sync_method_ordinals": mojom.GetSyncMethodOrdinals,
+        "has_sync_methods": mojom.HasSyncMethods,
         "has_uninterruptable_methods": mojom.HasUninterruptableMethods,
         "method_supports_lazy_serialization":
         self._MethodSupportsLazySerialization,

@@ -23,9 +23,6 @@
 #include <libxml/list.h>
 #include <libxml/globals.h>
 
-#include "private/error.h"
-#include "private/parser.h"
-
 static xmlElementPtr xmlGetDtdElementDesc2(xmlDtdPtr dtd, const xmlChar *name,
 	                           int create);
 /* #define DEBUG_VALID_ALGO */
@@ -835,7 +832,7 @@ xmlValidBuildContentModel(xmlValidCtxtPtr ctxt, xmlElementPtr elem) {
 	xmlSnprintfElementContent(expr, 5000, elem->content, 1);
 	xmlErrValidNode(ctxt, (xmlNodePtr) elem,
 	                XML_DTD_CONTENT_NOT_DETERMINIST,
-	       "Content model of %s is not deterministic: %s\n",
+	       "Content model of %s is not determinist: %s\n",
 	       elem->name, BAD_CAST expr, NULL);
 #ifdef DEBUG_REGEXP_ALGO
         xmlRegexpPrint(stderr, elem->contModel);
@@ -4906,7 +4903,6 @@ cont:
      */
     if ((CONT != NULL) &&
 	((CONT->parent == NULL) ||
-	 (CONT->parent == (xmlElementContentPtr) 1) ||
 	 (CONT->parent->type != XML_ELEMENT_CONTENT_OR)) &&
 	((CONT->ocur == XML_ELEMENT_CONTENT_MULT) ||
 	 (CONT->ocur == XML_ELEMENT_CONTENT_OPT) ||
@@ -5019,7 +5015,7 @@ cont:
 	     * save the second branch 'or' branch
 	     */
 	    DEBUG_VALID_MSG("saving 'or' branch");
-	    if (vstateVPush(ctxt, CONT->c2, NODE, DEPTH + 1,
+	    if (vstateVPush(ctxt, CONT->c2, NODE, (unsigned char)(DEPTH + 1),
 			    OCCURS, ROLLBACK_OR) < 0)
 		return(-1);
 	    DEPTH++;
@@ -5159,8 +5155,7 @@ analyze:
 	 * Then act accordingly at the parent level
 	 */
 	RESET_OCCURRENCE;
-	if ((CONT->parent == NULL) ||
-            (CONT->parent == (xmlElementContentPtr) 1))
+	if (CONT->parent == NULL)
 	    break;
 
 	switch (CONT->parent->type) {
@@ -5442,13 +5437,9 @@ fail:
     STATE = 0;
     ret = xmlValidateElementType(ctxt);
     if ((ret == -3) && (warn)) {
-	char expr[5000];
-	expr[0] = 0;
-	xmlSnprintfElementContent(expr, 5000, elemDecl->content, 1);
-	xmlErrValidNode(ctxt, (xmlNodePtr) elemDecl,
-                XML_DTD_CONTENT_NOT_DETERMINIST,
-	        "Content model of %s is not deterministic: %s\n",
-	        name, BAD_CAST expr, NULL);
+	xmlErrValidWarning(ctxt, child, XML_DTD_CONTENT_NOT_DETERMINIST,
+	       "Content model for Element %s is ambiguous\n",
+	                   name, NULL, NULL);
     } else if (ret == -2) {
 	/*
 	 * An entities reference appeared at this level.
@@ -5669,7 +5660,6 @@ done:
     return(ret);
 }
 
-#ifdef LIBXML_REGEXP_ENABLED
 /**
  * xmlValidateCheckMixed:
  * @ctxt:  the validation context
@@ -5735,7 +5725,6 @@ xmlValidateCheckMixed(xmlValidCtxtPtr ctxt,
     }
     return(0);
 }
-#endif /* LIBXML_REGEXP_ENABLED */
 
 /**
  * xmlValidGetElemDecl:

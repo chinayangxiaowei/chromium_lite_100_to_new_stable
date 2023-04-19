@@ -13,27 +13,31 @@
 #include <utility>
 
 #include "base/bind.h"
-#include "base/callback_forward.h"
-#include "base/check_op.h"
+#include "base/callback.h"
+#include "base/check.h"
 #include "base/component_export.h"
-#include "base/location.h"
-#include "base/memory/ptr_util.h"
-#include "base/memory/ref_counted.h"
+#include "base/dcheck_is_on.h"
+#include "base/memory/scoped_refptr.h"
 #include "base/task/sequenced_task_runner.h"
 #include "base/time/time.h"
-#include "mojo/public/cpp/bindings/associated_group.h"
 #include "mojo/public/cpp/bindings/async_flusher.h"
 #include "mojo/public/cpp/bindings/connection_error_callback.h"
 #include "mojo/public/cpp/bindings/interface_endpoint_client.h"
-#include "mojo/public/cpp/bindings/interface_id.h"
 #include "mojo/public/cpp/bindings/lib/multiplex_router.h"
 #include "mojo/public/cpp/bindings/lib/pending_remote_state.h"
-#include "mojo/public/cpp/bindings/lib/sync_method_traits.h"
-#include "mojo/public/cpp/bindings/message_header_validator.h"
 #include "mojo/public/cpp/bindings/pending_flush.h"
-#include "mojo/public/cpp/bindings/scoped_interface_endpoint_handle.h"
+#include "mojo/public/cpp/bindings/thread_safe_proxy.h"
+#include "mojo/public/cpp/system/message_pipe.h"
+
+namespace base {
+class Location;
+}
 
 namespace mojo {
+
+class AssociatedGroup;
+class MessageReceiver;
+
 namespace internal {
 
 class COMPONENT_EXPORT(MOJO_CPP_BINDINGS) InterfacePtrStateBase {
@@ -245,10 +249,6 @@ class InterfacePtrState : public InterfacePtrStateBase {
     endpoint_client()->RaiseError();
   }
 
-  InterfaceEndpointClient* endpoint_client_for_test() {
-    return endpoint_client();
-  }
-
  private:
   void ConfigureProxyIfNecessary() {
     // The proxy has been configured.
@@ -259,8 +259,7 @@ class InterfacePtrState : public InterfacePtrStateBase {
     }
 
     if (InitializeEndpointClient(
-            Interface::PassesAssociatedKinds_,
-            !SyncMethodTraits<Interface>::GetOrdinals().empty(),
+            Interface::PassesAssociatedKinds_, Interface::HasSyncMethods_,
             Interface::HasUninterruptableMethods_,
             std::make_unique<typename Interface::ResponseValidator_>(),
             Interface::Name_, Interface::MessageToStableIPCHash_,

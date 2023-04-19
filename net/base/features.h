@@ -430,14 +430,8 @@ NET_EXPORT extern const base::Feature kSandboxHttpCache;
 // future.
 NET_EXPORT extern const base::Feature kClampCookieExpiryTo400Days;
 
-// Whether ALPS parsing is on for any type of frame.
-NET_EXPORT extern const base::Feature kAlpsParsing;
-
-// Whether ALPS parsing is on for client hint parsing specifically.
-NET_EXPORT extern const base::Feature kAlpsClientHintParsing;
-
-// Whether to kill the session on Error::kAcceptChMalformed.
-NET_EXPORT extern const base::Feature kShouldKillSessionOnAcceptChMalformed;
+// Controls whether static key pinning is enforced.
+NET_EXPORT extern const base::Feature kStaticKeyPinningEnforcement;
 
 }  // namespace features
 }  // namespace net

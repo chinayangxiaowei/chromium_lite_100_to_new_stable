@@ -21,10 +21,9 @@
 
 #include <libxml/xmlwriter.h>
 
-#include "private/buf.h"
-#include "private/enc.h"
-#include "private/error.h"
-#include "private/save.h"
+#include "buf.h"
+#include "enc.h"
+#include "save.h"
 
 #define B64LINELEN 72
 #define B64CRLF "\r\n"
@@ -189,7 +188,7 @@ xmlNewTextWriter(xmlOutputBufferPtr out)
                         "xmlNewTextWriter : out of memory!\n");
         return NULL;
     }
-    memset(ret, 0, sizeof(xmlTextWriter));
+    memset(ret, 0, (size_t) sizeof(xmlTextWriter));
 
     ret->nodes = xmlListCreate(xmlFreeTextWriterStackEntry,
                                xmlCmpTextWriterStackEntry);

@@ -14,7 +14,6 @@ group("orchestrator_all") {
     # profile information
     ":code_coverage_merge_results_py",
     ":code_coverage_merge_steps_py",
-    ":process_perf_results_py",
     ":standard_gtest_merge_py",
     ":standard_isolated_script_merge_py",
   ]
@@ -29,7 +28,8 @@ group("orchestrator_all") {
     "//testing/buildbot/*.json",
   ]
 
-  # coverage tool for the Orchestrator to merge and output coverage data
+  # Orchestrator will run this script to curl for the coverage tool, which
+  # merges and outputs coverage data
   if (use_clang_coverage) {
     data += [ "//tools/clang/scripts/update.py" ]
   }
@@ -61,25 +61,4 @@ python_library("code_coverage_merge_results_py") {
 
 python_library("code_coverage_merge_steps_py") {
   pydeps_file = "//testing/merge_scripts/code_coverage/merge_steps.pydeps"
-}
-
-python_library("process_perf_results_py") {
-  pydeps_file = "//tools/perf/process_perf_results.pydeps"
-
-  data = [
-      # Telemetry fails if catapult's vendored libs aren't present on the
-      # filesystem. But since process_perf_results.py doesn't ever import any of
-      # them, build/print_python_deps.py doesn't detect them. So to appease
-      # telemetry, just add the needed dirs directly.
-      "//third_party/catapult/telemetry/third_party/",
-      "//third_party/catapult/third_party/polymer/",
-      "//third_party/catapult/third_party/six/",
-      "//third_party/catapult/third_party/vinn/",
-      "//third_party/catapult/tracing/bin/add_reserved_diagnostics",
-      "//third_party/catapult/tracing/third_party/",
-      "//third_party/catapult/tracing/tracing/",
-
-      # This file is read at script run-time.
-      "//tools/perf/core/perf_dashboard_machine_group_mapping.json",
-  ]
 }

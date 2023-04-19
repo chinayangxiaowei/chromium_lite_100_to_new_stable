@@ -795,7 +795,8 @@ void VaapiVideoDecoder::ApplyResolutionChangeWithScreenSizes(
   // TODO(b/203240043): Create a GMB directly instead of allocating a
   // VideoFrame.
   scoped_refptr<VideoFrame> dummy_frame = CreateGpuMemoryBufferVideoFrame(
-      *format, decoder_pic_size, decoder_visible_rect, decoder_natural_size,
+      /*gpu_memory_buffer_factory=*/nullptr, *format, decoder_pic_size,
+      decoder_visible_rect, decoder_natural_size,
       /*timestamp=*/base::TimeDelta(),
       cdm_context_ref_ ? gfx::BufferUsage::PROTECTED_SCANOUT_VDA_WRITE
                        : gfx::BufferUsage::SCANOUT_VDA_WRITE);
@@ -839,6 +840,7 @@ void VaapiVideoDecoder::ApplyResolutionChangeWithScreenSizes(
 CroStatus::Or<scoped_refptr<VideoFrame>>
 VaapiVideoDecoder::AllocateCustomFrameProxy(
     base::WeakPtr<VaapiVideoDecoder> decoder,
+    gpu::GpuMemoryBufferFactory* gpu_memory_buffer_factory,
     VideoPixelFormat format,
     const gfx::Size& coded_size,
     const gfx::Rect& visible_rect,
@@ -848,12 +850,13 @@ VaapiVideoDecoder::AllocateCustomFrameProxy(
     base::TimeDelta timestamp) {
   if (!decoder)
     return CroStatus::Codes::kFailedToCreateVideoFrame;
-  return decoder->AllocateCustomFrame(format, coded_size, visible_rect,
-                                      natural_size, use_protected,
-                                      use_linear_buffers, timestamp);
+  return decoder->AllocateCustomFrame(
+      gpu_memory_buffer_factory, format, coded_size, visible_rect, natural_size,
+      use_protected, use_linear_buffers, timestamp);
 }
 
 CroStatus::Or<scoped_refptr<VideoFrame>> VaapiVideoDecoder::AllocateCustomFrame(
+    gpu::GpuMemoryBufferFactory* gpu_memory_buffer_factory,
     VideoPixelFormat format,
     const gfx::Size& coded_size,
     const gfx::Rect& visible_rect,
@@ -878,11 +881,8 @@ CroStatus::Or<scoped_refptr<VideoFrame>> VaapiVideoDecoder::AllocateCustomFrame(
   if (!pixmap_and_info)
     return CroStatus::Codes::kFailedToCreateVideoFrame;
 
-  // Increase this one every time this method is called.
-  static int gmb_id = 0;
-  CHECK_LT(gmb_id, std::numeric_limits<int>::max());
   gfx::GpuMemoryBufferHandle gmb_handle;
-  auto handle_id = gfx::GpuMemoryBufferId(gmb_id++);
+  auto handle_id = GetNextGpuMemoryBufferId();
   gmb_handle.id = handle_id;
   gmb_handle.type = gfx::GpuMemoryBufferType::NATIVE_PIXMAP;
   gmb_handle.native_pixmap_handle = pixmap_and_info->pixmap->ExportHandle();

@@ -237,10 +237,6 @@ String SerializeTransceiver(const RTCRtpTransceiverPlatform& transceiver) {
     result.Append("  receiver:");
     result.Append(SerializeReceiver("  ", *transceiver.Receiver()));
     result.Append(",\n");
-    // stopped:false,
-    result.Append("  stopped:");
-    result.Append(SerializeBoolean(transceiver.Stopped()));
-    result.Append(",\n");
     // direction:'sendrecv',
     result.Append("  direction:");
     result.Append(SerializeDirection(transceiver.Direction()));
@@ -648,20 +644,16 @@ PeerConnectionTracker::PeerConnectionTracker(
     scoped_refptr<base::SingleThreadTaskRunner> main_thread_task_runner,
     base::PassKey<PeerConnectionTracker>)
     : Supplement<LocalDOMWindow>(window),
-      receiver_(this, &window),
       main_thread_task_runner_(std::move(main_thread_task_runner)) {
   window.GetBrowserInterfaceBroker().GetInterface(
       peer_connection_tracker_host_.BindNewPipeAndPassReceiver());
 }
 
-// Constructor used for testing. Note that receiver_ doesn't have a context
-// notifier in this case.
 PeerConnectionTracker::PeerConnectionTracker(
     mojo::Remote<blink::mojom::blink::PeerConnectionTrackerHost> host,
     scoped_refptr<base::SingleThreadTaskRunner> main_thread_task_runner)
     : Supplement(nullptr),
       peer_connection_tracker_host_(std::move(host)),
-      receiver_(this, nullptr),
       main_thread_task_runner_(std::move(main_thread_task_runner)) {}
 
 PeerConnectionTracker::~PeerConnectionTracker() {}
@@ -753,7 +745,7 @@ void PeerConnectionTracker::GetLegacyStats() {
             pair.value, main_thread_task_runner_,
             CrossThreadBindOnce(&PeerConnectionTracker::AddLegacyStats,
                                 WrapCrossThreadWeakPersistent(this))));
-    pair.key->GetStats(observer,
+    pair.key->GetStats(observer.get(),
                        webrtc::PeerConnectionInterface::kStatsOutputLevelDebug,
                        nullptr);
   }
@@ -822,39 +814,15 @@ void PeerConnectionTracker::TrackCreateOffer(
                            "options: {" + SerializeOfferOptions(options) + "}");
 }
 
-void PeerConnectionTracker::TrackCreateOffer(
-    RTCPeerConnectionHandler* pc_handler,
-    const MediaConstraints& constraints) {
-  DCHECK_CALLED_ON_VALID_THREAD(main_thread_);
-  int id = GetLocalIDForHandler(pc_handler);
-  if (id == -1)
-    return;
-  SendPeerConnectionUpdate(
-      id, "createOffer",
-      "constraints: {" + SerializeMediaConstraints(constraints) + "}");
-}
-
 void PeerConnectionTracker::TrackCreateAnswer(
     RTCPeerConnectionHandler* pc_handler,
-    blink::RTCAnswerOptionsPlatform* options) {
+    RTCAnswerOptionsPlatform* options) {
   DCHECK_CALLED_ON_VALID_THREAD(main_thread_);
   int id = GetLocalIDForHandler(pc_handler);
   if (id == -1)
     return;
   SendPeerConnectionUpdate(
       id, "createAnswer", "options: {" + SerializeAnswerOptions(options) + "}");
-}
-
-void PeerConnectionTracker::TrackCreateAnswer(
-    RTCPeerConnectionHandler* pc_handler,
-    const MediaConstraints& constraints) {
-  DCHECK_CALLED_ON_VALID_THREAD(main_thread_);
-  int id = GetLocalIDForHandler(pc_handler);
-  if (id == -1)
-    return;
-  SendPeerConnectionUpdate(
-      id, "createAnswer",
-      "constraints: {" + SerializeMediaConstraints(constraints) + "}");
 }
 
 void PeerConnectionTracker::TrackSetSessionDescription(

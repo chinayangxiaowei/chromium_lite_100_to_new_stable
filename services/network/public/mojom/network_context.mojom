@@ -10,6 +10,7 @@ import "mojo/public/mojom/base/read_only_file.mojom";
 import "mojo/public/mojom/base/time.mojom";
 import "mojo/public/mojom/base/unguessable_token.mojom";
 import "mojo/public/mojom/base/values.mojom";
+import "sandbox/policy/mojom/context.mojom";
 import "services/network/public/mojom/address_list.mojom";
 import "services/network/public/mojom/url_loader_network_service_observer.mojom";
 import "services/network/public/mojom/cert_verifier_service.mojom";
@@ -533,11 +534,11 @@ struct NetworkConditions {
   // response received.
   mojo_base.mojom.TimeDelta latency;
 
-  // Maximal aggregated download throughput (bytes/sec). <=0 disables download
+  // Maximal aggregated download throughput (bytes/sec). 0 disables download
   // throttling.
   double download_throughput;
 
-  // Maximal aggregated upload throughput (bytes/sec). <=0 disables upload
+  // Maximal aggregated upload throughput (bytes/sec). 0 disables upload
   // throttling.
   double upload_throughput;
 };
@@ -825,7 +826,9 @@ interface NetworkContextClient {
 //
 // NetworkContext is implemented by the network service. It is a trusted
 // interface that must not be sent to an untrusted process like a renderer
-// process. Only the browser process should have access to it.
+// process. Only the browser process or privileged utilities should have access
+// to it.
+[RequireContext=sandbox.mojom.Context.kPrivilegedUtility]
 interface NetworkContext {
   // Sets a client for this network context.
   SetClient(pending_remote<NetworkContextClient> client);
@@ -1453,10 +1456,6 @@ interface NetworkContext {
   // Gets the OriginPolicyManager associated with this network context.
   GetOriginPolicyManager(
       pending_receiver<OriginPolicyManager> origin_policy_manager);
-
-  // If called, the CT log list will be considered always timely.
-  [EnableIf=is_ct_supported]
-  SetCTLogListAlwaysTimelyForTesting();
 
   // Set the SCT auditing mode for this NetworkContext.
   [EnableIf=is_ct_supported]

@@ -11,10 +11,10 @@ load("//project.star", "settings")
 # Bucket-wide defaults
 ci.defaults.set(
     bucket = "ci",
-    triggered_by = ["chromium-gitiles-trigger"],
-    cpu = cpu.X86_64,
-    free_space = builders.free_space.standard,
     build_numbers = True,
+    cpu = cpu.X86_64,
+    triggered_by = ["chromium-gitiles-trigger"],
+    free_space = builders.free_space.standard,
 )
 
 luci.bucket(
@@ -26,12 +26,12 @@ luci.bucket(
         ),
         acl.entry(
             roles = acl.BUILDBUCKET_TRIGGERER,
-            groups = "project-chromium-ci-schedulers",
             users = [
                 # Allow chrome-release/branch builders on luci.chrome.official.infra
                 # to schedule builds
                 "chrome-official-brancher@chops-service-accounts.iam.gserviceaccount.com",
             ],
+            groups = "project-chromium-ci-schedulers",
         ),
         acl.entry(
             roles = acl.BUILDBUCKET_OWNER,
@@ -83,8 +83,8 @@ luci.gitiles_poller(
 
 # The main console includes some entries for builders from the chrome project
 [branches.console_view_entry(
-    console_view = "main",
     builder = "chrome:ci/{}".format(name),
+    console_view = "main",
     category = "chrome",
     short_name = short_name,
 ) for name, short_name in (
@@ -102,29 +102,28 @@ consoles.console_view(
     title = "Fuchsia Sheriff Console",
     ordering = {
         "*type*": consoles.ordering(short_names = ["a64", "x64"]),
-        None: ["ci", "fyi", "astro", "sherlock", "misc"],
-        "chromium.mac": "*type*",
+        None: ["ci", "fuchsia ci", "hardware", "fyi"],
         "chromium.fyi|13": "*type*",
     },
 )
 
 # The sheriff.fuchsia console includes some entries for builders from the chrome project
 [branches.console_view_entry(
-    console_view = "sheriff.fuchsia",
     builder = "chrome:ci/{}".format(name),
+    console_view = "sheriff.fuchsia",
     category = category,
     short_name = short_name,
 ) for name, category, short_name in (
-    ("fuchsia-fyi-arm64-size", "fyi", "a64-size"),
-    ("fuchsia-fyi-astro", "astro", "gpu"),
-    ("fuchsia-fyi-atlas", "atlas", "gpu"),
-    ("fuchsia-fyi-sherlock", "sherlock", "gpu"),
-    ("fuchsia-builder-perf-fyi", "fyi", "builder-perf"),
-    ("fuchsia-builder-perf-x64", "fyi", "builder-perf-x64"),
-    ("fuchsia-perf-fyi", "astro", "perf"),
-    ("fuchsia-perf-atlas-fyi", "atlas", "perf"),
-    ("fuchsia-perf-sherlock-fyi", "sherlock", "perf"),
-    ("fuchsia-x64", "ci", "x64-chrome"),
+    ("fuchsia-fyi-arm64-size", "fuchsia ci", "a64-size"),
+    ("fuchsia-fyi-astro", "hardware", "ast"),
+    ("fuchsia-fyi-atlas", "hardware", "atl"),
+    ("fuchsia-fyi-sherlock", "hardware", "slk"),
+    ("fuchsia-builder-perf-fyi", "fuchsia ci", "builder-perf"),
+    ("fuchsia-builder-perf-x64", "fuchsia ci", "builder-perf-x64"),
+    ("fuchsia-perf-fyi", "hardware", "ast-perf"),
+    ("fuchsia-perf-atlas-fyi", "hardware", "atl-perf"),
+    ("fuchsia-perf-sherlock-fyi", "hardware", "slk-perf"),
+    ("fuchsia-x64", "fuchsia ci", "x64-chrome"),
 )]
 
 exec("./ci/chromium.star")
@@ -134,6 +133,7 @@ exec("./ci/chromium.angle.star")
 exec("./ci/chromium.chromiumos.star")
 exec("./ci/chromium.clang.star")
 exec("./ci/chromium.dawn.star")
+exec("./ci/chromium.fuchsia.fyi.star")
 exec("./ci/chromium.fuzz.star")
 exec("./ci/chromium.fyi.star")
 exec("./ci/chromium.gpu.star")

@@ -89,40 +89,40 @@ builder(
 
 builder(
     name = "WebRTC Chromium FYI Mac Builder",
-    os = os.MAC_ANY,
     goma_backend = goma.backend.RBE_PROD,
+    os = os.MAC_ANY,
 )
 
 builder(
     name = "WebRTC Chromium FYI Mac Builder (dbg)",
-    os = os.MAC_ANY,
     goma_backend = goma.backend.RBE_PROD,
+    os = os.MAC_ANY,
 )
 
 builder(
     name = "WebRTC Chromium FYI Mac Tester",
-    triggered_by = ["WebRTC Chromium FYI Mac Builder"],
     os = os.MAC_ANY,
+    triggered_by = ["WebRTC Chromium FYI Mac Builder"],
 )
 
 builder(
     name = "WebRTC Chromium FYI Win Builder",
-    os = os.WINDOWS_DEFAULT,
     goma_backend = goma.backend.RBE_PROD,
     goma_enable_ats = True,
+    os = os.WINDOWS_DEFAULT,
 )
 
 builder(
     name = "WebRTC Chromium FYI Win Builder (dbg)",
-    os = os.WINDOWS_DEFAULT,
     goma_backend = goma.backend.RBE_PROD,
     goma_enable_ats = True,
+    os = os.WINDOWS_DEFAULT,
 )
 
 builder(
     name = "WebRTC Chromium FYI Win10 Tester",
-    triggered_by = ["WebRTC Chromium FYI Win Builder"],
     os = os.WINDOWS_DEFAULT,
+    triggered_by = ["WebRTC Chromium FYI Win Builder"],
 )
 
 # Builders run on the default Win OS version offered
@@ -130,21 +130,15 @@ builder(
 # to swarming bots with appropriate OS using swarming
 # dimensions.
 builder(
-    name = "WebRTC Chromium FYI Win7 Tester",
-    triggered_by = ["WebRTC Chromium FYI Win Builder"],
-    os = os.WINDOWS_DEFAULT,
-)
-
-builder(
     name = "WebRTC Chromium FYI ios-device",
-    os = os.MAC_ANY,
     goma_backend = goma.backend.RBE_PROD,
+    os = os.MAC_ANY,
     xcode = xcode.x13main,
 )
 
 builder(
     name = "WebRTC Chromium FYI ios-simulator",
-    os = os.MAC_ANY,
     goma_backend = goma.backend.RBE_PROD,
+    os = os.MAC_ANY,
     xcode = xcode.x13main,
 )

@@ -25,10 +25,7 @@
 #include <libxml/globals.h>
 #include <libxml/uri.h>
 
-#include "private/buf.h"
-#include "private/error.h"
-#include "private/io.h"
-#include "private/save.h"
+#include "buf.h"
 
 /************************************************************************
  *									*
@@ -331,6 +328,11 @@ htmlIsBooleanAttr(const xmlChar *name)
 }
 
 #ifdef LIBXML_OUTPUT_ENABLED
+/*
+ * private routine exported from xmlIO.c
+ */
+xmlOutputBufferPtr
+xmlAllocOutputBufferInternal(xmlCharEncodingHandlerPtr encoder);
 /************************************************************************
  *									*
  *			Output error handlers				*
@@ -415,7 +417,7 @@ htmlBufNodeDumpFormat(xmlBufPtr buf, xmlDocPtr doc, xmlNodePtr cur,
         htmlSaveErrMemory("allocating HTML output buffer");
 	return (-1);
     }
-    memset(outbuf, 0, sizeof(xmlOutputBuffer));
+    memset(outbuf, 0, (size_t) sizeof(xmlOutputBuffer));
     outbuf->buffer = buf;
     outbuf->encoder = NULL;
     outbuf->writecallback = NULL;
@@ -619,6 +621,8 @@ htmlDocDumpMemory(xmlDocPtr cur, xmlChar**mem, int *size) {
  *		Dumping HTML tree content to an I/O output buffer	*
  *									*
  ************************************************************************/
+
+void xmlNsListDumpOutput(xmlOutputBufferPtr buf, xmlNsPtr cur);
 
 /**
  * htmlDtdDumpOutput:
@@ -983,14 +987,7 @@ void
 htmlDocContentDumpFormatOutput(xmlOutputBufferPtr buf, xmlDocPtr cur,
 	                       const char *encoding ATTRIBUTE_UNUSED,
                                int format) {
-    int type = 0;
-    if (cur) {
-        type = cur->type;
-        cur->type = XML_HTML_DOCUMENT_NODE;
-    }
     htmlNodeDumpFormatOutput(buf, cur, (xmlNodePtr) cur, NULL, format);
-    if (cur)
-        cur->type = (xmlElementType) type;
 }
 
 /**

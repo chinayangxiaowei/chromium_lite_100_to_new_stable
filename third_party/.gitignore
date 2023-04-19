@@ -70,6 +70,8 @@
 /cld_2/src
 /cld_3/src
 /colorama/src
+/content_analysis_sdk/src
+/cpuinfo/src
 /crc32c/src
 /cros
 /cros_system_api
@@ -100,6 +102,7 @@
 /fuchsia-sdk/images
 /fuchsia-sdk/images-internal
 /fuchsia-sdk/sdk
+/fxdiv/src
 /gemmlowp/src
 /gles2_conform
 /glfw/src
@@ -175,8 +178,6 @@
 /minizip/src
 /mkl
 /mocha
-/js_code_coverage/*.tar.gz
-/js_code_coverage/node_modules
 /mockito/src
 /nacl_sdk_binaries/
 /nasm
@@ -184,11 +185,12 @@
 /neon_2_sse/src
 /netty-tcnative/src
 /netty4/src
-/ninja
-/node/*.tar.gz
+/js_code_coverage/node_modules
+/js_code_coverage/*.tar.gz
 /node/linux
 /node/mac
 /node/node_modules
+/node/*.tar.gz
 /node/win
 /nss
 /objenesis/lib/
@@ -206,6 +208,7 @@
 /proguard/lib/
 /protobuf/java/lite/target/
 /psyco_win32
+/pthreadpool/src
 /pthreads-win32
 /py_trace_event/src
 /pyelftools
@@ -280,4 +283,5 @@
 /wix
 /wuffs/src
 /xdg-utils
+/xnnpack/src
 /xulrunner-sdk

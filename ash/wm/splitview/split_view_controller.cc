@@ -783,7 +783,7 @@ SplitViewController::~SplitViewController() {
     Shell::Get()->tablet_mode_controller()->RemoveObserver(this);
   if (Shell::Get()->accessibility_controller())
     Shell::Get()->accessibility_controller()->RemoveObserver(this);
-  EndSplitView(EndReason::kRootWindowDestroyed);
+  EndSplitView();
 }
 
 bool SplitViewController::InSplitViewMode() const {
@@ -1312,11 +1312,8 @@ void SplitViewController::EndSplitView(EndReason end_reason) {
   // the resize. This can happen, for example, on the transition back to
   // clamshell mode or when a task is minimized during a resize. Likewise, if
   // split view is ending during the divider snap animation, then clean that up.
-  // But if the split view is ending due to the destroy of `root_window_`, we
-  // should skip the resize.
   const bool is_divider_animating = IsDividerAnimating();
-  if ((is_resizing_ || is_divider_animating) &&
-      end_reason != EndReason::kRootWindowDestroyed) {
+  if (is_resizing_ || is_divider_animating) {
     is_resizing_ = false;
     if (is_divider_animating) {
       // Don't call StopAndShoveAnimatedDivider as it will call observers.
@@ -2092,8 +2089,12 @@ void SplitViewController::UpdateBlackScrim(
     black_scrim_layer_ = std::make_unique<ui::Layer>(ui::LAYER_SOLID_COLOR);
     black_scrim_layer_->SetColor(
         DeprecatedGetBackgroundColor(kSplitviewBlackScrimLayerColor));
-    root_window_->layer()->Add(black_scrim_layer_.get());
-    root_window_->layer()->StackAtTop(black_scrim_layer_.get());
+    // Set the black scrim layer underneath split view divider.
+    auto* divider_layer =
+        split_view_divider_->divider_widget()->GetNativeWindow()->layer();
+    auto* divider_parent_layer = divider_layer->parent();
+    divider_parent_layer->Add(black_scrim_layer_.get());
+    divider_parent_layer->StackBelow(black_scrim_layer_.get(), divider_layer);
   }
 
   // Decide where the black scrim should show and update its bounds.

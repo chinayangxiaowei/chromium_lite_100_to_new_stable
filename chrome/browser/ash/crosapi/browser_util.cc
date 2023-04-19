@@ -121,12 +121,10 @@ LacrosAvailability GetCachedLacrosAvailability() {
 LacrosAvailability DetermineLacrosAvailabilityFromPolicyValue(
     base::StringPiece policy_value) {
   // Users can set this switch in chrome://flags to disable the effect of the
-  // lacros-availability policy. This should only be allows for googlers.
+  // lacros-availability policy.
   base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
-  if (command_line->HasSwitch(ash::switches::kLacrosAvailabilityIgnore) &&
-      IsGoogleInternal()) {
+  if (command_line->HasSwitch(ash::switches::kLacrosAvailabilityIgnore))
     return LacrosAvailability::kUserChoice;
-  }
 
   if (policy_value.empty()) {
     // Some tests call IsLacrosAllowedToBeEnabled but don't have the value set.
@@ -232,7 +230,7 @@ Channel GetStatefulLacrosChannel() {
 }
 
 static_assert(
-    crosapi::mojom::Crosapi::Version_ == 70,
+    crosapi::mojom::Crosapi::Version_ == 73,
     "if you add a new crosapi, please add it to kInterfaceVersionEntries");
 
 }  // namespace
@@ -821,10 +819,8 @@ LacrosLaunchSwitchSource GetLacrosLaunchSwitchSource() {
   // Note: this check needs to be consistent with the one in
   // DetermineLacrosAvailabilityFromPolicyValue.
   base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
-  if (command_line->HasSwitch(ash::switches::kLacrosAvailabilityIgnore) &&
-      IsGoogleInternal()) {
+  if (command_line->HasSwitch(ash::switches::kLacrosAvailabilityIgnore))
     return LacrosLaunchSwitchSource::kForcedByUser;
-  }
 
   return GetCachedLacrosAvailability() == LacrosAvailability::kUserChoice
              ? LacrosLaunchSwitchSource::kPossiblySetByUser

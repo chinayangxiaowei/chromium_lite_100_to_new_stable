@@ -119,11 +119,9 @@ LIBXML2_2.4.30 {
 # SAX2
   xmlDefaultSAXHandlerInit;
 
-# HTMLparser
+# parserInternals
   htmlCreateFileParserCtxt;
   htmlInitAutoClose;
-
-# parserInternals
   inputPop;
   inputPush;
   namePop;
@@ -1585,7 +1583,7 @@ LIBXML2_2.6.0 {
   xmlDictSize;
 
 # parserInternals
-# xmlErrMemory; removed in 2.11.0
+  xmlErrMemory;
   xmlParserMaxDepth; # variable
   xmlStringLenDecodeEntities;
   xmlSwitchInputEncoding;
@@ -2294,14 +2292,4 @@ LIBXML2_2.9.11 {
 # xmlIO
   xmlPopOutputCallbacks;
 } LIBXML2_2.9.8;
-
-LIBXML2_2.11.0 {
-    global:
-
-# HTMLparser
-  htmlNewSAXParserCtxt;
-
-# parser
-  xmlNewSAXParserCtxt;
-} LIBXML2_2.9.11;
 
