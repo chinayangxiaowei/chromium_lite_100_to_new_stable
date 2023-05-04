@@ -21,6 +21,7 @@
 #include "base/memory/raw_ptr.h"
 #include "base/memory/ref_counted.h"
 #include "base/path_service.h"
+#include "base/ranges/algorithm.h"
 #include "base/run_loop.h"
 #include "base/strings/string_piece.h"
 #include "base/strings/string_util.h"
@@ -56,6 +57,7 @@
 #include "chrome/browser/ui/browser_finder.h"
 #include "chrome/browser/ui/tabs/tab_enums.h"
 #include "chrome/browser/ui/tabs/tab_strip_model.h"
+#include "chrome/browser/ui/views/frame/browser_view.h"
 #include "chrome/common/chrome_content_client.h"
 #include "chrome/common/chrome_features.h"
 #include "chrome/common/chrome_paths.h"
@@ -262,7 +264,7 @@ class PDFExtensionTest : public extensions::ExtensionApiTest {
   // true if it loads successfully or false if it fails. If it doesn't finish
   // loading the test will hang. This is done from outside of the BrowserPlugin
   // guest to ensure sending messages to/from the plugin works correctly from
-  // there, since the PDFScriptingAPI relies on doing this as well.
+  // there, since the PdfScriptingApi relies on doing this as well.
   testing::AssertionResult LoadPdf(const GURL& url) {
     EXPECT_TRUE(ui_test_utils::NavigateToURL(browser(), url));
     WebContents* web_contents = GetActiveWebContents();
@@ -326,19 +328,22 @@ class PDFExtensionTest : public extensions::ExtensionApiTest {
   }
 
  protected:
-  TestGuestViewManager* GetGuestViewManager() {
+  TestGuestViewManager* GetGuestViewManager(
+      content::BrowserContext* profile = nullptr) {
+    if (!profile)
+      profile = browser()->profile();
     // TODO(wjmaclean): Re-implement FromBrowserContext in the
     // TestGuestViewManager class to avoid all callers needing this cast.
     auto* manager = static_cast<TestGuestViewManager*>(
-        TestGuestViewManager::FromBrowserContext(browser()->profile()));
+        TestGuestViewManager::FromBrowserContext(profile));
     // Test code may access the TestGuestViewManager before it would be created
     // during creation of the first guest.
     if (!manager) {
       manager = static_cast<TestGuestViewManager*>(
           GuestViewManager::CreateWithDelegate(
-              browser()->profile(),
+              profile,
               ExtensionsAPIClient::Get()->CreateGuestViewManagerDelegate(
-                  browser()->profile())));
+                  profile)));
     }
     return manager;
   }
@@ -387,9 +392,13 @@ class PDFExtensionTest : public extensions::ExtensionApiTest {
   }
 
   // Hooks to set up feature flags.
-  virtual std::vector<base::Feature> GetEnabledFeatures() const { return {}; }
+  virtual std::vector<base::test::FeatureRef> GetEnabledFeatures() const {
+    return {};
+  }
 
-  virtual std::vector<base::Feature> GetDisabledFeatures() const { return {}; }
+  virtual std::vector<base::test::FeatureRef> GetDisabledFeatures() const {
+    return {};
+  }
 
  private:
   base::test::ScopedFeatureList feature_list_;
@@ -398,7 +407,7 @@ class PDFExtensionTest : public extensions::ExtensionApiTest {
 
 class PDFExtensionTestWithPartialLoading : public PDFExtensionTest {
  protected:
-  std::vector<base::Feature> GetEnabledFeatures() const override {
+  std::vector<base::test::FeatureRef> GetEnabledFeatures() const override {
     auto enabled = PDFExtensionTest::GetEnabledFeatures();
     enabled.push_back(chrome_pdf::features::kPdfIncrementalLoading);
     enabled.push_back(chrome_pdf::features::kPdfPartialLoading);
@@ -1359,7 +1368,7 @@ IN_PROC_BROWSER_TEST_F(PDFExtensionContentSettingJSTest, DISABLED_NoBeepCsp) {
 
 class PDFExtensionWebUICodeCacheJSTest : public PDFExtensionJSTest {
  protected:
-  std::vector<base::Feature> GetEnabledFeatures() const override {
+  std::vector<base::test::FeatureRef> GetEnabledFeatures() const override {
     auto enabled = PDFExtensionJSTest::GetEnabledFeatures();
     enabled.push_back(features::kWebUICodeCache);
     return enabled;
@@ -1587,7 +1596,7 @@ IN_PROC_BROWSER_TEST_F(PDFExtensionTest, MAYBE_PdfZoomWithoutBubble) {
   // picked up by the browser zoom, then zoom to the next zoom level. This
   // ensures the test passes regardless of the initial default zoom level.
   std::vector<double> preset_zoom_levels = zoom::PageZoom::PresetZoomLevels(0);
-  auto it = std::find(preset_zoom_levels.begin(), preset_zoom_levels.end(), 0);
+  auto it = base::ranges::find(preset_zoom_levels, 0);
   ASSERT_NE(it, preset_zoom_levels.end());
   it++;
   ASSERT_NE(it, preset_zoom_levels.end());
@@ -2106,7 +2115,7 @@ IN_PROC_BROWSER_TEST_F(PDFExtensionTest, PrintButton) {
 
 class PDFExtensionRegionSearchTest : public PDFExtensionTest {
  protected:
-  std::vector<base::Feature> GetEnabledFeatures() const override {
+  std::vector<base::test::FeatureRef> GetEnabledFeatures() const override {
     auto enabled = PDFExtensionTest::GetEnabledFeatures();
     enabled.push_back(lens::features::kLensStandalone);
     return enabled;
@@ -3928,7 +3937,7 @@ class PDFExtensionAccessibilityTextExtractionTest : public PDFExtensionTest {
   }
 
  protected:
-  std::vector<base::Feature> GetEnabledFeatures() const override {
+  std::vector<base::test::FeatureRef> GetEnabledFeatures() const override {
     auto enabled = PDFExtensionTest::GetEnabledFeatures();
     enabled.push_back(chrome_pdf::features::kAccessiblePDFForm);
     return enabled;
@@ -4141,7 +4150,7 @@ class PDFExtensionAccessibilityTreeDumpTest
   }
 
  protected:
-  std::vector<base::Feature> GetEnabledFeatures() const override {
+  std::vector<base::test::FeatureRef> GetEnabledFeatures() const override {
     auto enabled = PDFExtensionTest::GetEnabledFeatures();
     enabled.push_back(chrome_pdf::features::kAccessiblePDFForm);
     return enabled;
@@ -4635,4 +4644,67 @@ IN_PROC_BROWSER_TEST_F(PDFExtensionPrerenderAndFencedFrameTest,
                          pdf_url)));
   ASSERT_TRUE(content::WaitForLoadStop(GetActiveWebContents()));
   EXPECT_EQ(CountPDFProcesses(), 0);
+}
+
+// Exercise a race condition where the profile is destroyed in the middle of a
+// PDF navigation and ensure that this doesn't crash.  Specifically,
+// `PdfNavigationThrottle` intercepts PDF navigations to PDF stream URLs,
+// cancels them, and posts a task to navigate to the original URL instead.
+// Triggering profile destruction after this task is posted but before it runs
+// has previously led to issues in https://crbug.com/1382761.
+IN_PROC_BROWSER_TEST_F(PDFExtensionTest, PdfNavigationDuringProfileShutdown) {
+  // Open an Incognito window and navigate it to a page with a PDF embedded in
+  // an iframe.
+  Browser* incognito = CreateIncognitoBrowser();
+  content::WebContents* incognito_contents =
+      incognito->tab_strip_model()->GetActiveWebContents();
+  incognito_contents->GetController().LoadURL(
+      embedded_test_server()->GetURL("/pdf/test-cross-site-iframe.html"),
+      content::Referrer(), ui::PAGE_TRANSITION_TYPED, std::string());
+
+  // Wait for the MimeHandleView guest to be created.  This should return
+  // before the actual PDF navigation in the guest is started.
+  GuestViewBase* guest_view = GetGuestViewManager(incognito->profile())
+                                  ->WaitForSingleGuestViewCreated();
+  ASSERT_TRUE(guest_view);
+
+  // Look up the PDF stream URL to which the navigation will take place.
+  extensions::MimeHandlerViewGuest* guest =
+      extensions::MimeHandlerViewGuest::FromWebContents(
+          guest_view->web_contents());
+  ASSERT_TRUE(guest);
+  base::WeakPtr<extensions::StreamContainer> stream = guest->GetStreamWeakPtr();
+  EXPECT_TRUE(stream);
+  GURL stream_url(stream->stream_url());
+
+  // Use TestNavigationManager to wait for first yield after running
+  // DidStartNavigation throttles.  This should be precisely after the
+  // navigation to the stream URL gets canceled and the task to start a new
+  // navigation to the original URL is scheduled.
+  {
+    content::TestNavigationManager manager(guest_view->web_contents(),
+                                           stream_url);
+    manager.WaitForFirstYieldAfterDidStartNavigation();
+  }
+
+  // Now, close Incognito and destroy its profile.  This is subtle: simply
+  // closing the Incognito window and waiting for browser destruction (e.g.,
+  // with `ui_test_utils::WaitForBrowserToClose(incognito)`) will trigger
+  // asynchronous profile destruction which will allow the PDF task to run
+  // before profile destruction is complete, sidestepping the bug in
+  // https://crbug.com/1382761.  Instead, use the hard shutdown/restart logic
+  // similar to that in `BrowserCloseManager::CloseBrowsers()`, which is used
+  // by `chrome::ExitIgnoreUnloadHandlers() and forces the `Browser` and its
+  // profile shutdown to complete synchronously, but only on the Incognito
+  // Browser object. Note that we can't just use
+  // `chrome::ExitIgnoreUnloadHandlers()` here, as that shuts down all Browser
+  // objects and the rest of the browser process and appears to be unsupported
+  // in tests.
+  chrome::CloseWindow(incognito);
+  BrowserView* incognito_view = static_cast<BrowserView*>(incognito->window());
+  incognito_view->DestroyBrowser();
+
+  // The test succeeds if it doesn't crash when the posted PDF task attempts to
+  // run (the task should be canceled/ignored), so wait for this to happen.
+  base::RunLoop().RunUntilIdle();
 }

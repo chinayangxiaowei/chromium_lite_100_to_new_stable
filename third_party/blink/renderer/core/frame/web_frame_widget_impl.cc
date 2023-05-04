@@ -2309,7 +2309,7 @@ std::unique_ptr<cc::WebVitalMetrics> WebFrameWidgetImpl::GetWebVitalMetrics() {
 
   base::TimeTicks start = perf.NavigationStartAsMonotonicTime();
   base::TimeTicks largest_contentful_paint =
-      perf.LargestContentfulPaintAsMonotonicTime();
+      perf.LargestContentfulPaintAsMonotonicTimeForMetrics();
   if (largest_contentful_paint >= start) {
     metrics->largest_contentful_paint = largest_contentful_paint - start;
     metrics->has_lcp = true;
@@ -2849,9 +2849,9 @@ void WebFrameWidgetImpl::AutoscrollEnd() {
 
 void WebFrameWidgetImpl::DidMeaningfulLayout(WebMeaningfulLayout layout_type) {
   if (layout_type == blink::WebMeaningfulLayout::kVisuallyNonEmpty) {
-    NotifyPresentationTime(
-        WTF::Bind(&WebFrameWidgetImpl::PresentationCallbackForMeaningfulLayout,
-                  WrapWeakPersistent(this)));
+    NotifyPresentationTime(WTF::BindOnce(
+        &WebFrameWidgetImpl::PresentationCallbackForMeaningfulLayout,
+        WrapWeakPersistent(this)));
   }
 
   ForEachLocalFrameControlledByWidget(
@@ -3036,9 +3036,9 @@ class ReportTimeSwapPromise : public cc::SwapPromise {
     if (widget && widget->widget_base_) {
       widget->widget_base_->AddPresentationCallback(
           frame_token,
-          WTF::Bind(&RunCallbackAfterPresentation,
-                    std::move(callbacks.presentation_time_callback),
-                    swap_time));
+          WTF::BindOnce(&RunCallbackAfterPresentation,
+                        std::move(callbacks.presentation_time_callback),
+                        swap_time));
       ReportTime(std::move(callbacks.swap_time_callback), swap_time);
 
 #if BUILDFLAG(IS_MAC)
@@ -3182,11 +3182,18 @@ void WebFrameWidgetImpl::AddEditCommandForNextKeyEvent(const WebString& name,
 }
 
 bool WebFrameWidgetImpl::HandleCurrentKeyboardEvent() {
-  bool did_execute_command = false;
+  if (edit_commands_.empty()) {
+    return false;
+  }
   WebLocalFrame* frame = FocusedWebLocalFrameInWidget();
   if (!frame)
     frame = local_root_;
-  for (const auto& command : edit_commands_) {
+  bool did_execute_command = false;
+  // Executing an edit command can run JS and we can end up reassigning
+  // `edit_commands_` so move it to a stack variable before iterating on it.
+  Vector<mojom::blink::EditCommandPtr> edit_commands =
+      std::move(edit_commands_);
+  for (const auto& command : edit_commands) {
     // In gtk and cocoa, it's possible to bind multiple edit commands to one
     // key (but it's the exception). Once one edit command is not executed, it
     // seems safest to not execute the rest.
@@ -4440,8 +4447,8 @@ void WebFrameWidgetImpl::SetWindowRect(const gfx::Rect& requested_rect,
   DCHECK(ForMainFrame());
   SetPendingWindowRect(adjusted_rect);
   View()->SendWindowRectToMainFrameHost(
-      requested_rect, WTF::Bind(&WebFrameWidgetImpl::AckPendingWindowRect,
-                                WrapWeakPersistent(this)));
+      requested_rect, WTF::BindOnce(&WebFrameWidgetImpl::AckPendingWindowRect,
+                                    WrapWeakPersistent(this)));
 }
 
 void WebFrameWidgetImpl::SetWindowRectSynchronouslyForTesting(

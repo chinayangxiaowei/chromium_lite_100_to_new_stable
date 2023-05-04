@@ -26,8 +26,6 @@
 #include "ui/gfx/geometry/rect_conversions.h"
 #include "ui/gfx/overlay_plane_data.h"
 #include "ui/gfx/overlay_priority_hint.h"
-#include "ui/gl/ca_renderer_layer_params.h"
-#include "ui/gl/dc_renderer_layer_params.h"
 #include "ui/gl/gl_utils.h"
 #include "ui/gl/gl_version_info.h"
 
@@ -2668,6 +2666,10 @@ error::Error GLES2DecoderPassthroughImpl::DoShaderBinary(GLsizei n,
                                                          GLenum binaryformat,
                                                          const void* binary,
                                                          GLsizei length) {
+#if 1  // No binary shader support.
+  InsertError(GL_INVALID_ENUM, "Invalid enum.");
+  return error::kNoError;
+#else
   std::vector<GLuint> service_shaders(n, 0);
   for (GLsizei i = 0; i < n; i++) {
     service_shaders[i] = GetShaderServiceID(shaders[i], resources_);
@@ -2675,6 +2677,7 @@ error::Error GLES2DecoderPassthroughImpl::DoShaderBinary(GLsizei n,
   api()->glShaderBinaryFn(n, service_shaders.data(), binaryformat, binary,
                           length);
   return error::kNoError;
+#endif
 }
 
 error::Error GLES2DecoderPassthroughImpl::DoShaderSource(GLuint shader,
@@ -3845,11 +3848,12 @@ error::Error GLES2DecoderPassthroughImpl::DoSwapBuffers(uint64_t swap_id,
         base::BindOnce(
             &GLES2DecoderPassthroughImpl::CheckSwapBuffersAsyncResult,
             weak_ptr_factory_.GetWeakPtr(), "SwapBuffers", swap_id),
-        base::DoNothing());
+        base::DoNothing(), gl::FrameData());
     return error::kNoError;
   } else {
-    return CheckSwapBuffersResult(surface_->SwapBuffers(base::DoNothing()),
-                                  "SwapBuffers");
+    return CheckSwapBuffersResult(
+        surface_->SwapBuffers(base::DoNothing(), gl::FrameData()),
+        "SwapBuffers");
   }
 }
 

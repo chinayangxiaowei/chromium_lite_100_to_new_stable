@@ -1,4 +1,4 @@
-// Copyright 2022 The Chromium Authors. All rights reserved.
+// Copyright 2022 The Chromium Authors
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -63,15 +63,15 @@ void AnnotationAgentImpl::Bind(
   // Breaking the mojo connection will cause this agent to remove itself from
   // the container.
   receiver_.set_disconnect_handler(
-      WTF::Bind(&AnnotationAgentImpl::Remove, WrapWeakPersistent(this)));
+      WTF::BindOnce(&AnnotationAgentImpl::Remove, WrapWeakPersistent(this)));
 }
 
 void AnnotationAgentImpl::Attach() {
   DCHECK(!IsRemoved());
   Document& document = *owning_container_->GetSupplementable();
   selector_->FindRange(document, AnnotationSelector::kSynchronous,
-                       WTF::Bind(&AnnotationAgentImpl::DidFinishAttach,
-                                 WrapWeakPersistent(this)));
+                       WTF::BindOnce(&AnnotationAgentImpl::DidFinishAttach,
+                                     WrapWeakPersistent(this)));
 }
 
 bool AnnotationAgentImpl::IsAttached() const {
@@ -117,7 +117,11 @@ void AnnotationAgentImpl::ScrollIntoView() const {
 
   EphemeralRangeInFlatTree range = attached_range_->ToEphemeralRange();
 
-  DCHECK(range.Nodes().begin() != range.Nodes().end());
+  // TODO(bokan): This should be checked in IsAttached.
+  bool range_has_nodes = range.Nodes().begin() != range.Nodes().end();
+  if (!range_has_nodes) {
+    return;
+  }
 
   Node& first_node = *range.Nodes().begin();
 
@@ -162,7 +166,7 @@ void AnnotationAgentImpl::DidFinishAttach(const RangeInFlatTree* range) {
              .MarkersIntersectingRange(
                  attached_range_->ToEphemeralRange(),
                  DocumentMarker::MarkerTypes::TextFragment())
-             .IsEmpty()) {
+             .empty()) {
       return;
     }
 

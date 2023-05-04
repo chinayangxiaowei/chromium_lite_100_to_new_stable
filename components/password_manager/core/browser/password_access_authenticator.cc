@@ -13,11 +13,14 @@
 #include "base/time/time.h"
 #include "components/password_manager/core/browser/password_manager_metrics_util.h"
 #include "components/password_manager/core/common/password_manager_features.h"
+#include "components/sync/base/features.h"
 
 namespace password_manager {
 
 using metrics_util::LogPasswordSettingsReauthResult;
 using metrics_util::ReauthResult;
+
+PasswordAccessAuthenticator::PasswordAccessAuthenticator() = default;
 
 PasswordAccessAuthenticator::PasswordAccessAuthenticator(
     ReauthCallback os_reauth_call,
@@ -26,6 +29,12 @@ PasswordAccessAuthenticator::PasswordAccessAuthenticator(
       timeout_call_(std::move(timeout_call)) {}
 
 PasswordAccessAuthenticator::~PasswordAccessAuthenticator() = default;
+
+void PasswordAccessAuthenticator::Init(ReauthCallback os_reauth_call,
+                                       TimeoutCallback timeout_call) {
+  os_reauth_call_ = std::move(os_reauth_call);
+  timeout_call_ = std::move(timeout_call);
+}
 
 // TODO(crbug.com/327331): Trigger Re-Auth after closing and opening the
 // settings tab.
@@ -71,9 +80,9 @@ void PasswordAccessAuthenticator::OnUserReauthenticationResult(
 }
 
 base::TimeDelta PasswordAccessAuthenticator::GetAuthValidityPeriod() {
-  if (!base::FeatureList::IsEnabled(features::kPasswordNotes))
+  if (!base::FeatureList::IsEnabled(syncer::kPasswordNotesWithBackup))
     return kAuthValidityPeriod;
-  return features::kPasswordNotesAuthValidity.Get();
+  return syncer::kPasswordNotesAuthValidity.Get();
 }
 
 }  // namespace password_manager

@@ -38,6 +38,8 @@ class COMPONENT_EXPORT(USERDATAAUTH_CLIENT) InstallAttributesClient {
           ::user_data_auth::RemoveFirmwareManagementParametersReply>;
   using SetFirmwareManagementParametersCallback = chromeos::DBusMethodCallback<
       ::user_data_auth::SetFirmwareManagementParametersReply>;
+  using GetFirmwareManagementParametersCallback = chromeos::DBusMethodCallback<
+      ::user_data_auth::GetFirmwareManagementParametersReply>;
 
   // Not copyable or movable.
   InstallAttributesClient(const InstallAttributesClient&) = delete;
@@ -66,11 +68,6 @@ class COMPONENT_EXPORT(USERDATAAUTH_CLIENT) InstallAttributesClient {
       const ::user_data_auth::InstallAttributesGetRequest& request,
       InstallAttributesGetCallback callback) = 0;
 
-  // Set an install attribute.
-  virtual void InstallAttributesSet(
-      const ::user_data_auth::InstallAttributesSetRequest& request,
-      InstallAttributesSetCallback callback) = 0;
-
   // Finalizes the install attribute.
   virtual void InstallAttributesFinalize(
       const ::user_data_auth::InstallAttributesFinalizeRequest& request,
@@ -91,6 +88,11 @@ class COMPONENT_EXPORT(USERDATAAUTH_CLIENT) InstallAttributesClient {
   virtual void SetFirmwareManagementParameters(
       const ::user_data_auth::SetFirmwareManagementParametersRequest& request,
       SetFirmwareManagementParametersCallback callback) = 0;
+
+  // Get the firmware management parameters.
+  virtual void GetFirmwareManagementParameters(
+      const ::user_data_auth::GetFirmwareManagementParametersRequest& request,
+      GetFirmwareManagementParametersCallback callback) = 0;
 
   // Blocking version of InstallAttributesGet().
   virtual absl::optional<::user_data_auth::InstallAttributesGetReply>

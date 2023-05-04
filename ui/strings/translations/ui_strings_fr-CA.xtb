@@ -20,7 +20,7 @@
 <translation id="169515659049020177">Maj</translation>
 <translation id="1710340000377843106">maintenant</translation>
 <translation id="1752946267035950200">{MINUTES,plural, =1{1 minute}one{# minute}other{# minutes}}</translation>
-<translation id="1761785978543082658"><ph name="QUANTITY" /> o</translation>
+<translation id="1761785978543082658"><ph name="QUANTITY" /> octets</translation>
 <translation id="1801827354178857021">Point</translation>
 <translation id="1803208670097017349">{MONTHS,plural, =1{Un mois}one{# mois}other{# mois}}</translation>
 <translation id="1809410197924942083"><ph name="QUANTITY" /> Mo/s</translation>
@@ -76,7 +76,7 @@
 <translation id="3234408098842461169">Flèche vers le bas</translation>
 <translation id="3291688615589870984">{DAYS,plural, =1{1 jour}one{# jour}other{# jours}}</translation>
 <translation id="3295886253693811851">Faire un appel avec</translation>
-<translation id="3306688585798492231">Écran intégré</translation>
+<translation id="3306688585798492231">écran intégré</translation>
 <translation id="335581015389089642">Parole</translation>
 <translation id="3389286852084373014">La taille du texte est trop grande</translation>
 <translation id="3406306243914553062">Contenu HTML</translation>

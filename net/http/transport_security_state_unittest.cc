@@ -368,10 +368,8 @@ class TransportSecurityStateTest : public ::testing::Test,
     FastForwardBy(base::Days(1));
 
     // By default Expect-CT should be disabled, but enable it for tests.
-    EXPECT_FALSE(base::FeatureList::IsEnabled(
-        TransportSecurityState::kDynamicExpectCTFeature));
-    scoped_feature_list_.InitAndEnableFeature(
-        TransportSecurityState::kDynamicExpectCTFeature);
+    EXPECT_FALSE(base::FeatureList::IsEnabled(kDynamicExpectCTFeature));
+    scoped_feature_list_.InitAndEnableFeature(kDynamicExpectCTFeature);
   }
 
   ~TransportSecurityStateTest() override {
@@ -796,8 +794,7 @@ TEST_F(TransportSecurityStateTest, NewPinsOverride) {
 
 TEST_F(TransportSecurityStateTest, DeleteAllDynamicDataBetween) {
   base::test::ScopedFeatureList feature_list;
-  feature_list.InitAndEnableFeature(
-      TransportSecurityState::kDynamicExpectCTFeature);
+  feature_list.InitAndEnableFeature(kDynamicExpectCTFeature);
   TransportSecurityState::ExpectCTState expect_ct_state;
 
   TransportSecurityState state;
@@ -850,7 +847,7 @@ TEST_F(TransportSecurityStateTest, DeleteDynamicDataForHost) {
   base::test::ScopedFeatureList feature_list;
   feature_list.InitWithFeatures(
       /* enabled_features */
-      {TransportSecurityState::kDynamicExpectCTFeature,
+      {kDynamicExpectCTFeature,
        features::kPartitionExpectCTStateByNetworkIsolationKey},
       /* disabled_features */
       {});
@@ -1792,7 +1789,7 @@ class CTEmergencyDisableTest
       scoped_feature_list_.Init();
     } else {
       scoped_feature_list_.InitAndDisableFeature(
-          TransportSecurityState::kCertificateTransparencyEnforcement);
+          kCertificateTransparencyEnforcement);
     }
   }
   void SetUp() override {
@@ -2112,8 +2109,7 @@ TEST_F(TransportSecurityStateTest, RequireCTForSymantecManagedCAs) {
 // Tests that dynamic Expect-CT state is cleared from ClearDynamicData().
 TEST_F(TransportSecurityStateTest, DynamicExpectCTStateCleared) {
   base::test::ScopedFeatureList feature_list;
-  feature_list.InitAndEnableFeature(
-      TransportSecurityState::kDynamicExpectCTFeature);
+  feature_list.InitAndEnableFeature(kDynamicExpectCTFeature);
   const std::string host("example.test");
   TransportSecurityState state;
   TransportSecurityState::ExpectCTState expect_ct_state;
@@ -2135,8 +2131,7 @@ TEST_F(TransportSecurityStateTest, DynamicExpectCTStateCleared) {
 // Tests that dynamic Expect-CT state can be added and retrieved.
 TEST_F(TransportSecurityStateTest, DynamicExpectCTState) {
   base::test::ScopedFeatureList feature_list;
-  feature_list.InitAndEnableFeature(
-      TransportSecurityState::kDynamicExpectCTFeature);
+  feature_list.InitAndEnableFeature(kDynamicExpectCTFeature);
   const std::string host("example.test");
   TransportSecurityState state;
   TransportSecurityState::ExpectCTState expect_ct_state;
@@ -2187,8 +2182,7 @@ TEST_F(TransportSecurityStateTest, DynamicExpectCTDeduping) {
   SignedCertificateTimestampAndStatusList sct_list;
 
   base::test::ScopedFeatureList feature_list;
-  feature_list.InitAndEnableFeature(
-      TransportSecurityState::kDynamicExpectCTFeature);
+  feature_list.InitAndEnableFeature(kDynamicExpectCTFeature);
   base::Time now = base::Time::Now();
   TransportSecurityState state;
   MockExpectCTReporter reporter;
@@ -2247,8 +2241,7 @@ TEST_F(TransportSecurityStateTest, DynamicExpectCTCompliantConnection) {
   SignedCertificateTimestampAndStatusList sct_list;
 
   base::test::ScopedFeatureList feature_list;
-  feature_list.InitAndEnableFeature(
-      TransportSecurityState::kDynamicExpectCTFeature);
+  feature_list.InitAndEnableFeature(kDynamicExpectCTFeature);
 
   TransportSecurityState state;
   MockExpectCTReporter reporter;
@@ -2277,8 +2270,7 @@ TEST_F(TransportSecurityStateTest, DynamicExpectCTHeaderProcessingDeduping) {
   ssl.ct_policy_compliance = ct::CTPolicyCompliance::CT_POLICY_NOT_ENOUGH_SCTS;
 
   base::test::ScopedFeatureList feature_list;
-  feature_list.InitAndEnableFeature(
-      TransportSecurityState::kDynamicExpectCTFeature);
+  feature_list.InitAndEnableFeature(kDynamicExpectCTFeature);
   TransportSecurityState state;
   MockExpectCTReporter reporter;
   state.SetExpectCTReporter(&reporter);
@@ -2301,8 +2293,7 @@ TEST_F(TransportSecurityStateTest, DynamicExpectCTHeaderProcessingDeduping) {
 // enabled.
 TEST_F(TransportSecurityStateTest, DynamicExpectCTStateDisabled) {
   base::test::ScopedFeatureList feature_list;
-  feature_list.InitAndDisableFeature(
-      TransportSecurityState::kDynamicExpectCTFeature);
+  feature_list.InitAndDisableFeature(kDynamicExpectCTFeature);
   const std::string host("example.test");
   TransportSecurityState state;
   TransportSecurityState::ExpectCTState expect_ct_state;
@@ -2326,8 +2317,7 @@ TEST_F(TransportSecurityStateTest, DynamicExpectCT) {
   // First test that the header is not processed when the feature is disabled.
   {
     base::test::ScopedFeatureList feature_list;
-    feature_list.InitAndDisableFeature(
-        TransportSecurityState::kDynamicExpectCTFeature);
+    feature_list.InitAndDisableFeature(kDynamicExpectCTFeature);
     TransportSecurityState state;
     state.ProcessExpectCTHeader(kHeader, HostPortPair("example.test", 443), ssl,
                                 NetworkAnonymizationKey());
@@ -2339,8 +2329,7 @@ TEST_F(TransportSecurityStateTest, DynamicExpectCT) {
   // Now test that the header is processed when the feature is enabled.
   {
     base::test::ScopedFeatureList feature_list;
-    feature_list.InitAndEnableFeature(
-        TransportSecurityState::kDynamicExpectCTFeature);
+    feature_list.InitAndEnableFeature(kDynamicExpectCTFeature);
     base::Time now = base::Time::Now();
     TransportSecurityState state;
     MockExpectCTReporter reporter;
@@ -2367,8 +2356,7 @@ TEST_F(TransportSecurityStateTest, DynamicExpectCTPrivateRoot) {
   ssl.ct_policy_compliance = ct::CTPolicyCompliance::CT_POLICY_NOT_ENOUGH_SCTS;
 
   base::test::ScopedFeatureList feature_list;
-  feature_list.InitAndEnableFeature(
-      TransportSecurityState::kDynamicExpectCTFeature);
+  feature_list.InitAndEnableFeature(kDynamicExpectCTFeature);
   TransportSecurityState state;
   MockExpectCTReporter reporter;
   state.SetExpectCTReporter(&reporter);
@@ -2399,8 +2387,7 @@ TEST_F(TransportSecurityStateTest, DynamicExpectCTNoComplianceDetails) {
   ssl.cert = cert2;
 
   base::test::ScopedFeatureList feature_list;
-  feature_list.InitAndEnableFeature(
-      TransportSecurityState::kDynamicExpectCTFeature);
+  feature_list.InitAndEnableFeature(kDynamicExpectCTFeature);
   TransportSecurityState state;
   MockExpectCTReporter reporter;
   state.SetExpectCTReporter(&reporter);
@@ -2438,8 +2425,7 @@ TEST_F(TransportSecurityStateTest,
   NetworkAnonymizationKey network_anonymization_key =
       NetworkAnonymizationKey::CreateTransient();
   base::test::ScopedFeatureList feature_list;
-  feature_list.InitAndEnableFeature(
-      TransportSecurityState::kDynamicExpectCTFeature);
+  feature_list.InitAndEnableFeature(kDynamicExpectCTFeature);
   TransportSecurityState state;
   MockExpectCTReporter reporter;
   state.SetExpectCTReporter(&reporter);
@@ -2481,8 +2467,7 @@ TEST_F(TransportSecurityStateTest, CheckCTRequirementsWithExpectCT) {
   NetworkAnonymizationKey network_anonymization_key =
       NetworkAnonymizationKey::CreateTransient();
   base::test::ScopedFeatureList feature_list;
-  feature_list.InitAndEnableFeature(
-      TransportSecurityState::kDynamicExpectCTFeature);
+  feature_list.InitAndEnableFeature(kDynamicExpectCTFeature);
 
   TransportSecurityState state;
   MockExpectCTReporter reporter;
@@ -2626,8 +2611,7 @@ TEST_F(TransportSecurityStateTest, CheckCTRequirementsWithExpectCTAndDelegate) {
       NetworkAnonymizationKey::CreateTransient();
 
   base::test::ScopedFeatureList feature_list;
-  feature_list.InitAndEnableFeature(
-      TransportSecurityState::kDynamicExpectCTFeature);
+  feature_list.InitAndEnableFeature(kDynamicExpectCTFeature);
 
   TransportSecurityState state;
   MockExpectCTReporter reporter;
@@ -2687,8 +2671,7 @@ TEST_F(TransportSecurityStateTest,
       NetworkAnonymizationKey::CreateTransient();
 
   base::test::ScopedFeatureList feature_list;
-  feature_list.InitAndEnableFeature(
-      TransportSecurityState::kDynamicExpectCTFeature);
+  feature_list.InitAndEnableFeature(kDynamicExpectCTFeature);
 
   TransportSecurityState state;
   MockExpectCTReporter reporter;
@@ -3466,8 +3449,7 @@ TEST_F(TransportSecurityStateTest,
   HostPortPair host_port_pair(kDomain, 443);
 
   base::test::ScopedFeatureList feature_list;
-  feature_list.InitAndEnableFeature(
-      TransportSecurityState::kDynamicExpectCTFeature);
+  feature_list.InitAndEnableFeature(kDynamicExpectCTFeature);
 
   const base::Time expiry = base::Time::Now() + base::Seconds(1000);
 
@@ -3558,7 +3540,7 @@ TEST_F(TransportSecurityStateTest, PruneExpectCTPriority) {
   base::test::ScopedFeatureList feature_list;
   feature_list.InitWithFeatures(
       // enabled_features
-      {TransportSecurityState::kDynamicExpectCTFeature,
+      {kDynamicExpectCTFeature,
        features::kPartitionExpectCTStateByNetworkIsolationKey},
       // disabled_features
       {});
@@ -3821,8 +3803,7 @@ TEST_F(TransportSecurityStateTest, PruneExpectCTPriority) {
 TEST_F(TransportSecurityStateTest, PruneExpectCTDelay) {
   const GURL report_uri(kReportUri);
   base::test::ScopedFeatureList feature_list;
-  feature_list.InitAndEnableFeature(
-      TransportSecurityState::kDynamicExpectCTFeature);
+  feature_list.InitAndEnableFeature(kDynamicExpectCTFeature);
 
   TransportSecurityState state;
   base::Time expiry = base::Time::Now() + base::Days(10);
@@ -3888,7 +3869,7 @@ TEST_F(TransportSecurityStateTest, PruneExpectCTNetworkAnonymizationKeyLimit) {
   base::test::ScopedFeatureList feature_list;
   feature_list.InitWithFeatures(
       // enabled_features
-      {TransportSecurityState::kDynamicExpectCTFeature,
+      {kDynamicExpectCTFeature,
        features::kPartitionExpectCTStateByNetworkIsolationKey},
       // disabled_features
       {});
@@ -4072,6 +4053,23 @@ TEST_F(TransportSecurityStateTest, UpdateKeyPinsListNotValidPin) {
                 host_port_pair, true, good_hashes, cert1.get(), cert2.get(),
                 TransportSecurityState::ENABLE_PIN_REPORTS,
                 network_anonymization_key, &unused_failure_log));
+
+  // Hashes should also be rejected if the hostname has a trailing dot.
+  host_port_pair = HostPortPair("example.test.", kPort);
+  EXPECT_EQ(TransportSecurityState::PKPStatus::VIOLATED,
+            state.CheckPublicKeyPins(
+                host_port_pair, true, good_hashes, cert1.get(), cert2.get(),
+                TransportSecurityState::ENABLE_PIN_REPORTS,
+                network_anonymization_key, &unused_failure_log));
+
+  // Hashes should also be rejected if the hostname has different
+  // capitalization.
+  host_port_pair = HostPortPair("ExAmpLe.tEsT", kPort);
+  EXPECT_EQ(TransportSecurityState::PKPStatus::VIOLATED,
+            state.CheckPublicKeyPins(
+                host_port_pair, true, good_hashes, cert1.get(), cert2.get(),
+                TransportSecurityState::ENABLE_PIN_REPORTS,
+                network_anonymization_key, &unused_failure_log));
 }
 
 TEST_F(TransportSecurityStateTest, UpdateKeyPinsEmptyList) {
@@ -4115,6 +4113,218 @@ TEST_F(TransportSecurityStateTest, UpdateKeyPinsEmptyList) {
             state.CheckPublicKeyPins(
                 host_port_pair, true, bad_hashes, cert1.get(), cert2.get(),
                 TransportSecurityState::ENABLE_PIN_REPORTS,
+                network_anonymization_key, &unused_failure_log));
+}
+
+TEST_F(TransportSecurityStateTest, UpdateKeyPinsIncludeSubdomains) {
+  base::test::ScopedFeatureList scoped_feature_list_;
+  scoped_feature_list_.InitAndEnableFeature(
+      net::features::kStaticKeyPinningEnforcement);
+  HostPortPair host_port_pair("example.sub.test", kPort);
+  GURL report_uri(kReportUri);
+  NetworkAnonymizationKey network_anonymization_key =
+      NetworkAnonymizationKey::CreateTransient();
+  // Two dummy certs to use as the server-sent and validated chains. The
+  // contents don't matter.
+  scoped_refptr<X509Certificate> cert1 =
+      ImportCertFromFile(GetTestCertsDirectory(), "ok_cert.pem");
+  ASSERT_TRUE(cert1);
+  scoped_refptr<X509Certificate> cert2 =
+      ImportCertFromFile(GetTestCertsDirectory(), "expired_cert.pem");
+  ASSERT_TRUE(cert2);
+
+  // unpinned_hashes is a set of hashes that (after the update) won't match the
+  // expected hashes for the tld of this domain. kGoodPath is used here because
+  // it's a path that is accepted prior to any updates, and this test will
+  // validate it is rejected afterwards.
+  HashValueVector unpinned_hashes;
+  for (size_t i = 0; kGoodPath[i]; i++) {
+    EXPECT_TRUE(AddHash(kGoodPath[i], &unpinned_hashes));
+  }
+
+  TransportSecurityState state;
+  EnableStaticPins(&state);
+  std::string unused_failure_log;
+
+  // Prior to updating the list, unpinned_hashes should be accepted
+  EXPECT_EQ(TransportSecurityState::PKPStatus::OK,
+            state.CheckPublicKeyPins(
+                host_port_pair, true, unpinned_hashes, cert1.get(), cert2.get(),
+                TransportSecurityState::ENABLE_PIN_REPORTS,
+                network_anonymization_key, &unused_failure_log));
+
+  // Update the pins list, adding kBadPath to the accepted hashes for this
+  // host, relying on include_subdomains for enforcement. The contents of the
+  // hashes don't matter as long as they are different from unpinned_hashes,
+  // kBadPath is used for convenience.
+  std::vector<std::vector<uint8_t>> accepted_hashes;
+  for (size_t i = 0; kBadPath[i]; i++) {
+    HashValue hash;
+    ASSERT_TRUE(hash.FromString(kBadPath[i]));
+    accepted_hashes.emplace_back(hash.data(), hash.data() + hash.size());
+  }
+  TransportSecurityState::PinSet test_pinset(
+      /*name=*/"test",
+      /*static_spki_hashes=*/{accepted_hashes},
+      /*bad_static_spki_hashes=*/{},
+      /*report_uri=*/kReportUri);
+  // The host used in the test is "example.sub.test", so this pinset will only
+  // match due to include subdomains.
+  TransportSecurityState::PinSetInfo test_pinsetinfo(
+      /*hostname=*/"sub.test", /* pinset_name=*/"test",
+      /*include_subdomains=*/true);
+  state.UpdatePinList({test_pinset}, {test_pinsetinfo}, base::Time::Now());
+
+  // The path that was accepted before updating the pins should now be rejected.
+  EXPECT_EQ(TransportSecurityState::PKPStatus::VIOLATED,
+            state.CheckPublicKeyPins(
+                host_port_pair, true, unpinned_hashes, cert1.get(), cert2.get(),
+                TransportSecurityState::ENABLE_PIN_REPORTS,
+                network_anonymization_key, &unused_failure_log));
+}
+
+TEST_F(TransportSecurityStateTest, UpdateKeyPinsIncludeSubdomainsTLD) {
+  base::test::ScopedFeatureList scoped_feature_list_;
+  scoped_feature_list_.InitAndEnableFeature(
+      net::features::kStaticKeyPinningEnforcement);
+  HostPortPair host_port_pair(kHost, kPort);
+  GURL report_uri(kReportUri);
+  NetworkAnonymizationKey network_anonymization_key =
+      NetworkAnonymizationKey::CreateTransient();
+  // Two dummy certs to use as the server-sent and validated chains. The
+  // contents don't matter.
+  scoped_refptr<X509Certificate> cert1 =
+      ImportCertFromFile(GetTestCertsDirectory(), "ok_cert.pem");
+  ASSERT_TRUE(cert1);
+  scoped_refptr<X509Certificate> cert2 =
+      ImportCertFromFile(GetTestCertsDirectory(), "expired_cert.pem");
+  ASSERT_TRUE(cert2);
+
+  // unpinned_hashes is a set of hashes that (after the update) won't match the
+  // expected hashes for the tld of this domain. kGoodPath is used here because
+  // it's a path that is accepted prior to any updates, and this test will
+  // validate it is rejected afterwards.
+  HashValueVector unpinned_hashes;
+  for (size_t i = 0; kGoodPath[i]; i++) {
+    EXPECT_TRUE(AddHash(kGoodPath[i], &unpinned_hashes));
+  }
+
+  TransportSecurityState state;
+  EnableStaticPins(&state);
+  std::string unused_failure_log;
+
+  // Prior to updating the list, unpinned_hashes should be accepted
+  EXPECT_EQ(TransportSecurityState::PKPStatus::OK,
+            state.CheckPublicKeyPins(
+                host_port_pair, true, unpinned_hashes, cert1.get(), cert2.get(),
+                TransportSecurityState::ENABLE_PIN_REPORTS,
+                network_anonymization_key, &unused_failure_log));
+
+  // Update the pins list, adding kBadPath to the accepted hashes for this
+  // host, relying on include_subdomains for enforcement. The contents of the
+  // hashes don't matter as long as they are different from unpinned_hashes,
+  // kBadPath is used for convenience.
+  std::vector<std::vector<uint8_t>> accepted_hashes;
+  for (size_t i = 0; kBadPath[i]; i++) {
+    HashValue hash;
+    ASSERT_TRUE(hash.FromString(kBadPath[i]));
+    accepted_hashes.emplace_back(hash.data(), hash.data() + hash.size());
+  }
+  TransportSecurityState::PinSet test_pinset(
+      /*name=*/"test",
+      /*static_spki_hashes=*/{accepted_hashes},
+      /*bad_static_spki_hashes=*/{},
+      /*report_uri=*/kReportUri);
+  // The host used in the test is "example.test", so this pinset will only match
+  // due to include subdomains.
+  TransportSecurityState::PinSetInfo test_pinsetinfo(
+      /*hostname=*/"test", /* pinset_name=*/"test",
+      /*include_subdomains=*/true);
+  state.UpdatePinList({test_pinset}, {test_pinsetinfo}, base::Time::Now());
+
+  // The path that was accepted before updating the pins should now be rejected.
+  EXPECT_EQ(TransportSecurityState::PKPStatus::VIOLATED,
+            state.CheckPublicKeyPins(
+                host_port_pair, true, unpinned_hashes, cert1.get(), cert2.get(),
+                TransportSecurityState::ENABLE_PIN_REPORTS,
+                network_anonymization_key, &unused_failure_log));
+}
+
+TEST_F(TransportSecurityStateTest, UpdateKeyPinsDontIncludeSubdomains) {
+  base::test::ScopedFeatureList scoped_feature_list_;
+  scoped_feature_list_.InitAndEnableFeature(
+      net::features::kStaticKeyPinningEnforcement);
+  HostPortPair host_port_pair(kHost, kPort);
+  GURL report_uri(kReportUri);
+  NetworkAnonymizationKey network_anonymization_key =
+      NetworkAnonymizationKey::CreateTransient();
+  // Two dummy certs to use as the server-sent and validated chains. The
+  // contents don't matter.
+  scoped_refptr<X509Certificate> cert1 =
+      ImportCertFromFile(GetTestCertsDirectory(), "ok_cert.pem");
+  ASSERT_TRUE(cert1);
+  scoped_refptr<X509Certificate> cert2 =
+      ImportCertFromFile(GetTestCertsDirectory(), "expired_cert.pem");
+  ASSERT_TRUE(cert2);
+
+  // unpinned_hashes is a set of hashes that (after the update) won't match the
+  // expected hashes for the tld of this domain. kGoodPath is used here because
+  // it's a path that is accepted prior to any updates, and this test will
+  // validate it is accepted or rejected afterwards depending on whether the
+  // domain is an exact match.
+  HashValueVector unpinned_hashes;
+  for (size_t i = 0; kGoodPath[i]; i++) {
+    EXPECT_TRUE(AddHash(kGoodPath[i], &unpinned_hashes));
+  }
+
+  TransportSecurityState state;
+  EnableStaticPins(&state);
+  std::string unused_failure_log;
+
+  // Prior to updating the list, unpinned_hashes should be accepted
+  EXPECT_EQ(TransportSecurityState::PKPStatus::OK,
+            state.CheckPublicKeyPins(
+                host_port_pair, true, unpinned_hashes, cert1.get(), cert2.get(),
+                TransportSecurityState::ENABLE_PIN_REPORTS,
+                network_anonymization_key, &unused_failure_log));
+
+  // Update the pins list, adding kBadPath to the accepted hashes for the
+  // tld of this host, but without include_subdomains set. The contents of the
+  // hashes don't matter as long as they are different from unpinned_hashes,
+  // kBadPath is used for convenience.
+  std::vector<std::vector<uint8_t>> accepted_hashes;
+  for (size_t i = 0; kBadPath[i]; i++) {
+    HashValue hash;
+    ASSERT_TRUE(hash.FromString(kBadPath[i]));
+    accepted_hashes.emplace_back(hash.data(), hash.data() + hash.size());
+  }
+  TransportSecurityState::PinSet test_pinset(
+      /*name=*/"test",
+      /*static_spki_hashes=*/{accepted_hashes},
+      /*bad_static_spki_hashes=*/{},
+      /*report_uri=*/kReportUri);
+  // The host used in the test is "example.test", so this pinset will not match
+  // due to include subdomains not being set.
+  TransportSecurityState::PinSetInfo test_pinsetinfo(
+      /*hostname=*/"test", /* pinset_name=*/"test",
+      /*include_subdomains=*/false);
+  state.UpdatePinList({test_pinset}, {test_pinsetinfo}, base::Time::Now());
+
+  // Hashes that were accepted before the update should still be accepted since
+  // include subdomains is not set for the pinset, and this is not an exact
+  // match.
+  EXPECT_EQ(TransportSecurityState::PKPStatus::OK,
+            state.CheckPublicKeyPins(
+                host_port_pair, true, unpinned_hashes, cert1.get(), cert2.get(),
+                TransportSecurityState::ENABLE_PIN_REPORTS,
+                network_anonymization_key, &unused_failure_log));
+
+  // Hashes should be rejected for an exact match of the hostname.
+  HostPortPair exact_match_host("test", kPort);
+  EXPECT_EQ(TransportSecurityState::PKPStatus::VIOLATED,
+            state.CheckPublicKeyPins(
+                exact_match_host, true, unpinned_hashes, cert1.get(),
+                cert2.get(), TransportSecurityState::ENABLE_PIN_REPORTS,
                 network_anonymization_key, &unused_failure_log));
 }
 

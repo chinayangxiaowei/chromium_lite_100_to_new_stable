@@ -7,7 +7,6 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include <algorithm>
 #include <limits>
 #include <map>
 #include <memory>
@@ -420,6 +419,16 @@ std::u16string RemoveWhiteSpaceAndConjugatingCharacters(
   base::TrimWhitespace(value, base::TRIM_ALL, &sanitized_value);
   base::RemoveChars(sanitized_value, kCharsToBeRemoved, &sanitized_value);
   return sanitized_value;
+}
+
+base::StringPiece RenderFormDataActionToString(
+    mojom::RendererFormDataAction action) {
+  switch (action) {
+    case mojom::RendererFormDataAction::kFill:
+      return "fill";
+    case mojom::RendererFormDataAction::kPreview:
+      return "preview";
+  }
 }
 
 }  // namespace
@@ -1112,6 +1121,17 @@ void BrowserAutofillManager::OnAskForValuesToFillImpl(
     return true;
   };
 
+  if (fast_checkout_delegate_->IsShowingFastCheckoutUI() ||
+      (form_element_was_clicked &&
+       fast_checkout_delegate_->TryToShowFastCheckout(form, field))) {
+    // The Fast Checkout surface is shown, so abort showing regular Autofill UI.
+    // Now the flow is controlled by the `fast_checkout_delegate_` instead
+    // of `external_delegate_`.
+    // In principle, TTF and Fast Checkout triggering surfaces are different and
+    // the two screens should never coincide.
+    return;
+  }
+
   if (ShouldOfferSingleFieldFormFill()) {
     // Suggestions come back asynchronously, so the SingleFieldFormFillRouter
     // will handle sending the results back to the renderer.
@@ -1131,17 +1151,6 @@ void BrowserAutofillManager::OnAskForValuesToFillImpl(
     // Touch To Fill surface is shown, so abort showing regular Autofill UI.
     // Now the flow is controlled by the |touch_to_fill_delegate_| instead
     // of |external_delegate_|.
-    return;
-  }
-
-  if (fast_checkout_delegate_->IsShowingFastCheckoutUI() ||
-      (form_element_was_clicked &&
-       fast_checkout_delegate_->TryToShowFastCheckout(form, field))) {
-    // The Fast Checkout surface is shown, so abort showing regular Autofill UI.
-    // Now the flow is controlled by the `fast_checkout_delegate_` instead
-    // of `external_delegate_`.
-    // In principle, touch_to_fill is prioritized, but the triggering surfaces
-    // are different and the two screens should never coincide.
     return;
   }
 
@@ -1635,6 +1644,7 @@ void BrowserAutofillManager::OnJavaScriptChangedAutofilledValueImpl(
                         << Tag{"table"} << Tr{} << GetFieldNumber()
                         << std::move(change);
 
+  AnalyzeJavaScriptChangedAutofilledValue(form, field);
   MaybeTriggerRefillForExpirationDate(form, field, old_value);
 }
 
@@ -1693,6 +1703,39 @@ void BrowserAutofillManager::MaybeTriggerRefillForExpirationDate(
     DCHECK(filling_context);  // This is enforced by ShouldTriggerRefill.
     filling_context->forced_fill_values[field.global_id()] = refill_value;
     ScheduleRefill(form);
+  }
+}
+
+void BrowserAutofillManager::AnalyzeJavaScriptChangedAutofilledValue(
+    const FormData& form,
+    const FormFieldData& field) {
+  // We are interested in reporting the events where JavaScript resets an
+  // autofilled value immediately after filling. For a reset, the value
+  // needs to be empty.
+  if (!field.value.empty())
+    return;
+
+  FormStructure* form_structure = nullptr;
+  AutofillField* autofill_field = nullptr;
+  if (!GetCachedFormAndField(form, field, &form_structure, &autofill_field))
+    return;
+
+  FillingContext* filling_context = GetFillingContext(*form_structure);
+  if (!filling_context)
+    return;
+
+  base::TimeTicks now = AutofillTickClock::NowTicks();
+  base::TimeDelta delta = now - filling_context->original_fill_time;
+
+  // If the filling happened too long ago, maybe this is just an effect of
+  // the user pressing a "reset form" button.
+  if (delta >= kLimitBeforeRefill)
+    return;
+
+  auto* logger = GetEventFormLogger(autofill_field->Type().group());
+  if (logger) {
+    logger->OnAutofilledFieldWasClearedByJavaScriptShortlyAfterFill(
+        *form_structure);
   }
 }
 
@@ -1944,6 +1987,7 @@ void BrowserAutofillManager::FillOrPreviewDataModelForm(
   DCHECK(autofill_field);
 
   LogBuffer buffer(IsLoggingActive(log_manager()));
+  LOG_AF(buffer) << "action: " << RenderFormDataActionToString(action);
   LOG_AF(buffer) << "is credit card section: " << is_credit_card << Br{};
   LOG_AF(buffer) << "is refill: " << is_refill << Br{};
   LOG_AF(buffer) << *form_structure << Br{};
@@ -2145,17 +2189,12 @@ void BrowserAutofillManager::FillOrPreviewDataModelForm(
     if (!cached_field->IsFocusable() && result.fields[i].is_autofilled)
       AutofillMetrics::LogHiddenOrPresentationalSelectFieldsFilled();
   }
-  LOG_AF(buffer) << CTag{"table"};
 
   autofilled_form_signatures_.push_front(form_structure->FormSignatureAsStr());
   // Only remember the last few forms that we've seen, both to avoid false
   // positives and to avoid wasting memory.
   if (autofilled_form_signatures_.size() > kMaxRecentFormSignaturesToRemember)
     autofilled_form_signatures_.pop_back();
-
-  LOG_AF(log_manager()) << LoggingScope::kFilling
-                        << LogMessage::kSendFillingData << Br{}
-                        << std::move(buffer);
 
   auto field_types = base::MakeFlatMap<FieldGlobalId, ServerFieldType>(
       *form_structure, {}, [](const auto& field) {
@@ -2164,6 +2203,28 @@ void BrowserAutofillManager::FillOrPreviewDataModelForm(
       });
   std::vector<FieldGlobalId> safe_fields = driver()->FillOrPreviewForm(
       query_id, action, result, field.origin, field_types);
+
+  // Report the fields that were not filled due to the iframe security policy.
+  for (FieldGlobalId field_global_id : newly_filled_fields) {
+    if (base::Contains(safe_fields, field_global_id)) {
+      // A safe field was filled.
+      continue;
+    }
+    // Find and report index of fields that were not filled.
+    auto it = base::ranges::find(result.fields, field_global_id,
+                                 &FormFieldData::global_id);
+    if (it != result.fields.end()) {
+      size_t index = it - result.fields.begin();
+      std::string field_number = base::StringPrintf("Field %zu", index);
+      LOG_AF(buffer) << Tr{} << field_number
+                     << "Actually did not fill field because of the iframe "
+                        "security policy.";
+    }
+  }
+  LOG_AF(buffer) << CTag{"table"};
+  LOG_AF(log_manager()) << LoggingScope::kFilling
+                        << LogMessage::kSendFillingData << Br{}
+                        << std::move(buffer);
 
   // Call OnDidFillSuggestion() to log the metrics.
   if (action == mojom::RendererFormDataAction::kFill && !is_refill) {
@@ -2263,9 +2324,9 @@ std::unique_ptr<FormStructure> BrowserAutofillManager::ValidateSubmittedForm(
   }
 
   auto submitted_form = std::make_unique<FormStructure>(form);
-  submitted_form->RetrieveFromCache(*cached_submitted_form,
-                                    /*should_keep_cached_value=*/false,
-                                    /*only_server_and_autofill_state=*/false);
+  submitted_form->RetrieveFromCache(
+      *cached_submitted_form,
+      FormStructure::RetrieveFromCacheReason::kFormImport);
   if (value_from_dynamic_change_form_) {
     submitted_form->set_value_from_dynamic_change_form(true);
   }
@@ -2321,12 +2382,13 @@ std::vector<Suggestion> BrowserAutofillManager::GetCreditCardSuggestions(
   credit_card_form_event_logger_->OnDidPollSuggestions(field, sync_state_);
 
   std::vector<Suggestion> suggestions;
+  bool with_offer = false;
   if (!IsInAutofillSuggestionsDisabledExperiment()) {
     suggestions = suggestion_generator_->GetSuggestionsForCreditCards(
-        form_structure, field, type, app_locale_, should_display_gpay_logo);
+        field, type, app_locale_, should_display_gpay_logo, &with_offer);
   }
 
-  credit_card_form_event_logger_->set_suggestions(suggestions);
+  credit_card_form_event_logger_->OnDidFetchSuggestion(suggestions, with_offer);
   return suggestions;
 }
 
@@ -2859,7 +2921,7 @@ void BrowserAutofillManager::GetAvailableSuggestions(
   // If ablation_group is AblationGroup::kDefault or AblationGroup::kControl,
   // no ablation happens in the following.
   AblationGroup ablation_group = client()->GetAblationStudy().GetAblationGroup(
-      client()->GetLastCommittedURL(), form_type);
+      client()->GetLastCommittedPrimaryMainFrameURL(), form_type);
   context->ablation_group = ablation_group;
   // Note that we don't set the ablation group if there are no suggestions.
   // In that case we stick to kDefault.
@@ -2937,9 +2999,7 @@ bool BrowserAutofillManager::ShouldShowVirtualCardOption(
   // If merchant is not allowed, return false.
   std::vector<std::string> allowed_merchants =
       client()->GetAllowedMerchantsForVirtualCards();
-  if (std::find(allowed_merchants.begin(), allowed_merchants.end(),
-                form_structure->source_url().spec()) ==
-      allowed_merchants.end()) {
+  if (!base::Contains(allowed_merchants, form_structure->source_url().spec())) {
     return false;
   }
 

@@ -158,9 +158,11 @@ TEST(ValidationSuite, TestRegistry) {
 
 std::unique_ptr<TestRunner> DesktopRunner() {
   auto runner = std::make_unique<TestRunner>();
-  runner->GetPolicy()->CreateAlternateDesktop(Desktop::kAlternateWinstation);
+  EXPECT_EQ(SBOX_ALL_OK, runner->broker()->CreateAlternateDesktop(
+                             Desktop::kAlternateWinstation));
   runner->GetPolicy()->GetConfig()->SetDesktop(Desktop::kAlternateWinstation);
-  runner->GetPolicy()->GetConfig()->SetIntegrityLevel(INTEGRITY_LEVEL_LOW);
+  EXPECT_EQ(SBOX_ALL_OK, runner->GetPolicy()->GetConfig()->SetIntegrityLevel(
+                             INTEGRITY_LEVEL_LOW));
   return runner;
 }
 
@@ -184,12 +186,16 @@ TEST(ValidationSuite, TestAlternateDesktop) {
   TestRunner runner;
   wchar_t command[1024] = {0};
   runner.SetTimeout(3600000);
-  runner.GetPolicy()->CreateAlternateDesktop(Desktop::kAlternateWinstation);
+  EXPECT_EQ(SBOX_ALL_OK, runner.broker()->CreateAlternateDesktop(
+                             Desktop::kAlternateWinstation));
   runner.GetPolicy()->GetConfig()->SetDesktop(Desktop::kAlternateWinstation);
-  runner.GetPolicy()->GetConfig()->SetIntegrityLevel(INTEGRITY_LEVEL_LOW);
+  EXPECT_EQ(SBOX_ALL_OK, runner.GetPolicy()->GetConfig()->SetIntegrityLevel(
+                             INTEGRITY_LEVEL_LOW));
   // Ensure the desktop is created.
-  runner.GetPolicy()->CreateAlternateDesktop(Desktop::kAlternateWinstation);
-  std::wstring desktop_name = runner.GetPolicy()->GetDesktopName();
+  EXPECT_EQ(SBOX_ALL_OK, runner.broker()->CreateAlternateDesktop(
+                             Desktop::kAlternateWinstation));
+  std::wstring desktop_name =
+      runner.broker()->GetDesktopName(Desktop::kAlternateWinstation);
   desktop_name = desktop_name.substr(desktop_name.find('\\') + 1);
   wsprintf(command, L"OpenAlternateDesktop %lS", desktop_name.c_str());
   EXPECT_EQ(SBOX_TEST_DENIED, runner.RunTest(command));
@@ -197,9 +203,11 @@ TEST(ValidationSuite, TestAlternateDesktop) {
 
 std::unique_ptr<TestRunner> AlternateDesktopLocalWinstationRunner() {
   auto runner = std::make_unique<TestRunner>();
-  runner->GetPolicy()->CreateAlternateDesktop(Desktop::kAlternateDesktop);
+  EXPECT_EQ(SBOX_ALL_OK, runner->broker()->CreateAlternateDesktop(
+                             Desktop::kAlternateDesktop));
   runner->GetPolicy()->GetConfig()->SetDesktop(Desktop::kAlternateDesktop);
-  runner->GetPolicy()->GetConfig()->SetIntegrityLevel(INTEGRITY_LEVEL_LOW);
+  EXPECT_EQ(SBOX_ALL_OK, runner->GetPolicy()->GetConfig()->SetIntegrityLevel(
+                             INTEGRITY_LEVEL_LOW));
   return runner;
 }
 
@@ -215,12 +223,13 @@ TEST(ValidationSuite, TestAlternateDesktopLocalWinstation) {
 
 // Tests if the windows are correctly protected by the sandbox.
 TEST(ValidationSuite, TestWindows) {
-  // Due to a bug in Windows on builds based on the 19041 branch (20H1, 20H2 and
-  // 21H1) this test will fail on these versions. See crbug.com/1057656.
+  // Due to a bug in Windows on builds based on the 19041 branch (20H1, 20H2,
+  // 21H1 and 22H2) this test will fail on these versions. See
+  // crbug.com/1057656.
   base::win::OSInfo* os_info = base::win::OSInfo::GetInstance();
   if (os_info->version_number().build >= 19041 &&
-      os_info->version_number().build <= 19043) {
-    return;
+      os_info->version_number().build <= 19045) {
+    GTEST_SKIP() << "Skipping test for Win10 19041 branch, crbug.com/1057656.";
   }
 
   wchar_t command[1024] = {0};
@@ -252,9 +261,10 @@ TEST(ValidationSuite, TestProcessDenyLockdown) {
 
 std::unique_ptr<TestRunner> ProcessDenyLowIntegrityRunner() {
   auto runner = std::make_unique<TestRunner>();
-  runner->GetPolicy()->GetConfig()->SetIntegrityLevel(INTEGRITY_LEVEL_LOW);
-  runner->GetPolicy()->GetConfig()->SetTokenLevel(USER_RESTRICTED_SAME_ACCESS,
-                                                  USER_INTERACTIVE);
+  EXPECT_EQ(SBOX_ALL_OK, runner->GetPolicy()->GetConfig()->SetIntegrityLevel(
+                             INTEGRITY_LEVEL_LOW));
+  EXPECT_EQ(SBOX_ALL_OK, runner->GetPolicy()->GetConfig()->SetTokenLevel(
+                             USER_RESTRICTED_SAME_ACCESS, USER_INTERACTIVE));
   return runner;
 }
 
@@ -275,8 +285,8 @@ std::unique_ptr<TestRunner> ProcessDenyBelowLowIntegrityRunner() {
   auto runner = std::make_unique<TestRunner>();
   runner->GetPolicy()->GetConfig()->SetDelayedIntegrityLevel(
       INTEGRITY_LEVEL_UNTRUSTED);
-  runner->GetPolicy()->GetConfig()->SetTokenLevel(USER_RESTRICTED_SAME_ACCESS,
-                                                  USER_INTERACTIVE);
+  EXPECT_EQ(SBOX_ALL_OK, runner->GetPolicy()->GetConfig()->SetTokenLevel(
+                             USER_RESTRICTED_SAME_ACCESS, USER_INTERACTIVE));
   return runner;
 }
 
@@ -284,9 +294,10 @@ std::unique_ptr<TestRunner> ProcessDenyBelowLowIntegrityRunner() {
 TEST(ValidationSuite, TestProcessDenyBelowLowIntegrity) {
   TestRunner target;
   target.SetAsynchronous(true);
-  target.GetPolicy()->GetConfig()->SetIntegrityLevel(INTEGRITY_LEVEL_LOW);
-  target.GetPolicy()->GetConfig()->SetTokenLevel(USER_RESTRICTED_SAME_ACCESS,
-                                                 USER_INTERACTIVE);
+  EXPECT_EQ(SBOX_ALL_OK, target.GetPolicy()->GetConfig()->SetIntegrityLevel(
+                             INTEGRITY_LEVEL_LOW));
+  EXPECT_EQ(SBOX_ALL_OK, target.GetPolicy()->GetConfig()->SetTokenLevel(
+                             USER_RESTRICTED_SAME_ACCESS, USER_INTERACTIVE));
 
   EXPECT_EQ(SBOX_TEST_SUCCEEDED, target.RunTest(L"SleepCmd 30000"));
 

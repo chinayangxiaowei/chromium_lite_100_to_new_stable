@@ -6,6 +6,7 @@
 #define CHROME_BROWSER_SAFE_BROWSING_CLOUD_CONTENT_SCANNING_BINARY_UPLOAD_SERVICE_H_
 
 #include "base/memory/read_only_shared_memory_region.h"
+#include "base/memory/weak_ptr.h"
 #include "chrome/browser/enterprise/connectors/analysis/analysis_settings.h"
 #include "components/enterprise/common/proto/connectors.pb.h"
 #include "components/keyed_service/core/keyed_service.h"
@@ -18,7 +19,8 @@ namespace safe_browsing {
 
 // This class encapsulates the process of getting data scanned through a generic
 // interface.
-class BinaryUploadService : public KeyedService {
+class BinaryUploadService : public KeyedService,
+                            public base::SupportsWeakPtr<BinaryUploadService> {
  public:
   // The maximum size of data that can be uploaded via this service.
   constexpr static size_t kMaxUploadSizeBytes = 50 * 1024 * 1024;  // 50 MB
@@ -154,6 +156,9 @@ class BinaryUploadService : public KeyedService {
     void clear_dlp_scan_request();
     void set_client_metadata(enterprise_connectors::ClientMetadata metadata);
     void set_content_type(const std::string& type);
+    void set_tab_title(const std::string& tab_title);
+    void set_user_action_id(const std::string& user_action_id);
+    void set_user_action_requests_count(uint64_t user_action_requests_count);
 
     std::string SetRandomRequestToken();
 
@@ -165,6 +170,8 @@ class BinaryUploadService : public KeyedService {
     const std::string& filename() const;
     const std::string& digest() const;
     const std::string& content_type() const;
+    const std::string& user_action_id() const;
+    uint64_t user_action_requests_count() const;
 
     // Finish the request, with the given `result` and `response` from the
     // server.

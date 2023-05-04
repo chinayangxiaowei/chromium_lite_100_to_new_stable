@@ -350,12 +350,18 @@ bool DevToolsAgentHostImpl::Inspect() {
 }
 
 void DevToolsAgentHostImpl::ForceDetachAllSessions() {
-  scoped_refptr<DevToolsAgentHostImpl> protect(this);
+  std::ignore = ForceDetachAllSessionsImpl();
+}
+
+scoped_refptr<DevToolsAgentHost>
+DevToolsAgentHostImpl::ForceDetachAllSessionsImpl() {
+  scoped_refptr<DevToolsAgentHost> retain_this(this);
   while (!sessions_.empty()) {
     DevToolsAgentHostClient* client = (*sessions_.begin())->GetClient();
     DetachClient(client);
     client->AgentHostClosed(this);
   }
+  return retain_this;
 }
 
 void DevToolsAgentHostImpl::ForceDetachRestrictedSessions(
@@ -416,6 +422,10 @@ void DevToolsAgentHost::RemoveObserver(DevToolsAgentHostObserver* observer) {
 // static
 bool DevToolsAgentHostImpl::ShouldForceCreation() {
   return !!s_force_creation_count_;
+}
+
+std::string DevToolsAgentHostImpl::GetSubtype() {
+  return "";
 }
 
 void DevToolsAgentHostImpl::NotifyCreated() {

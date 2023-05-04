@@ -16,11 +16,25 @@ constexpr base::TimeDelta kUserSettingsMaxAge = base::Days(14);
 // scrolling.
 extern const int kMinScrollThreshold;
 
+// Time spent by the user in feed to consider it a
+// FeedEngagementType::kFeedGoodVisit.
+extern const int kGoodVisitTimeInFeedSeconds;
+
+// Minimum time spent in an article to be considered a non-short click. A
+// non-short click is any click on an article lasting more than the value
+// assigned to this constant. Calculated when back in the feed.
+extern const int kNonShortClickSeconds;
+
 // Time between two metrics recorded to consider it a new session.
 extern const int kMinutesBetweenSessions;
 
 // The max amount of cards in the Discover Feed.
 extern const int kMaxCardsInFeed;
+
+// Stores the time when the user visits an article on the feed.
+extern NSString* const kArticleVisitTimestampKey;
+// Stores the time elapsed on the feed when the user leaves.
+extern NSString* const kLongFeedVisitTimeAggregateKey;
 
 #pragma mark - Enums
 
@@ -179,12 +193,6 @@ extern const char kDiscoverFeedCardShownAtIndex[];
 // Histogram name for a Following feed card shown at index.
 extern const char kFollowingFeedCardShownAtIndex[];
 
-// Histogram name for a Discover feed card tapped at index.
-extern const char kDiscoverFeedCardOpenedAtIndex[];
-
-// Histogram name for a Following feed card tapped at index.
-extern const char kFollowingFeedCardOpenedAtIndex[];
-
 // Histogram name to capture Feed Notice card impressions.
 extern const char kDiscoverFeedNoticeCardFulfilled[];
 
@@ -216,9 +224,11 @@ extern const char kDiscoverFeedUploadActionsNetworkDurationFailure[];
 // operation.
 extern const char kDiscoverFeedNetworkDuration[];
 
-// Histogram name to measure opened URL's regardless of the surface they were
-// opened in.
+// Histogram name to track opened articles from the Discover feed.
 extern const char kDiscoverFeedURLOpened[];
+
+// Histogram name to track opened articles from the Following feed.
+extern const char kFollowingFeedURLOpened[];
 
 // Histogram name to capture if the last Feed fetch had logging enabled.
 extern const char kDiscoverFeedActivityLoggingEnabled[];

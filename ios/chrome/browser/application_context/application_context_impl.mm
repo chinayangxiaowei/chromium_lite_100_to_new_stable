@@ -21,6 +21,7 @@
 #import "base/time/default_clock.h"
 #import "base/time/default_tick_clock.h"
 #import "components/breadcrumbs/core/breadcrumb_persistent_storage_manager.h"
+#import "components/breadcrumbs/core/crash_reporter_breadcrumb_observer.h"
 #import "components/breadcrumbs/core/features.h"
 #import "components/component_updater/component_updater_service.h"
 #import "components/component_updater/timer_update_scheduler.h"
@@ -59,7 +60,7 @@
 #import "ios/chrome/browser/prefs/ios_chrome_pref_service_factory.h"
 #import "ios/chrome/browser/prefs/pref_names.h"
 #import "ios/chrome/browser/promos_manager/features.h"
-#import "ios/chrome/browser/promos_manager/promos_manager.h"
+#import "ios/chrome/browser/promos_manager/promos_manager_impl.h"
 #import "ios/chrome/browser/push_notification/push_notification_service.h"
 #import "ios/chrome/browser/segmentation_platform/otr_web_state_observer.h"
 #import "ios/chrome/browser/update_client/ios_chrome_update_query_params_delegate.h"
@@ -161,6 +162,10 @@ void ApplicationContextImpl::PreMainMessageLoopRun() {
   }
 
   if (base::FeatureList::IsEnabled(breadcrumbs::kLogBreadcrumbs)) {
+    // Start crash reporter listening for breadcrumb events. Collected
+    // breadcrumbs will be attached to crash reports.
+    breadcrumbs::CrashReporterBreadcrumbObserver::GetInstance();
+
     base::FilePath storage_dir;
     bool result = base::PathService::Get(ios::DIR_USER_DATA, &storage_dir);
     DCHECK(result);
@@ -477,7 +482,7 @@ BrowserPolicyConnectorIOS* ApplicationContextImpl::GetBrowserPolicyConnector() {
 PromosManager* ApplicationContextImpl::GetPromosManager() {
   DCHECK(thread_checker_.CalledOnValidThread());
   if (IsFullscreenPromosManagerEnabled() && !promos_manager_) {
-    promos_manager_ = std::make_unique<PromosManager>(GetLocalState());
+    promos_manager_ = std::make_unique<PromosManagerImpl>(GetLocalState());
   }
   return promos_manager_.get();
 }

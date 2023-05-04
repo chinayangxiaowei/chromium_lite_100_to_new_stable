@@ -57,35 +57,45 @@ os_category = struct(
 # The *_DEFAULT members enable distinguishing between a use that runs the
 # "current" version of the OS and a use that runs against a specific version
 # that happens to be the "current" version
-def os_enum(dimension, category):
-    return struct(dimension = dimension, category = category)
+def os_enum(category, dimension, dimension_overrides = None):
+    if dimension_overrides:
+        def get_dimension(bucket, builder):
+            return dimension_overrides.get(bucket, {}).get(builder, dimension)
+    else:
+        def get_dimension(_bucket, _builder):
+            return dimension
+
+    return struct(category = category, get_dimension = get_dimension)
 
 os = struct(
-    ANDROID = os_enum("Android", os_category.ANDROID),
-    LINUX_TRUSTY = os_enum("Ubuntu-14.04", os_category.LINUX),
-    LINUX_XENIAL = os_enum("Ubuntu-16.04", os_category.LINUX),
-    LINUX_BIONIC = os_enum("Ubuntu-18.04", os_category.LINUX),
-    LINUX_FOCAL = os_enum("Ubuntu-20.04", os_category.LINUX),
-    LINUX_DEFAULT = os_enum("Ubuntu-18.04", os_category.LINUX),
-    MAC_10_12 = os_enum("Mac-10.12", os_category.MAC),
-    MAC_10_13 = os_enum("Mac-10.13", os_category.MAC),
-    MAC_10_14 = os_enum("Mac-10.14", os_category.MAC),
-    MAC_10_15 = os_enum("Mac-10.15", os_category.MAC),
-    MAC_11 = os_enum("Mac-11", os_category.MAC),
-    MAC_12 = os_enum("Mac-12", os_category.MAC),
-    MAC_DEFAULT = os_enum("Mac-12", os_category.MAC),
-    MAC_ANY = os_enum("Mac", os_category.MAC),
-    MAC_BETA = os_enum("Mac-12", os_category.MAC),
-    WINDOWS_7 = os_enum("Windows-7", os_category.WINDOWS),
-    WINDOWS_8_1 = os_enum("Windows-8.1", os_category.WINDOWS),
-    WINDOWS_10 = os_enum("Windows-10", os_category.WINDOWS),
-    WINDOWS_10_1703 = os_enum("Windows-10-15063", os_category.WINDOWS),
-    WINDOWS_10_1909 = os_enum("Windows-10-18363", os_category.WINDOWS),
-    WINDOWS_10_20h2 = os_enum("Windows-10-19042", os_category.WINDOWS),
-    WINDOWS_11 = os_enum("Windows-11", os_category.WINDOWS),
-    WINDOWS_11_21h2 = os_enum("Windows-11-22000", os_category.WINDOWS),
-    WINDOWS_DEFAULT = os_enum("Windows-10", os_category.WINDOWS),
-    WINDOWS_ANY = os_enum("Windows", os_category.WINDOWS),
+    ANDROID = os_enum(os_category.ANDROID, "Android"),
+    LINUX_TRUSTY = os_enum(os_category.LINUX, "Ubuntu-14.04"),
+    LINUX_XENIAL = os_enum(os_category.LINUX, "Ubuntu-16.04"),
+    LINUX_BIONIC = os_enum(os_category.LINUX, "Ubuntu-18.04"),
+    LINUX_FOCAL = os_enum(os_category.LINUX, "Ubuntu-20.04"),
+    # A migration off of bionic is in progress, builders identified in
+    # linux-default.json will have a different os dimension
+    LINUX_DEFAULT = os_enum(os_category.LINUX, "Ubuntu-18.04", json.decode(io.read_file("./linux-default.json"))),
+    MAC_10_12 = os_enum(os_category.MAC, "Mac-10.12"),
+    MAC_10_13 = os_enum(os_category.MAC, "Mac-10.13"),
+    MAC_10_14 = os_enum(os_category.MAC, "Mac-10.14"),
+    MAC_10_15 = os_enum(os_category.MAC, "Mac-10.15"),
+    MAC_11 = os_enum(os_category.MAC, "Mac-11"),
+    MAC_12 = os_enum(os_category.MAC, "Mac-12"),
+    MAC_13 = os_enum(os_category.MAC, "Mac-13"),
+    MAC_DEFAULT = os_enum(os_category.MAC, "Mac-12"),
+    MAC_ANY = os_enum(os_category.MAC, "Mac"),
+    MAC_BETA = os_enum(os_category.MAC, "Mac-12"),
+    WINDOWS_7 = os_enum(os_category.WINDOWS, "Windows-7"),
+    WINDOWS_8_1 = os_enum(os_category.WINDOWS, "Windows-8.1"),
+    WINDOWS_10 = os_enum(os_category.WINDOWS, "Windows-10"),
+    WINDOWS_10_1703 = os_enum(os_category.WINDOWS, "Windows-10-15063"),
+    WINDOWS_10_1909 = os_enum(os_category.WINDOWS, "Windows-10-18363"),
+    WINDOWS_10_20h2 = os_enum(os_category.WINDOWS, "Windows-10-19042"),
+    WINDOWS_11 = os_enum(os_category.WINDOWS, "Windows-11"),
+    WINDOWS_11_21h2 = os_enum(os_category.WINDOWS, "Windows-11-22000"),
+    WINDOWS_DEFAULT = os_enum(os_category.WINDOWS, "Windows-10"),
+    WINDOWS_ANY = os_enum(os_category.WINDOWS, "Windows"),
 )
 
 # The constants to be used for the goma_backend and goma_jobs parameters of the
@@ -152,7 +162,10 @@ reclient = struct(
 )
 
 def _rotation(name):
-    return branches.value({branches.MAIN: [name]})
+    return branches.value(
+        branch_selector = branches.selector.MAIN,
+        value = [name],
+    )
 
 # Sheriff rotations that a builder can be added to (only takes effect on trunk)
 # Arbitrary elements can't be added, new rotations must be added in SoM code
@@ -162,6 +175,7 @@ sheriff_rotations = struct(
     CHROMIUM = _rotation("chromium"),
     FUCHSIA = _rotation("fuchsia"),
     CHROMIUM_CLANG = _rotation("chromium.clang"),
+    CHROMIUM_FUZZ = _rotation("chromium.fuzz"),
     CHROMIUM_GPU = _rotation("chromium.gpu"),
     IOS = _rotation("ios"),
 )
@@ -188,7 +202,7 @@ xcode = struct(
     # Xcode14 RC will be used to build Main iOS
     x14main = xcode_enum("14a309"),
     # A newer Xcode 14 RC  used on beta bots.
-    x14betabots = xcode_enum("14a309"),
+    x14betabots = xcode_enum("14b5024i"),
     # in use by ios-webkit-tot
     x13wk = xcode_enum("13a1030dwk"),
 )
@@ -306,9 +320,9 @@ def _reclient_property(*, instance, service, jobs, rewrapper_env, profiler_servi
     bootstrap_env = defaults.get_value("reclient_bootstrap_env", bootstrap_env)
     if bootstrap_env:
         for k in bootstrap_env:
-            if not k.startswith("RBE_"):
+            if not (k.startswith("RBE_") or k.startswith("GLOG_")):
                 fail("Environment variables in bootstrap_env must start with " +
-                     "'RBE_', got '%s'" % k)
+                     "'RBE_' or 'GLOG_', got '%s'" % k)
         reclient["bootstrap_env"] = bootstrap_env
     profiler_service = defaults.get_value("reclient_profiler_service", profiler_service)
     if profiler_service:
@@ -369,6 +383,10 @@ defaults = args.defaults(
     reclient_cache_silo = None,
     reclient_ensure_verified = None,
 
+    # This is to enable luci.buildbucket.omit_python2 experiment.
+    # TODO(crbug.com/1362440): remove this after enabling this in all builders.
+    omit_python2 = True,
+
     # Provide vars for bucket and executable so users don't have to
     # unnecessarily make wrapper functions
     bucket = args.COMPUTE,
@@ -380,7 +398,7 @@ defaults = args.defaults(
 def builder(
         *,
         name,
-        branch_selector = branches.MAIN,
+        branch_selector = branches.selector.MAIN,
         bucket = args.DEFAULT,
         executable = args.DEFAULT,
         notifies = None,
@@ -426,6 +444,7 @@ def builder(
         reclient_publish_trace = args.DEFAULT,
         reclient_cache_silo = None,
         reclient_ensure_verified = None,
+        omit_python2 = args.DEFAULT,
         **kwargs):
     """Define a builder.
 
@@ -597,6 +616,9 @@ def builder(
             remote caching. Has no effect if reclient_instance is not set.
         reclient_ensure_verified: If True, it verifies build artifacts. Has no
             effect if reclient_instance is not set.
+        omit_python2: If True, set luci.buildbucket.omit_python2 experiment.
+            TODO(crbug.com/1362440): remove this after enabling this in all
+            builders.
         **kwargs: Additional keyword arguments to forward on to `luci.builder`.
 
     Returns:
@@ -632,15 +654,15 @@ def builder(
              "use reclient_instance and reclient_rewrapper_env instead")
     properties = dict(properties)
 
-    os = defaults.get_value("os", os)
-    if os:
-        dimensions["os"] = os.dimension
-
     # bucket might be the args.COMPUTE sentinel value if the caller didn't set
     # bucket in some way, which will result in a weird fully-qualified builder
     # dimension, but it shouldn't matter because the call to luci.builder will
     # fail without bucket being set
     bucket = defaults.get_value("bucket", bucket)
+
+    os = defaults.get_value("os", os)
+    if os:
+        dimensions["os"] = os.get_dimension(bucket, name)
 
     if override_builder_dimension:
         dimensions["builder"] = override_builder_dimension
@@ -778,6 +800,13 @@ def builder(
     if triggered_by != args.COMPUTE:
         kwargs["triggered_by"] = triggered_by
 
+    experiments = kwargs.pop("experiments", None) or {}
+
+    # TODO: remove this after this experiment is removed from
+    # cr-buildbucket/settings.cfg (http://shortn/_cz2s9ql61X).
+    if defaults.get_value("omit_python2", omit_python2):
+        experiments["luci.buildbucket.omit_python2"] = 100
+
     builder = branches.builder(
         name = name,
         branch_selector = branch_selector,
@@ -791,6 +820,7 @@ def builder(
             ),
             history_options = history_options,
         ),
+        experiments = experiments,
         **kwargs
     )
 

@@ -9,8 +9,14 @@
 #endif
 
 const int kMinScrollThreshold = 140;
+const int kGoodVisitTimeInFeedSeconds = 60;
+const int kNonShortClickSeconds = 10;
 const int kMinutesBetweenSessions = 5;
 const int kMaxCardsInFeed = 50;
+
+NSString* const kArticleVisitTimestampKey = @"ShortClickInteractionTimestamp";
+NSString* const kLongFeedVisitTimeAggregateKey =
+    @"LongFeedInteractionTimeDelta";
 
 #pragma mark - Histograms
 
@@ -28,10 +34,6 @@ const char kDiscoverFeedCardShownAtIndex[] =
     "NewTabPage.ContentSuggestions.Shown";
 const char kFollowingFeedCardShownAtIndex[] =
     "ContentSuggestions.Feed.WebFeed.Shown";
-const char kDiscoverFeedCardOpenedAtIndex[] =
-    "NewTabPage.ContentSuggestions.Opened";
-const char kFollowingFeedCardOpenedAtIndex[] =
-    "ContentSuggestions.Feed.WebFeed.Opened";
 const char kDiscoverFeedNoticeCardFulfilled[] =
     "ContentSuggestions.Feed.NoticeCardFulfilled2";
 const char kDiscoverFeedArticlesFetchNetworkDurationSuccess[] =
@@ -49,6 +51,7 @@ const char kDiscoverFeedUploadActionsNetworkDurationFailure[] =
 const char kDiscoverFeedNetworkDuration[] =
     "ContentSuggestions.Feed.Network.Duration";
 const char kDiscoverFeedURLOpened[] = "NewTabPage.ContentSuggestions.Opened";
+const char kFollowingFeedURLOpened[] = "ContentSuggestions.Feed.WebFeed.Opened";
 const char kDiscoverFeedActivityLoggingEnabled[] =
     "ContentSuggestions.Feed.ActivityLoggingEnabled";
 const char kDiscoverFeedBrokenNTPHierarchy[] =

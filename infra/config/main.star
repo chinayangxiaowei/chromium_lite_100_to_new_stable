@@ -10,7 +10,7 @@ load("//lib/branches.star", "branches")
 load("//project.star", "settings")
 
 lucicfg.check_version(
-    min = "1.33.7",
+    min = "1.38.1",
     message = "Update depot_tools",
 )
 
@@ -40,6 +40,7 @@ lucicfg.config(
         "outages.pyl",
         "sheriff-rotations/*.txt",
         "project.pyl",
+        "testing/gn_isolate_map.pyl",
     ],
     fail_on_warnings = True,
     lint_checks = [
@@ -217,6 +218,7 @@ luci.builder.defaults.test_presentation.set(resultdb.test_presentation(grouping_
 exec("//swarming.star")
 
 exec("//recipes.star")
+exec("//targets/targets.star")
 
 exec("//notifiers.star")
 

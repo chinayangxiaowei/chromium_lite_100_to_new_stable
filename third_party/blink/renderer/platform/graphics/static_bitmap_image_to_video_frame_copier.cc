@@ -1,4 +1,4 @@
-// Copyright 2021 The Chromium Authors. All rights reserved.
+// Copyright 2021 The Chromium Authors
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -57,6 +57,9 @@ void StaticBitmapImageToVideoFrameCopier::Convert(
     return;
   }
 
+  // We might need to convert the frame into I420 pixel format, and 1x1 frame
+  // can't be read back into I420.
+  const bool too_small_for_i420 = image->width() == 1 || image->height() == 1;
   if (!image->IsTextureBacked()) {
     // Initially try accessing pixels directly if they are in memory.
     sk_sp<SkImage> sk_image = image->PaintImageForCurrentFrame().GetSwSkImage();
@@ -83,7 +86,8 @@ void StaticBitmapImageToVideoFrameCopier::Convert(
   }
 
   // Try async reading if image is texture backed.
-  if (image->CurrentFrameKnownToBeOpaque() || can_discard_alpha_) {
+  if (!too_small_for_i420 &&
+      (image->CurrentFrameKnownToBeOpaque() || can_discard_alpha_)) {
     // Split the callback so it can be used for both the GMB frame pool copy and
     // ReadYUVPixelsAsync fallback paths.
     auto split_callback = base::SplitOnceCallback(std::move(callback));
@@ -193,9 +197,9 @@ void StaticBitmapImageToVideoFrameCopier::ReadARGBPixelsAsync(
       mailbox_holder.mailbox, mailbox_holder.texture_target, image_origin, info,
       temp_argb_frame->stride(media::VideoFrame::kARGBPlane),
       temp_argb_frame->GetWritableVisibleData(media::VideoFrame::kARGBPlane),
-      WTF::Bind(&StaticBitmapImageToVideoFrameCopier::OnARGBPixelsReadAsync,
-                weak_ptr_factory_.GetWeakPtr(), image, temp_argb_frame,
-                std::move(callback)));
+      WTF::BindOnce(&StaticBitmapImageToVideoFrameCopier::OnARGBPixelsReadAsync,
+                    weak_ptr_factory_.GetWeakPtr(), image, temp_argb_frame,
+                    std::move(callback)));
 }
 
 void StaticBitmapImageToVideoFrameCopier::ReadYUVPixelsAsync(
@@ -205,7 +209,10 @@ void StaticBitmapImageToVideoFrameCopier::ReadYUVPixelsAsync(
   DCHECK_CALLED_ON_VALID_THREAD(main_render_thread_checker_);
   DCHECK(context_provider);
 
-  const gfx::Size image_size(image->width(), image->height());
+  // Our ReadbackYUVPixelsAsync() implementations either cut off odd pixels or
+  // simply fail. So, there is no point even trying reading odd sized images
+  // into I420.
+  const gfx::Size image_size(image->width() & ~1u, image->height() & ~1u);
   scoped_refptr<media::VideoFrame> output_frame = frame_pool_.CreateFrame(
       media::PIXEL_FORMAT_I420, image_size, gfx::Rect(image_size), image_size,
       base::TimeDelta());
@@ -227,11 +234,11 @@ void StaticBitmapImageToVideoFrameCopier::ReadYUVPixelsAsync(
       output_frame->stride(media::VideoFrame::kVPlane),
       output_frame->GetWritableVisibleData(media::VideoFrame::kVPlane),
       gfx::Point(0, 0),
-      WTF::Bind(&StaticBitmapImageToVideoFrameCopier::OnReleaseMailbox,
-                weak_ptr_factory_.GetWeakPtr(), image),
-      WTF::Bind(&StaticBitmapImageToVideoFrameCopier::OnYUVPixelsReadAsync,
-                weak_ptr_factory_.GetWeakPtr(), output_frame,
-                std::move(callback)));
+      WTF::BindOnce(&StaticBitmapImageToVideoFrameCopier::OnReleaseMailbox,
+                    weak_ptr_factory_.GetWeakPtr(), image),
+      WTF::BindOnce(&StaticBitmapImageToVideoFrameCopier::OnYUVPixelsReadAsync,
+                    weak_ptr_factory_.GetWeakPtr(), output_frame,
+                    std::move(callback)));
 }
 
 void StaticBitmapImageToVideoFrameCopier::OnARGBPixelsReadAsync(

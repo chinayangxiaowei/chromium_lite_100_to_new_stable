@@ -58,6 +58,7 @@
 #include "components/password_manager/core/browser/ui/password_check_referrer.h"
 #include "components/password_manager/core/common/credential_manager_types.h"
 #include "components/password_manager/core/common/password_manager_features.h"
+#include "components/password_manager/core/common/password_manager_pref_names.h"
 #include "components/password_manager/core/common/password_manager_ui.h"
 #include "components/signin/public/base/signin_metrics.h"
 #include "components/signin/public/identity_manager/account_info.h"
@@ -207,6 +208,8 @@ bool ManagePasswordsUIController::OnChooseCredentials(
   DCHECK(!local_credentials.empty());
   if (!HasBrowserWindow())
     return false;
+  // Delete any existing window from the screen.
+  dialog_controller_.reset();
   // If |local_credentials| contains PSL matches they shouldn't be propagated to
   // the state (unless they are also web affiliations) because PSL matches
   // aren't saved for current page. This logic is implemented here because
@@ -311,6 +314,43 @@ void ManagePasswordsUIController::OnShowMoveToAccountBubble(
     GetPasswordFeatureManager()->RecordMoveOfferedToNonOptedInUser();
   passwords_data_.OnPasswordMovable(std::move(form_to_move));
   // TODO(crbug.com/1100814): Add smartness like OnPasswordSubmitted?
+  bubble_status_ = BubbleStatus::SHOULD_POP_UP;
+  UpdateBubbleAndIconVisibility();
+}
+
+void ManagePasswordsUIController::OnBiometricAuthenticationForFilling(
+    PrefService* prefs) {
+#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN)
+  const std::string promo_shown_counter =
+      password_manager::prefs::kBiometricAuthBeforeFillingPromoShownCounter;
+  // Checking GetIfBiometricAuthenticationPromoWasShown() prevents from
+  // displaying multiple prompts on the same tab (eg. when there are multiple
+  // password forms).
+  if (was_biometric_authentication_for_filling_promo_shown_ ||
+      prefs->GetBoolean(
+          password_manager::prefs::kHasUserInteractedWithBiometricAuthPromo) ||
+      prefs->GetInteger(promo_shown_counter) >=
+          kMaxNumberOfTimesBiometricAuthForFillingPromoWillBeShown ||
+      prefs->GetBoolean(
+          password_manager::prefs::kBiometricAuthenticationBeforeFilling)) {
+    return;
+  }
+  prefs->SetInteger(promo_shown_counter,
+                    prefs->GetInteger(promo_shown_counter) + 1);
+
+  passwords_data_.TransitionToState(
+      password_manager::ui::BIOMETRIC_AUTHENTICATION_FOR_FILLING_STATE);
+  bubble_status_ = BubbleStatus::SHOULD_POP_UP;
+  was_biometric_authentication_for_filling_promo_shown_ = true;
+  UpdateBubbleAndIconVisibility();
+#else
+  NOTIMPLEMENTED();
+#endif
+}
+
+void ManagePasswordsUIController::ShowBiometricActivationConfirmation() {
+  passwords_data_.TransitionToState(
+      password_manager::ui::BIOMETRIC_AUTHENTICATION_CONFIRMATION_STATE);
   bubble_status_ = BubbleStatus::SHOULD_POP_UP;
   UpdateBubbleAndIconVisibility();
 }
@@ -464,6 +504,8 @@ void ManagePasswordsUIController::OnBubbleHidden() {
   bubble_status_ = BubbleStatus::NOT_SHOWN;
   if (GetState() == password_manager::ui::CONFIRMATION_STATE ||
       GetState() == password_manager::ui::AUTO_SIGNIN_STATE ||
+      GetState() ==
+          password_manager::ui::BIOMETRIC_AUTHENTICATION_CONFIRMATION_STATE ||
       GetState() == password_manager::ui::PASSWORD_UPDATED_SAFE_STATE ||
       GetState() == password_manager::ui::PASSWORD_UPDATED_MORE_TO_FIX) {
     passwords_data_.TransitionToState(password_manager::ui::MANAGE_STATE);
@@ -684,6 +726,26 @@ bool ManagePasswordsUIController::AuthenticateUser() {
 #endif
 }
 
+void ManagePasswordsUIController::AuthenticateUserWithMessage(
+    const std::u16string& message,
+    AvailabilityCallback callback) {
+#if !BUILDFLAG(IS_MAC) && !BUILDFLAG(IS_WIN)
+  std::move(callback).Run(true);
+  return;
+#else
+  base::OnceClosure on_reauth_completed =
+      base::BindOnce(&ManagePasswordsUIController::OnReauthCompleted,
+                     weak_ptr_factory_.GetWeakPtr());
+
+  CancelAnyOngoingBiometricAuth();
+  biometric_authenticator_ =
+      passwords_data_.client()->GetBiometricAuthenticator();
+  biometric_authenticator_->AuthenticateWithMessage(
+      device_reauth::BiometricAuthRequester::kTouchToFill, message,
+      std::move(callback).Then(std::move(on_reauth_completed)));
+#endif  // !BUILDFLAG(IS_MAC) && !BUILDFLAG(IS_WIN)
+}
+
 void ManagePasswordsUIController::
     AuthenticateUserForAccountStoreOptInAndSavePassword(
         const std::u16string& username,
@@ -769,6 +831,8 @@ bool ManagePasswordsUIController::HasBrowserWindow() const {
 }
 
 void ManagePasswordsUIController::PrimaryPageChanged(content::Page& page) {
+  CancelAnyOngoingBiometricAuth();
+
   // Keep the state if the bubble is currently open or the fallback for saving
   // should be still available.
   if (IsShowingBubble() || save_fallback_timer_.IsRunning()) {
@@ -966,6 +1030,18 @@ void ManagePasswordsUIController::
         std::list<std::unique_ptr<MovePasswordToAccountStoreHelper>>::iterator
             done_helper_it) {
   move_to_account_store_helpers_.erase(done_helper_it);
+}
+
+void ManagePasswordsUIController::OnReauthCompleted() {
+  biometric_authenticator_.reset();
+}
+
+void ManagePasswordsUIController::CancelAnyOngoingBiometricAuth() {
+  if (!biometric_authenticator_)
+    return;
+  biometric_authenticator_->Cancel(
+      device_reauth::BiometricAuthRequester::kTouchToFill);
+  biometric_authenticator_.reset();
 }
 
 WEB_CONTENTS_USER_DATA_KEY_IMPL(ManagePasswordsUIController);

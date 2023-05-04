@@ -195,7 +195,7 @@
 <translation id="2751739896257479635">Autentikasi tahap 2 EAP</translation>
 <translation id="2783010256799387990">LULUS</translation>
 <translation id="2789486458103222910">Oke</translation>
-<translation id="2805756323405976993">Apl</translation>
+<translation id="2805756323405976993">Aplikasi</translation>
 <translation id="28232023175184696">Tidak dapat terhubung ke internet. Klik untuk mencoba lagi.</translation>
 <translation id="2859243502336719778">Update penting</translation>
 <translation id="2860473693272905224">Letakkan halaman lain pada pemindai</translation>
@@ -250,6 +250,7 @@
 <translation id="3484914941826596830">Saat firmware sedang diupdate, jangan mencabut perangkat eksternal ini atau mematikan komputer. Anda dapat meminimalkan jendela ini. Update ini mungkin perlu waktu beberapa menit dan perangkat eksternal mungkin tidak berfungsi selama update.</translation>
 <translation id="3486220673238053218">definisi</translation>
 <translation id="3488065109653206955">Diaktifkan sebagian</translation>
+<translation id="3510890413042482857">Kirim <ph name="BEGIN_LINK1" />data trace performa<ph name="END_LINK1" /></translation>
 <translation id="3517001332549868749">Update Chrome OS</translation>
 <translation id="3527036260304016759">Gagal - Error tidak diketahui</translation>
 <translation id="3532980081107202182">Sekitar <ph name="MIN_REMAINING" /> menit lagi</translation>
@@ -327,7 +328,7 @@
 <translation id="4250229828105606438">Screenshot</translation>
 <translation id="4258281355379922695">Latensi HTTP</translation>
 <translation id="4271957103967917607">Lihat di Layar Penuh</translation>
-<translation id="4289540628985791613">Ikhtisar</translation>
+<translation id="4289540628985791613">Ringkasan</translation>
 <translation id="4289849978083912975">Slideshow</translation>
 <translation id="4297501883039923494">Dihentikan - Error tidak diketahui</translation>
 <translation id="4300073214558989"><ph name="IMAGE_COUNT" /> Gambar</translation>
@@ -469,6 +470,7 @@ Ketuk mikrofon untuk bertanya apa saja.</translation>
 <translation id="5502931783115429516">Android tidak berjalan</translation>
 <translation id="5519195206574732858">LTE</translation>
 <translation id="554517032089923082">GTC</translation>
+<translation id="5559898619118303662">Otomatis beralih ke tema gelap saat matahari terbenam</translation>
 <translation id="5578477003638479617">UMTS</translation>
 <translation id="5578519639599103840">Pindai ulang</translation>
 <translation id="5583640892426849032">Backspace</translation>

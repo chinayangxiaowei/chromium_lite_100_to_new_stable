@@ -965,6 +965,40 @@ IN_PROC_BROWSER_TEST_F(ServiceWorkerVersionBrowserTest,
             version_->fetch_handler_type());
 }
 
+IN_PROC_BROWSER_TEST_F(ServiceWorkerVersionBrowserTest,
+                       NonFunctionFetchHandler) {
+  StartServerAndNavigateToSetup();
+  ASSERT_EQ(Install("/service_worker/non_function_fetch_event.js"),
+            blink::ServiceWorkerStatusCode::kOk);
+  EXPECT_EQ(ServiceWorkerVersion::FetchHandlerExistence::EXISTS,
+            version_->fetch_handler_existence());
+  EXPECT_EQ(ServiceWorkerVersion::FetchHandlerType::kNotSkippable,
+            version_->fetch_handler_type());
+}
+
+IN_PROC_BROWSER_TEST_F(ServiceWorkerVersionBrowserTest,
+                       NonFunctionFetchHandlerWithHandleEventProperty) {
+  StartServerAndNavigateToSetup();
+  ASSERT_EQ(
+      Install("/service_worker/fetch_event_with_handle_event_property.js"),
+      blink::ServiceWorkerStatusCode::kOk);
+  EXPECT_EQ(ServiceWorkerVersion::FetchHandlerExistence::EXISTS,
+            version_->fetch_handler_existence());
+  EXPECT_EQ(ServiceWorkerVersion::FetchHandlerType::kNotSkippable,
+            version_->fetch_handler_type());
+}
+
+IN_PROC_BROWSER_TEST_F(ServiceWorkerVersionBrowserTest,
+                       RemoveFetchEventListenersInGet) {
+  StartServerAndNavigateToSetup();
+  ASSERT_EQ(Install("/service_worker/fetch_event_object_removing_itself.js"),
+            blink::ServiceWorkerStatusCode::kOk);
+  EXPECT_EQ(ServiceWorkerVersion::FetchHandlerExistence::EXISTS,
+            version_->fetch_handler_existence());
+  EXPECT_EQ(ServiceWorkerVersion::FetchHandlerType::kNotSkippable,
+            version_->fetch_handler_type());
+}
+
 // Check that fetch event handler added in the install event should result in a
 // service worker that doesn't count as having a fetch event handler.
 IN_PROC_BROWSER_TEST_F(ServiceWorkerVersionBrowserTest,
@@ -1654,17 +1688,15 @@ IN_PROC_BROWSER_TEST_F(CacheStorageEagerReadingTest,
   ExpectEagerlyReadCacheResponse(std::move(response));
 }
 
-// TODO(crbug.com/1364167): Test is failing on various builders.
 IN_PROC_BROWSER_TEST_F(CacheStorageEagerReadingTest,
-                       DISABLED_CacheMatchInUnrelatedFetchEvent) {
+                       CacheMatchInUnrelatedFetchEvent) {
   blink::mojom::FetchAPIResponsePtr response;
   SetupServiceWorkerAndDoFetch(kOtherURL, &response);
   ExpectNormalCacheResponse(std::move(response));
 }
 
-// TODO(crbug.com/1364167): Test is failing on various builders.
 IN_PROC_BROWSER_TEST_F(CacheStorageEagerReadingTest,
-                       DISABLED_CacheMatchInRelatedFetchEventWithRangeRequest) {
+                       CacheMatchInRelatedFetchEventWithRangeRequest) {
   blink::mojom::FetchAPIResponsePtr response;
   SetupServiceWorkerAndDoFetch(kCacheMatchURL, "bytes=0-8", &response);
   EXPECT_TRUE(response);

@@ -676,6 +676,7 @@ void TemplateURLService::SetIsActiveTemplateURL(TemplateURL* url,
   std::string histogram_name = kKeywordModeUsageByEngineTypeHistogramName;
   if (is_active) {
     data.is_active = TemplateURLData::ActiveStatus::kTrue;
+    data.safe_for_autoreplace = false;
     histogram_name.append(".Activated");
   } else {
     data.is_active = TemplateURLData::ActiveStatus::kFalse;
@@ -817,6 +818,14 @@ bool TemplateURLService::IsSearchResultsPageFromDefaultSearchProvider(
       default_provider->IsSearchURL(url, search_terms_data());
 }
 
+GURL TemplateURLService::GenerateSearchURLForDefaultSearchProvider(
+    const std::u16string& search_terms) const {
+  const TemplateURL* default_provider = GetDefaultSearchProvider();
+  return default_provider ? default_provider->GenerateSearchURL(
+                                search_terms_data(), search_terms)
+                          : GURL();
+}
+
 bool TemplateURLService::IsSideSearchSupportedForDefaultSearchProvider() const {
   const TemplateURL* default_provider = GetDefaultSearchProvider();
   return default_provider && default_provider->IsSideSearchSupported();
@@ -834,6 +843,13 @@ GURL TemplateURLService::GenerateSideSearchURLForDefaultSearchProvider(
   DCHECK(IsSideSearchSupportedForDefaultSearchProvider());
   return GetDefaultSearchProvider()->GenerateSideSearchURL(search_url, version,
                                                            search_terms_data());
+}
+
+GURL TemplateURLService::RemoveSideSearchParamFromURL(
+    const GURL& search_url) const {
+  if (!IsSideSearchSupportedForDefaultSearchProvider())
+    return search_url;
+  return GetDefaultSearchProvider()->RemoveSideSearchParamFromURL(search_url);
 }
 
 GURL TemplateURLService::GenerateSideImageSearchURLForDefaultSearchProvider(
@@ -1060,8 +1076,8 @@ void TemplateURLService::OnWebDataServiceRequestDone(
   }
 
   if (default_search_provider_) {
-    UMA_HISTOGRAM_ENUMERATION(
-        "Search.DefaultSearchProviderType",
+    base::UmaHistogramEnumeration(
+        "Search.DefaultSearchProviderType2",
         default_search_provider_->GetEngineType(search_terms_data()),
         SEARCH_ENGINE_MAX);
   }
@@ -1904,9 +1920,6 @@ void TemplateURLService::ApplyDefaultSearchChange(
   if (!ApplyDefaultSearchChangeNoMetrics(data, source))
     return;
 
-  UMA_HISTOGRAM_ENUMERATION(
-      "Search.DefaultSearchChangeOrigin", dsp_change_origin_, DSP_CHANGE_MAX);
-
   if (GetDefaultSearchProvider() &&
       GetDefaultSearchProvider()->HasGoogleBaseURLs(search_terms_data()) &&
       !dsp_change_callback_.is_null())
@@ -2162,7 +2175,14 @@ void TemplateURLService::MergeInSyncTemplateURL(
       keyword_to_turl_and_length_.equal_range(sync_turl->keyword());
   for (auto it = match_range.first; it != match_range.second; ++it) {
     TemplateURL* local_turl = it->second.first;
-    if (local_turl->type() == TemplateURL::NORMAL) {
+    // The conflict resolution code below sometimes resets the TemplateURL's
+    // GUID, which can trigger deleting any Policy-created engines. Avoid this
+    // use-after-free bug by excluding any Policy-created engines. Also exclude
+    // Play API created engines, as those also seem local-only and should not
+    // be merged into Synced engines. crbug.com/1414224.
+    if (local_turl->type() == TemplateURL::NORMAL &&
+        !local_turl->created_by_policy() &&
+        !local_turl->created_from_play_api()) {
       local_duplicates.push_back(local_turl);
     }
   }
@@ -2312,6 +2332,7 @@ void TemplateURLService::MaybeSetIsActiveSearchEngines(
     if (turl->is_active() == TemplateURLData::ActiveStatus::kUnspecified &&
         (!turl->safe_for_autoreplace() || turl->usage_count() > 0)) {
       turl->data_.is_active = TemplateURLData::ActiveStatus::kTrue;
+      turl->data_.safe_for_autoreplace = false;
       if (web_data_service_)
         web_data_service_->UpdateKeyword(turl->data());
     }

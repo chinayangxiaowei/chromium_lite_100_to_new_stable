@@ -109,7 +109,7 @@
 <translation id="1871569928317311284">Disattiva il tema scuro</translation>
 <translation id="1874612839560830905">MTU</translation>
 <translation id="188114911237521550">Disattiva la modalità Buio</translation>
-<translation id="1881188606372070653">Vai alla <ph name="BEGIN_LINK1" />Guida di approfondimento legale<ph name="END_LINK1" /> per richiedere modifiche ai contenuti per motivi legali. Alcune informazioni sull'account e sul sistema potrebbero essere inviate a Google. Utilizzeremo le informazioni fornite per risolvere problemi tecnici e migliorare i nostri servizi, in conformità con le nostre <ph name="BEGIN_LINK2" />Norme sulla privacy<ph name="END_LINK2" /> e i nostri <ph name="BEGIN_LINK3" />Termini di servizio<ph name="END_LINK3" />.</translation>
+<translation id="1881188606372070653">Vai alla <ph name="BEGIN_LINK1" />Guida di approfondimento legale<ph name="END_LINK1" /> per richiedere modifiche ai contenuti per motivi legali. Alcuni dati dell'account e del sistema potrebbero essere inviati a Google. Utilizzeremo le informazioni fornite per risolvere problemi tecnici e migliorare i nostri servizi, in conformità con le nostre <ph name="BEGIN_LINK2" />Norme sulla privacy<ph name="END_LINK2" /> e i nostri <ph name="BEGIN_LINK3" />Termini di servizio<ph name="END_LINK3" />.</translation>
 <translation id="1887850431809612466">Revisione hardware</translation>
 <translation id="1904932688895783618">Ecco alcune altre risorse utili:</translation>
 <translation id="1905710495812624430">Numero massimo di tentativi consentiti superato.</translation>
@@ -250,6 +250,7 @@
 <translation id="3484914941826596830">Durante l'aggiornamento del firmware, non scollegare questo dispositivo esterno o non arrestare il computer. Puoi ridurre a icona questa finestra. Questo aggiornamento potrebbe richiedere qualche minuto e nel frattempo il dispositivo esterno potrebbe non funzionare.</translation>
 <translation id="3486220673238053218">definizione</translation>
 <translation id="3488065109653206955">Attivato parzialmente</translation>
+<translation id="3510890413042482857">Invia <ph name="BEGIN_LINK1" />dati di rilevamento del rendimento<ph name="END_LINK1" /></translation>
 <translation id="3517001332549868749">Aggiornamento ChromeOS</translation>
 <translation id="3527036260304016759">Operazione non riuscita - Errore sconosciuto</translation>
 <translation id="3532980081107202182">Mancano circa <ph name="MIN_REMAINING" /> minuti</translation>
@@ -469,6 +470,7 @@ Prova a toccare il microfono per chiedermi qualcosa.</translation>
 <translation id="5502931783115429516">Android non funziona</translation>
 <translation id="5519195206574732858">LTE</translation>
 <translation id="554517032089923082">GTC</translation>
+<translation id="5559898619118303662">Passa automaticamente al tema scuro al tramonto</translation>
 <translation id="5578477003638479617">UMTS</translation>
 <translation id="5578519639599103840">Scansiona di nuovo</translation>
 <translation id="5583640892426849032">Backspace</translation>

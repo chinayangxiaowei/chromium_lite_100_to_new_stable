@@ -1,4 +1,4 @@
-// Copyright 2019 The Chromium Authors. All rights reserved.
+// Copyright 2019 The Chromium Authors
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -348,12 +348,12 @@ struct NGFragmentedOutOfFlowData final : NGPhysicalFragment::OutOfFlowData {
     const NGFragmentedOutOfFlowData* oof_data =
         fragment.FragmentedOutOfFlowData();
     return oof_data &&
-           !oof_data->oof_positioned_fragmentainer_descendants.IsEmpty();
+           !oof_data->oof_positioned_fragmentainer_descendants.empty();
   }
 
   bool NeedsOOFPositionedInfoPropagation() const {
-    return !oof_positioned_fragmentainer_descendants.IsEmpty() ||
-           !multicols_with_pending_oofs.IsEmpty();
+    return !oof_positioned_fragmentainer_descendants.empty() ||
+           !multicols_with_pending_oofs.empty();
   }
 
   static base::span<NGPhysicalOOFNodeForFragmentation>
@@ -361,8 +361,7 @@ struct NGFragmentedOutOfFlowData final : NGPhysicalFragment::OutOfFlowData {
       const NGPhysicalFragment& fragment) {
     const NGFragmentedOutOfFlowData* oof_data =
         fragment.FragmentedOutOfFlowData();
-    if (!oof_data ||
-        oof_data->oof_positioned_fragmentainer_descendants.IsEmpty())
+    if (!oof_data || oof_data->oof_positioned_fragmentainer_descendants.empty())
       return base::span<NGPhysicalOOFNodeForFragmentation>();
     HeapVector<NGPhysicalOOFNodeForFragmentation>& descendants =
         const_cast<HeapVector<NGPhysicalOOFNodeForFragmentation>&>(
@@ -380,6 +379,20 @@ struct NGFragmentedOutOfFlowData final : NGPhysicalFragment::OutOfFlowData {
       oof_positioned_fragmentainer_descendants;
   MulticolCollection multicols_with_pending_oofs;
 };
+
+inline PhysicalOffset RelativeInsetToPhysical(
+    LogicalOffset relative_inset,
+    WritingDirectionMode writing_direction) {
+  return relative_inset.ConvertToPhysical(writing_direction, PhysicalSize(),
+                                          PhysicalSize());
+}
+
+inline LogicalOffset RelativeInsetToLogical(
+    PhysicalOffset relative_inset,
+    WritingDirectionMode writing_direction) {
+  return relative_inset.ConvertToLogical(writing_direction, PhysicalSize(),
+                                         PhysicalSize());
+}
 
 }  // namespace blink
 

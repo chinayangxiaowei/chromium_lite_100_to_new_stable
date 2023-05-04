@@ -1,4 +1,4 @@
-// Copyright 2020 The Chromium Authors. All rights reserved.
+// Copyright 2020 The Chromium Authors
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -191,6 +191,8 @@ class CORE_EXPORT NGGridLayoutTrackCollection
   wtf_size_t RangeSetCount(wtf_size_t range_index) const;
   // Return the index of the first set spanned by a given track range.
   wtf_size_t RangeBeginSetIndex(wtf_size_t range_index) const;
+  // Returns the track span properties of the range at position |range_index|.
+  TrackSpanProperties RangeProperties(wtf_size_t range_index) const;
 
   // Returns true if the specified property has been set in the track span
   // properties bitmask of the range at position |range_index|.
@@ -206,6 +208,10 @@ class CORE_EXPORT NGGridLayoutTrackCollection
   LayoutUnit GetSetOffset(wtf_size_t set_index) const;
   wtf_size_t GetSetTrackCount(wtf_size_t set_index) const;
 
+  bool HasBaselines() const {
+    DCHECK_EQ(major_baselines_.empty(), minor_baselines_.empty());
+    return !major_baselines_.empty();
+  }
   LayoutUnit MajorBaseline(wtf_size_t set_index) const;
   LayoutUnit MinorBaseline(wtf_size_t set_index) const;
 

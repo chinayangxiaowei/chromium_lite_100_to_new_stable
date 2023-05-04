@@ -384,20 +384,6 @@ bool GpuInit::InitializeAndStartSandbox(base::CommandLine* command_line,
     watchdog_thread_ = GpuWatchdogThread::Create(
         gpu_preferences_.watchdog_starts_backgrounded, "GpuWatchdog");
     watchdog_init.SetGpuWatchdogPtr(watchdog_thread_.get());
-
-#if BUILDFLAG(IS_WIN)
-    // This is a workaround for an occasional deadlock between watchdog and
-    // current thread. Watchdog hangs at thread initialization in
-    // __acrt_thread_attach() and current thread in std::setlocale(...)
-    // (during InitializeGLOneOff()). Source of the deadlock looks like an old
-    // UCRT bug that was supposed to be fixed in 10.0.10586 release of UCRT,
-    // but we might have come accross a not-yet-covered scenario.
-    // References:
-    // https://bugs.python.org/issue26624
-    // http://stackoverflow.com/questions/35572792/setlocale-stuck-on-windows
-    bool watchdog_started = watchdog_thread_->WaitUntilThreadStarted();
-    DCHECK(watchdog_started);
-#endif  // BUILDFLAG(IS_WIN)
   }
 
   bool attempted_startsandbox = false;
@@ -482,14 +468,6 @@ bool GpuInit::InitializeAndStartSandbox(base::CommandLine* command_line,
     UMA_HISTOGRAM_BOOLEAN("GPU.AppHelpIsLoaded",
                           static_cast<bool>(::GetModuleHandle(L"apphelp.dll")));
 #endif
-    if (watchdog_thread_) {
-      if (base::FeatureList::IsEnabled(
-              features::kEnableWatchdogReportOnlyModeOnGpuInit)) {
-        watchdog_thread_->DisableReportOnlyMode();
-      } else {
-        watchdog_thread_->ResumeWatchdog();
-      }
-    }
     if (gl::GetGLImplementation() != gl::kGLImplementationDisabled) {
       gl_display = gl::init::InitializeGLNoExtensionsOneOff(
           /*init_bindings*/ false, system_device_id);
@@ -497,6 +475,14 @@ bool GpuInit::InitializeAndStartSandbox(base::CommandLine* command_line,
       if (!gl_initialized) {
         VLOG(1) << "gl::init::InitializeGLNoExtensionsOneOff failed";
         return false;
+      }
+    }
+    if (watchdog_thread_) {
+      if (base::FeatureList::IsEnabled(
+              features::kEnableWatchdogReportOnlyModeOnGpuInit)) {
+        watchdog_thread_->DisableReportOnlyMode();
+      } else {
+        watchdog_thread_->ResumeWatchdog();
       }
     }
   }

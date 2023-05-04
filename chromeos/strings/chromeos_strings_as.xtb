@@ -250,6 +250,7 @@
 <translation id="3484914941826596830">ফাৰ্মৱেৰটো আপডে’ট হৈ থকাৰ সময়ত, এই বাহ্যিক ডিভাইচটো আনপ্লাগ অথবা আপোনাৰ কম্পিউটাৰটো শ্বাট ডাউন নকৰিব। আপুনি এই ৱিণ্ড’খন মিনিমাইজ কৰিব পাৰে। এই আপডে’টটোৰ বাবে কেইমিনিটমান সময় লাগিব পাৰে আৰু এই সময়খিনিত আপোনাৰ বাহ্যিক ডিভাইচটোৱে কাম নকৰিব পাৰে।</translation>
 <translation id="3486220673238053218">সংজ্ঞা</translation>
 <translation id="3488065109653206955">আংশিকভাৱে সক্ৰিয় কৰা হৈছে</translation>
+<translation id="3510890413042482857"><ph name="BEGIN_LINK1" />কাৰ্যদক্ষতাৰ ট্ৰে’চ ডেটা<ph name="END_LINK1" /> পঠিয়াওক</translation>
 <translation id="3517001332549868749">ChromeOSৰ আপডে’ট</translation>
 <translation id="3527036260304016759">বিফল হৈছে - অজ্ঞাত আসোঁৱাহ</translation>
 <translation id="3532980081107202182">প্ৰায় <ph name="MIN_REMAINING" /> মিনিট বাকী আছে</translation>
@@ -469,6 +470,7 @@
 <translation id="5502931783115429516">Android চলি থকা নাই</translation>
 <translation id="5519195206574732858">এলটিই</translation>
 <translation id="554517032089923082">GTC</translation>
+<translation id="5559898619118303662">সূৰ্যাস্তৰ সময়ত স্বয়ংক্ৰিয়ভাৱে গাঢ় ৰঙৰ থীমলৈ সলনি কৰক</translation>
 <translation id="5578477003638479617">UMTS</translation>
 <translation id="5578519639599103840">পুনৰ স্কেন কৰক</translation>
 <translation id="5583640892426849032">বেকস্পেচ</translation>
@@ -554,7 +556,7 @@
 <translation id="6348738456043757611">ব্যৱহাৰকাৰীৰ নাম আৰু পাছৱৰ্ড</translation>
 <translation id="6359706544163531585">পাতল ৰঙৰ থীম অক্ষম কৰক</translation>
 <translation id="636850387210749493">এন্টাৰপ্ৰাইজৰ পঞ্জীয়ন</translation>
-<translation id="6379086450106841622">টাচ্চস্ক্ৰীন</translation>
+<translation id="6379086450106841622">টাচ্‌স্ক্ৰীন</translation>
 <translation id="6381741036071372448">আপোনাৰ কীব’ৰ্ডখন পৰীক্ষা কৰক</translation>
 <translation id="6388847657025262518">স্কেনাৰৰ নথিৰ ফীডাৰটো জাম লাগিছে। ফীডাৰটো পৰীক্ষা কৰি পুনৰ চেষ্টা কৰক।</translation>
 <translation id="6394634179843537518">ফাইল যোগ দিয়ক</translation>
@@ -668,11 +670,11 @@
 <translation id="7502658306369382406">IPv6 ঠিকনা</translation>
 <translation id="7515998400212163428">Android</translation>
 <translation id="7535791657097741517">পাতল ৰঙৰ থীম অন কৰক</translation>
-<translation id="7550715992156305117">ডায়গন’ষ্টিক ৰুটিন</translation>
+<translation id="7550715992156305117">ডায়েগন’ষ্টিক ৰুটিন</translation>
 <translation id="7551123448725492271">ডিভাইচটো এটা অডিঅ’ ডিভাইচ।</translation>
 <translation id="7561454561030345039">এই কাৰ্যটো আপোনাৰ প্ৰশাসকে পৰিচালনা কৰে</translation>
 <translation id="7569444139234840525"><ph name="QUERY_TEXT" /> · /<ph name="PHONETICS" />/</translation>
-<translation id="7570674786725311828">ইউএছবি টাচ্চস্ক্ৰীন</translation>
+<translation id="7570674786725311828">ইউএছবি টাচ্‌স্ক্ৰীন</translation>
 <translation id="7595982850646262331"><ph name="TIME_VALUE" /> বাকী</translation>
 <translation id="7620771111601174153">সহায় কেন্দ্ৰত অধিক জানক</translation>
 <translation id="763165478673169849">অন্তিমবাৰ ৰিছেট কৰাৰ সময়</translation>
@@ -697,12 +699,12 @@
 <translation id="7819857487979277519">PSK (WPA বা RSN)</translation>
 <translation id="7841134249932030522">গাঢ় ম’ড সক্ষম কৰক</translation>
 <translation id="7846634333498149051">কীব'ৰ্ড</translation>
-<translation id="7856267634822906833">ব্লুটুথ টাচ্চস্ক্ৰীন</translation>
+<translation id="7856267634822906833">ব্লুটুথ টাচ্‌স্ক্ৰীন</translation>
 <translation id="7869143217755017858">গাঢ় ম’ড অক্ষম কৰক</translation>
 <translation id="7881066108824108340">DNS</translation>
 <translation id="7882358943899516840">প্ৰদানকাৰীৰ ধৰণ</translation>
 <translation id="7882501334836096755">ৰাজহুৱা চাবি</translation>
-<translation id="7890841768028788197">অভ্যন্তৰীণ টাচ্চস্ক্ৰীন</translation>
+<translation id="7890841768028788197">অভ্যন্তৰীণ টাচ্‌স্ক্ৰীন</translation>
 <translation id="7936303884198020182">ড’মেইন নাম থকা কোনো ছাৰ্ভাৰ পোৱা নগ'ল</translation>
 <translation id="7942349550061667556">ৰঙা</translation>
 <translation id="7943235353293548836">অবিৰত কীপএলাইভৰ অন্তৰাল</translation>

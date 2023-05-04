@@ -250,6 +250,7 @@
 <translation id="3484914941826596830">Орнотулган программа жаңыртылып жатканда, тышкы түзмөктү ажыратпаңыз же компьютерди өчүрбөңүз. Бул терезени кичирейтип койсоңуз болот. Жаңыртуу бир нече мүнөткө созулуп, ал эми тышкы түзмөгүңүз бул убакытта иштебеши мүмкүн.</translation>
 <translation id="3486220673238053218">аныктама</translation>
 <translation id="3488065109653206955">Жарым-жартылай жандырылган</translation>
+<translation id="3510890413042482857"><ph name="BEGIN_LINK1" />Жаздырылган майнаптуулук маалыматын<ph name="END_LINK1" /> жөнөтүү</translation>
 <translation id="3517001332549868749">ChromeOS жаңыртуусу</translation>
 <translation id="3527036260304016759">Басылып чыгарылган жок - Белгисиз ката</translation>
 <translation id="3532980081107202182">Болжол менен <ph name="MIN_REMAINING" /> мүнөт калды</translation>
@@ -323,7 +324,7 @@
 <translation id="4227825898293920515">Сырсөздүн мөөнөтү <ph name="TIME" /> кийин бүтөт</translation>
 <translation id="4238516577297848345">Аткарылып жаткан иш жок</translation>
 <translation id="4239069858505860023">GPRS</translation>
-<translation id="4244962993387259361">Эстутумду сыноо үчүн кеминде 500 Мб бош орун керек. Орун бошотуу үчүн Жөндөөлөр &gt; Сактагычты башкаргычка өтүңүз.</translation>
+<translation id="4244962993387259361">Эстутумду сыноо үчүн кеминде 500 Мб бош орун керек. Орун бошотуу үчүн Параметрлер &gt; Сактагычты башкаргычка өтүңүз.</translation>
 <translation id="4250229828105606438">Скриншот</translation>
 <translation id="4258281355379922695">HTTP күтүү убакыты</translation>
 <translation id="4271957103967917607">Толук экран режими</translation>
@@ -422,7 +423,7 @@
 <translation id="5142961317498132443">Аныктыгын текшерүү</translation>
 <translation id="5154917547274118687">Эстутум</translation>
 <translation id="5160857336552977725"><ph name="DEVICE_TYPE" /> түзмөгүңүзгө кириңиз</translation>
-<translation id="5166918508782100047">Ыкчам жооптор жөндөөлөрү</translation>
+<translation id="5166918508782100047">Ыкчам жооптор параметрлери</translation>
 <translation id="5168185087976003268">Батареянын иштөө мөөнөтү</translation>
 <translation id="5170568018924773124">Куржунда көрсөтүү</translation>
 <translation id="5190187232518914472">Эсте калган учурларды кайра көз алдыңыздан өткөрүңүз. Альбомдорду кошуу же түзөтүү үчүн <ph name="LINK_BEGIN" />Google Фотого<ph name="LINK_END" /> өтүңүз.</translation>
@@ -469,6 +470,7 @@
 <translation id="5502931783115429516">Android иштеген жок</translation>
 <translation id="5519195206574732858">LTE</translation>
 <translation id="554517032089923082">GTC</translation>
+<translation id="5559898619118303662">Күн батканда автоматтык түрдө караңгы темага которулуу</translation>
 <translation id="5578477003638479617">UMTS</translation>
 <translation id="5578519639599103840">Кайра скандоо</translation>
 <translation id="5583640892426849032">Backspace</translation>

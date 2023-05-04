@@ -19,11 +19,11 @@
 #include "base/time/time.h"
 #include "chrome/browser/ash/policy/core/browser_policy_connector_ash.h"
 #include "chrome/browser/ash/policy/enrollment/auto_enrollment_client_impl.h"
-#include "chrome/browser/ash/policy/enrollment/private_membership/fake_private_membership_rlwe_client.h"
-#include "chrome/browser/ash/policy/enrollment/private_membership/private_membership_rlwe_client.h"
-#include "chrome/browser/ash/policy/enrollment/private_membership/private_membership_rlwe_client_impl.h"
-#include "chrome/browser/ash/policy/enrollment/private_membership/psm_rlwe_dmserver_client_impl.h"
-#include "chrome/browser/ash/policy/enrollment/private_membership/psm_rlwe_id_provider_impl.h"
+#include "chrome/browser/ash/policy/enrollment/psm/fake_rlwe_client.h"
+#include "chrome/browser/ash/policy/enrollment/psm/rlwe_client.h"
+#include "chrome/browser/ash/policy/enrollment/psm/rlwe_client_impl.h"
+#include "chrome/browser/ash/policy/enrollment/psm/rlwe_dmserver_client_impl.h"
+#include "chrome/browser/ash/policy/enrollment/psm/rlwe_id_provider_impl.h"
 #include "chrome/browser/ash/policy/server_backed_state/server_backed_state_keys_broker.h"
 #include "chrome/browser/ash/settings/device_settings_service.h"
 #include "chrome/browser/browser_process.h"
@@ -176,16 +176,65 @@ bool AutoEnrollmentController::ShouldUseFakePsmRlweClient() {
       switches::kEnterpriseUseFakePsmRlweClientForTesting);
 }
 
-AutoEnrollmentController::AutoEnrollmentController() {
+EnrollmentFwmpHelper::EnrollmentFwmpHelper(
+    ash::InstallAttributesClient* install_attributes_client)
+    : install_attributes_client_(install_attributes_client) {}
+
+EnrollmentFwmpHelper::~EnrollmentFwmpHelper() = default;
+
+void EnrollmentFwmpHelper::DetermineDevDisableBoot(
+    ResultCallback result_callback) {
+  // D-Bus services may not be available yet, so we call
+  // WaitForServiceToBeAvailable. See https://crbug.com/841627.
+  install_attributes_client_->WaitForServiceToBeAvailable(base::BindOnce(
+      &EnrollmentFwmpHelper::RequestFirmwareManagementParameters,
+      weak_ptr_factory_.GetWeakPtr(), std::move(result_callback)));
+}
+
+void EnrollmentFwmpHelper::RequestFirmwareManagementParameters(
+    ResultCallback result_callback,
+    bool service_is_ready) {
+  if (!service_is_ready) {
+    LOG(ERROR) << "Failed waiting for cryptohome D-Bus service availability.";
+    return std::move(result_callback).Run(false);
+  }
+
+  user_data_auth::GetFirmwareManagementParametersRequest request;
+  install_attributes_client_->GetFirmwareManagementParameters(
+      request,
+      base::BindOnce(
+          &EnrollmentFwmpHelper::OnGetFirmwareManagementParametersReceived,
+          weak_ptr_factory_.GetWeakPtr(), std::move(result_callback)));
+}
+
+void EnrollmentFwmpHelper::OnGetFirmwareManagementParametersReceived(
+    ResultCallback result_callback,
+    absl::optional<user_data_auth::GetFirmwareManagementParametersReply>
+        reply) {
+  if (!reply.has_value() ||
+      reply->error() !=
+          user_data_auth::CryptohomeErrorCode::CRYPTOHOME_ERROR_NOT_SET) {
+    LOG(ERROR) << "Failed to retrieve firmware management parameters.";
+    return std::move(result_callback).Run(false);
+  }
+
+  const bool dev_disable_boot =
+      (reply->fwmp().flags() & cryptohome::DEVELOPER_DISABLE_BOOT);
+
+  std::move(result_callback).Run(dev_disable_boot);
+}
+
+AutoEnrollmentController::AutoEnrollmentController()
+    : enrollment_fwmp_helper_(ash::InstallAttributesClient::Get()) {
   // Create the PSM (private set membership) RLWE client factory depending on
   // whether switches::kEnterpriseUseFakePsmRlweClient is set.
   if (ShouldUseFakePsmRlweClient()) {
     CHECK_IS_TEST();
-    psm_rlwe_client_factory_ = std::make_unique<
-        policy::FakePrivateMembershipRlweClient::FactoryImpl>();
+    psm_rlwe_client_factory_ =
+        std::make_unique<policy::psm::FakeRlweClient::FactoryImpl>();
   } else {
-    psm_rlwe_client_factory_ = std::make_unique<
-        policy::PrivateMembershipRlweClientImpl::FactoryImpl>();
+    psm_rlwe_client_factory_ =
+        std::make_unique<policy::psm::RlweClientImpl::FactoryImpl>();
   }
 }
 
@@ -226,13 +275,24 @@ void AutoEnrollmentController::Start() {
   // The system clock sync state is not known yet, and this
   // `AutoEnrollmentController` could wait for it if requested.
   system_clock_sync_state_ = SystemClockSyncState::kCanWaitForSync;
+
+  enrollment_fwmp_helper_.DetermineDevDisableBoot(
+      base::BindOnce(&AutoEnrollmentController::OnDevDisableBootDetermined,
+                     weak_ptr_factory_.GetWeakPtr()));
+}
+
+void AutoEnrollmentController::OnDevDisableBootDetermined(
+    bool dev_disable_boot) {
+  dev_disable_boot_ = dev_disable_boot;
+
   StartWithSystemClockSyncState();
 }
 
 void AutoEnrollmentController::StartWithSystemClockSyncState() {
   auto_enrollment_check_type_ =
       policy::AutoEnrollmentTypeChecker::DetermineAutoEnrollmentCheckType(
-          IsSystemClockSynchronized(system_clock_sync_state_));
+          IsSystemClockSynchronized(system_clock_sync_state_),
+          dev_disable_boot_);
   if (auto_enrollment_check_type_ ==
       policy::AutoEnrollmentTypeChecker::CheckType::kNone) {
     UpdateState(policy::AUTO_ENROLLMENT_STATE_NO_ENROLLMENT);
@@ -439,7 +499,7 @@ void AutoEnrollmentController::StartClientForInitialEnrollment() {
       g_browser_process->system_network_context_manager()
           ->GetSharedURLLoaderFactory(),
       serial_number, rlz_brand_code, power_initial, power_limit,
-      std::make_unique<policy::PsmRlweDmserverClientImpl>(
+      std::make_unique<policy::psm::RlweDmserverClientImpl>(
           service,
           g_browser_process->system_network_context_manager()
               ->GetSharedURLLoaderFactory(),

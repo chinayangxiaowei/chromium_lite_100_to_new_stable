@@ -1,4 +1,4 @@
-// Copyright (c) 2012 The Chromium Authors. All rights reserved.
+// Copyright 2012 The Chromium Authors
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -7,7 +7,6 @@
 #include <ctype.h>
 #include <string.h>
 
-#include <algorithm>
 #include <functional>
 #include <memory>
 #include <set>
@@ -16,6 +15,7 @@
 #include <vector>
 
 #include "base/bind.h"
+#include "base/containers/contains.h"
 #include "base/location.h"
 #include "base/logging.h"
 #include "base/memory/scoped_refptr.h"
@@ -190,21 +190,6 @@ void CopyConstraintsIntoRtcConfiguration(
   // advanced constraints). The sets are iterated until a value is found.
   std::vector<const GoogMediaConstraintsSet*> all_constraints_sets =
       AllMediaConstraintSets(media_constraints);
-
-  absl::optional<bool> goog_ipv6;
-  for (auto* constraints_set : all_constraints_sets) {
-    if (constraints_set->hasGoogIPv6()) {
-      goog_ipv6 = constraints_set->googIPv6();
-      break;
-    }
-  }
-  bool enable_ipv6 = goog_ipv6.value_or(true);  // googIPv6 is true by default.
-  if (!enable_ipv6) {
-    // Setting googIPv6 to the non-default value triggers count deprecation.
-    Deprecation::CountDeprecation(context,
-                                  WebFeature::kLegacyConstraintGoogIPv6);
-  }
-  configuration->disable_ipv6 = !enable_ipv6;
 
   // TODO(crbug.com/804275): Delete when Fuchsia no longer depends on it.
   absl::optional<bool> dtls_srtp_key_agreement;
@@ -728,6 +713,8 @@ class RTCPeerConnectionHandler::WebRtcSetDescriptionObserverImpl
     if (handler_) {
       handler_->OnModifySctpTransport(std::move(states.sctp_transport_state));
     }
+    // Since OnSessionDescriptionsUpdated can fire events, it may cause
+    // garbage collection. Ensure that handler_ is still valid.
     if (handler_) {
       handler_->OnModifyTransceivers(
           states.signaling_state, std::move(states.transceiver_states),
@@ -1081,6 +1068,8 @@ bool RTCPeerConnectionHandler::Initialize(
   CHECK(!initialize_called_);
   initialize_called_ = true;
 
+  // Prevent garbage collection of client_ during processing.
+  auto* client_on_stack = client_;
   peer_connection_tracker_ = PeerConnectionTracker::From(*frame);
 
   configuration_ = server_configuration;
@@ -1119,8 +1108,8 @@ bool RTCPeerConnectionHandler::Initialize(
     peer_connection_tracker_->RegisterPeerConnection(this, configuration_,
                                                      frame_);
   }
-
-  return true;
+  // Gratuitous usage of client_on_stack to prevent compiler errors.
+  return !!client_on_stack;
 }
 
 bool RTCPeerConnectionHandler::InitializeForTest(
@@ -2081,9 +2070,11 @@ void RTCPeerConnectionHandler::OnSessionDescriptionsUpdated(
         pending_remote_description,
     std::unique_ptr<webrtc::SessionDescriptionInterface>
         current_remote_description) {
+  // Prevent garbage collection of client_ during processing.
+  auto* client_on_stack = client_;
   if (!client_ || is_closed_)
     return;
-  client_->DidChangeSessionDescriptions(
+  client_on_stack->DidChangeSessionDescriptions(
       pending_local_description
           ? CreateWebKitSessionDescription(pending_local_description.get())
           : nullptr,
@@ -2277,7 +2268,7 @@ void RTCPeerConnectionHandler::OnModifyTransceivers(
   // removed transceivers are reflected as "stopped" in JavaScript.
   Vector<uintptr_t> removed_transceivers;
   for (auto transceiver_id : previous_transceiver_ids_) {
-    if (std::find(ids.begin(), ids.end(), transceiver_id) == ids.end()) {
+    if (!base::Contains(ids, transceiver_id)) {
       removed_transceivers.emplace_back(transceiver_id);
       rtp_transceivers_.erase(FindTransceiver(transceiver_id));
     }
@@ -2309,8 +2300,12 @@ void RTCPeerConnectionHandler::OnIceCandidate(const String& sdp,
                                               int sdp_mline_index,
                                               int component,
                                               int address_family) {
+  // In order to ensure that the RTCPeerConnection is not garbage collected
+  // from under the function, we keep a pointer to it on the stack.
+  auto* client_on_stack = client_;
   DCHECK(task_runner_->RunsTasksInCurrentSequence());
   TRACE_EVENT0("webrtc", "RTCPeerConnectionHandler::OnIceCandidateImpl");
+  // This line can cause garbage collection.
   auto* platform_candidate = MakeGarbageCollected<RTCIceCandidatePlatform>(
       sdp, sdp_mid, sdp_mline_index);
   if (peer_connection_tracker_) {
@@ -2330,7 +2325,7 @@ void RTCPeerConnectionHandler::OnIceCandidate(const String& sdp,
     }
   }
   if (!is_closed_)
-    client_->DidGenerateICECandidate(platform_candidate);
+    client_on_stack->DidGenerateICECandidate(platform_candidate);
 }
 
 void RTCPeerConnectionHandler::OnIceCandidateError(
@@ -2342,7 +2337,6 @@ void RTCPeerConnectionHandler::OnIceCandidateError(
     const String& error_text) {
   DCHECK(task_runner_->RunsTasksInCurrentSequence());
   TRACE_EVENT0("webrtc", "RTCPeerConnectionHandler::OnIceCandidateError");
-
   if (peer_connection_tracker_) {
     peer_connection_tracker_->TrackIceCandidateError(
         this, address, port, host_candidate, url, error_code, error_text);

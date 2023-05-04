@@ -84,6 +84,10 @@ class CONTENT_EXPORT WebContentsViewAura
 
     // Location local to WebContentsViewAura.
     gfx::PointF localized_location;
+
+    // Root location of the drop target event.
+    gfx::PointF root_location;
+
     // The supported DnD operation of the source. A bitmask of
     // ui::mojom::DragOperations.
     int source_operations;
@@ -265,7 +269,7 @@ class CONTENT_EXPORT WebContentsViewAura
                            std::unique_ptr<DropData> drop_data,
                            base::WeakPtr<RenderWidgetHostViewBase> target,
                            absl::optional<gfx::PointF> transformed_pt);
-  void DragUpdatedCallback(ui::DropTargetEvent event,
+  void DragUpdatedCallback(DropMetadata drop_metadata,
                            std::unique_ptr<DropData> drop_data,
                            base::WeakPtr<RenderWidgetHostViewBase> target,
                            absl::optional<gfx::PointF> transformed_pt);
@@ -278,9 +282,11 @@ class CONTENT_EXPORT WebContentsViewAura
   void CompleteDragExit();
 
   // Called from PerformDropCallback() to finish processing the drop.
-  void FinishOnPerformDropCallback(
-      OnPerformDropContext context,
-      WebContentsViewDelegate::DropCompletionResult result);
+  // The override with `drop_data` updates `current_drop_data_` before
+  // completing the drop.
+  void FinishOnPerformDrop(OnPerformDropContext context);
+  void FinishOnPerformDropCallback(OnPerformDropContext context,
+                                   absl::optional<DropData> drop_data);
 
   // Completes a drop operation by communicating the drop data to the renderer
   // process.

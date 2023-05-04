@@ -1,4 +1,4 @@
-// Copyright 2013 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Chromium Authors
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -399,8 +399,9 @@ WebMediaPlayerMS::~WebMediaPlayerMS() {
   SendLogMessage(
       String::Format("%s() [delegate_id=%d]", __func__, delegate_id_));
 
-  if (!web_stream_.IsNull())
+  if (!web_stream_.IsNull()) {
     web_stream_.RemoveObserver(this);
+  }
 
   // Destruct compositor resources in the proper order.
   get_client()->SetCcLayer(nullptr);
@@ -409,17 +410,35 @@ WebMediaPlayerMS::~WebMediaPlayerMS() {
     video_layer_->StopUsingProvider();
   }
 
-  if (frame_deliverer_)
-    io_task_runner_->DeleteSoon(FROM_HERE, frame_deliverer_.release());
+  if (frame_deliverer_) {
+    io_task_runner_->DeleteSoon(FROM_HERE, std::move(frame_deliverer_));
+  }
 
-  if (compositor_)
-    compositor_->StopUsingProvider();
-
-  if (video_frame_provider_)
+  if (video_frame_provider_) {
     video_frame_provider_->Stop();
+  }
 
-  if (audio_renderer_)
+  // This must be destroyed before `compositor_` since it will grab a couple of
+  // final metrics during destruction.
+  watch_time_reporter_.reset();
+
+  if (compositor_) {
+    // `compositor_` receives frames on `io_task_runner_` from
+    // `frame_deliverer_` and operates on the `compositor_task_runner_`, so
+    // must trampoline through both to ensure a safe destruction.
+    PostCrossThreadTask(
+        *io_task_runner_, FROM_HERE,
+        WTF::CrossThreadBindOnce(
+            [](scoped_refptr<base::SingleThreadTaskRunner> task_runner,
+               std::unique_ptr<WebMediaPlayerMSCompositor> compositor) {
+              task_runner->DeleteSoon(FROM_HERE, std::move(compositor));
+            },
+            compositor_task_runner_, std::move(compositor_)));
+  }
+
+  if (audio_renderer_) {
     audio_renderer_->Stop();
+  }
 
   media_log_->AddEvent<media::MediaLogEvent::kWebMediaPlayerDestroyed>();
 
@@ -460,7 +479,7 @@ WebMediaPlayer::LoadTiming WebMediaPlayerMS::Load(
 
   watch_time_reporter_.reset();
 
-  compositor_ = base::MakeRefCounted<WebMediaPlayerMSCompositor>(
+  compositor_ = std::make_unique<WebMediaPlayerMSCompositor>(
       compositor_task_runner_, io_task_runner_, web_stream_,
       std::move(submitter_), use_surface_layer_, weak_this_);
 
@@ -483,7 +502,7 @@ WebMediaPlayer::LoadTiming WebMediaPlayerMS::Load(
   frame_deliverer_ = std::make_unique<WebMediaPlayerMS::FrameDeliverer>(
       weak_this_,
       CrossThreadBindRepeating(&WebMediaPlayerMSCompositor::EnqueueFrame,
-                               compositor_),
+                               CrossThreadUnretained(compositor_.get())),
       media_task_runner_, worker_task_runner_, gpu_factories_);
   video_frame_provider_ = renderer_factory_->GetVideoRenderer(
       web_stream_,
@@ -572,8 +591,9 @@ WebMediaPlayer::LoadTiming WebMediaPlayerMS::Load(
     MaybeCreateWatchTimeReporter();
   }
 
-  client_->DidMediaMetadataChange(HasAudio(), HasVideo(),
-                                  media::MediaContentType::OneShot);
+  client_->DidMediaMetadataChange(
+      HasAudio(), HasVideo(), media::AudioCodec::kUnknown,
+      media::VideoCodec::kUnknown, media::MediaContentType::OneShot);
   delegate_->DidMediaMetadataChange(delegate_id_, HasAudio(), HasVideo(),
                                     media::MediaContentType::OneShot);
 
@@ -669,7 +689,7 @@ void WebMediaPlayerMS::ReloadVideo() {
   auto video_components = descriptor.VideoComponents();
 
   RendererReloadAction renderer_action = RendererReloadAction::KEEP_RENDERER;
-  if (video_components.IsEmpty()) {
+  if (video_components.empty()) {
     if (video_frame_provider_)
       renderer_action = RendererReloadAction::REMOVE_RENDERER;
     current_video_track_id_ = WebString();
@@ -713,8 +733,9 @@ void WebMediaPlayerMS::ReloadVideo() {
   // TODO(perkj, magjed): We use OneShot focus type here so that it takes
   // audio focus once it starts, and then will not respond to further audio
   // focus changes. See https://crbug.com/596516 for more details.
-  client_->DidMediaMetadataChange(HasAudio(), HasVideo(),
-                                  media::MediaContentType::OneShot);
+  client_->DidMediaMetadataChange(
+      HasAudio(), HasVideo(), media::AudioCodec::kUnknown,
+      media::VideoCodec::kUnknown, media::MediaContentType::OneShot);
   delegate_->DidMediaMetadataChange(delegate_id_, HasAudio(), HasVideo(),
                                     media::MediaContentType::OneShot);
 }
@@ -730,7 +751,7 @@ void WebMediaPlayerMS::ReloadAudio() {
   auto audio_components = descriptor.AudioComponents();
 
   RendererReloadAction renderer_action = RendererReloadAction::KEEP_RENDERER;
-  if (audio_components.IsEmpty()) {
+  if (audio_components.empty()) {
     if (audio_renderer_)
       renderer_action = RendererReloadAction::REMOVE_RENDERER;
     current_audio_track_id_ = WebString();
@@ -773,8 +794,9 @@ void WebMediaPlayerMS::ReloadAudio() {
   // TODO(perkj, magjed): We use OneShot focus type here so that it takes
   // audio focus once it starts, and then will not respond to further audio
   // focus changes. See https://crbug.com/596516 for more details.
-  client_->DidMediaMetadataChange(HasAudio(), HasVideo(),
-                                  media::MediaContentType::OneShot);
+  client_->DidMediaMetadataChange(
+      HasAudio(), HasVideo(), media::AudioCodec::kUnknown,
+      media::VideoCodec::kUnknown, media::MediaContentType::OneShot);
   delegate_->DidMediaMetadataChange(delegate_id_, HasAudio(), HasVideo(),
                                     media::MediaContentType::OneShot);
 }
@@ -826,7 +848,19 @@ void WebMediaPlayerMS::Pause() {
     video_frame_provider_->Pause();
 
   compositor_->StopRendering();
-  compositor_->ReplaceCurrentFrameWithACopy();
+
+  // Bounce this call off of video task runner to since there might still be
+  // frames passed on video task runner.
+  PostCrossThreadTask(
+      *io_task_runner_, FROM_HERE,
+      WTF::CrossThreadBindOnce(
+          [](scoped_refptr<base::SingleThreadTaskRunner> task_runner,
+             WTF::CrossThreadOnceClosure copy_cb) {
+            PostCrossThreadTask(*task_runner, FROM_HERE, std::move(copy_cb));
+          },
+          main_render_task_runner_,
+          WTF::CrossThreadBindOnce(
+              &WebMediaPlayerMS::ReplaceCurrentFrameWithACopy, weak_this_)));
 
   if (audio_renderer_)
     audio_renderer_->Pause();
@@ -839,6 +873,11 @@ void WebMediaPlayerMS::Pause() {
   delegate_->SetIdle(delegate_id_, true);
 
   paused_ = true;
+}
+
+void WebMediaPlayerMS::ReplaceCurrentFrameWithACopy() {
+  DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
+  compositor_->ReplaceCurrentFrameWithACopy();
 }
 
 void WebMediaPlayerMS::Seek(double seconds) {
@@ -1006,6 +1045,11 @@ WebTimeRanges WebMediaPlayerMS::Buffered() const {
 WebTimeRanges WebMediaPlayerMS::Seekable() const {
   DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
   return WebTimeRanges();
+}
+
+void WebMediaPlayerMS::OnFrozen() {
+  DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
+  DCHECK(paused_);
 }
 
 bool WebMediaPlayerMS::DidLoadingProgress() {
@@ -1187,7 +1231,8 @@ void WebMediaPlayerMS::ActivateSurfaceLayerForVideo(
   PostCrossThreadTask(
       *compositor_task_runner_, FROM_HERE,
       CrossThreadBindOnce(&WebMediaPlayerMSCompositor::EnableSubmission,
-                          compositor_, bridge_->GetSurfaceId(), video_transform,
+                          CrossThreadUnretained(compositor_.get()),
+                          bridge_->GetSurfaceId(), video_transform,
                           IsInPictureInPicture()));
 
   // If the element is already in Picture-in-Picture mode, it means that it

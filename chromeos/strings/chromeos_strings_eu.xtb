@@ -250,6 +250,7 @@
 <translation id="3484914941826596830">Firmwarea eguneratu bitartean, ez deskonektatu kanpoko gailua edo ez itzali ordenagailua. Leihoa minimiza dezakezu. Agian minutu batzuk beharko dira eguneratzea instalatzeko, eta baliteke kanpoko gailuak denbora tarte horretan ez funtzionatzea.</translation>
 <translation id="3486220673238053218">definizioa</translation>
 <translation id="3488065109653206955">Partzialki aktibatuta</translation>
+<translation id="3510890413042482857">Bidali <ph name="BEGIN_LINK1" />errendimenduaren jarraipena egiteko datuak<ph name="END_LINK1" /></translation>
 <translation id="3517001332549868749">Chrome OS-ren eguneratzea</translation>
 <translation id="3527036260304016759">Hutsegitea - Errore ezezaguna</translation>
 <translation id="3532980081107202182"><ph name="MIN_REMAINING" /> minutu inguru geratzen dira</translation>
@@ -469,6 +470,7 @@ Sakatu mikrofonoa zerbait galdetu nahi badidazu.</translation>
 <translation id="5502931783115429516">Android-ek ez du funtzionatzen</translation>
 <translation id="5519195206574732858">LTE</translation>
 <translation id="554517032089923082">GTC</translation>
+<translation id="5559898619118303662">Aldatu automatikoki gai ilunera ilunabarrean</translation>
 <translation id="5578477003638479617">UMTS</translation>
 <translation id="5578519639599103840">Eskaneatu berriro</translation>
 <translation id="5583640892426849032">Atzera tekla</translation>
@@ -733,7 +735,7 @@ Sakatu mikrofonoa zerbait galdetu nahi badidazu.</translation>
 <translation id="8227119283605456246">Erantsi fitxategia</translation>
 <translation id="8230672074305416752">Ezin izan da egin ping sarerako atebide lehenetsian</translation>
 <translation id="8246209727385807362">Operadore ezezaguna</translation>
-<translation id="827422111966801947">Indigoa</translation>
+<translation id="827422111966801947">Anila</translation>
 <translation id="8286154143153872371">Konektatu sare batera eta kargatu orria berriro horma-papera ikusteko.</translation>
 <translation id="8291967909914612644">Hasierako hornitzailearen herrialdea</translation>
 <translation id="8294431847097064396">Iturburua</translation>

@@ -15,8 +15,8 @@ _IGNORE_FREEZE_FOOTER = 'Ignore-Freeze'
 
 # The time module's handling of timezones is abysmal, so the boundaries are
 # precomputed in UNIX time
-_FREEZE_START = 1639641600  # 2021/12/16 00:00 -0800
-_FREEZE_END = 1641196800  # 2022/01/03 00:00 -0800
+_FREEZE_START = 1671177600  # 2022/12/16 00:00 -0800
+_FREEZE_END = 1672646400  # 2023/01/02 00:00 -0800
 
 
 def CheckFreeze(input_api, output_api):
@@ -69,3 +69,27 @@ def CheckManageJsonFiles(input_api, output_api):
           kwargs={},
           message=output_api.PresubmitError),
   ])
+
+
+# TODO(gbeaty) pinpoint runs builds against revisions that aren't tip-of-tree,
+# so recipe side config can't be updated to refer to
+# //infra/config/generated/testing/gn_isolate_map.pyl until all of the revisions
+# that pinpoint will run against have that file. To workaround this, we'll copy
+# the generated file to //testing/buildbot/gn_isiolate_map.pyl. Once pinpoint is
+# only building revisions that contain
+# //infra/config/generated/testing/gn_isolate_map.pyl, the recipe configs can be
+# updated and we can remove this presubmit check,
+# //testing/buildbot/gn_isiolate_map.pyl and
+# //infra/config/scripts/sync-isolate-map.py.
+def CheckGnIsolateMapPylSynced(input_api, output_api):
+  if ('testing/buildbot/gn_isolate_map.pyl' in input_api.change.LocalPaths()
+      and 'infra/config/generated/testing/gn_isolate_map.pyl'
+      not in input_api.change.LocalPaths()):
+    return [
+        output_api.PresubmitError(
+            '//testing/buildbot/gn_isolate_map.pyl should not be edited'
+            ' manually, instead modify //infra/config/targets/targets.star,'
+            ' run //infra/config/main.star and run'
+            ' //infra/config/scripts/sync-isolate-map.py')
+    ]
+  return []

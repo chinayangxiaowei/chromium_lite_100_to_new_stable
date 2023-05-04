@@ -41,6 +41,9 @@ defaults.properties.set({
     "perf_dashboard_machine_group": "ChromiumWebRTC",
 })
 
+# TODO(crbug.com/1362440): remove this.
+defaults.omit_python2.set(False)
+
 # Builders are defined in lexicographic order by name
 
 builder(
@@ -65,8 +68,8 @@ builder(
 
 builder(
     name = "WebRTC Chromium Mac Builder",
-    goma_backend = goma.backend.RBE_PROD,
     os = os.MAC_ANY,
+    goma_backend = goma.backend.RBE_PROD,
     xcode = xcode.x14main,
 )
 
@@ -78,9 +81,9 @@ builder(
 
 builder(
     name = "WebRTC Chromium Win Builder",
+    os = os.WINDOWS_ANY,
     goma_backend = goma.backend.RBE_PROD,
     goma_enable_ats = True,
-    os = os.WINDOWS_ANY,
 )
 
 builder(
