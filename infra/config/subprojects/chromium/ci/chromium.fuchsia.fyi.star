@@ -5,7 +5,7 @@
 
 load("//lib/branches.star", "branches")
 load("//lib/builder_config.star", "builder_config")
-load("//lib/builders.star", "goma", "os", "sheriff_rotations")
+load("//lib/builders.star", "os", "reclient", "sheriff_rotations")
 load("//lib/ci.star", "ci")
 load("//lib/consoles.star", "consoles")
 
@@ -17,11 +17,9 @@ ci.defaults.set(
     os = os.LINUX_DEFAULT,
     sheriff_rotations = sheriff_rotations.FUCHSIA,
     execution_timeout = 10 * time.hour,
-    goma_backend = goma.backend.RBE_PROD,
     notifies = ["cr-fuchsia"],
-
-    # TODO(crbug.com/1362440): remove this.
-    omit_python2 = False,
+    reclient_instance = reclient.instance.DEFAULT_TRUSTED,
+    reclient_jobs = reclient.jobs.DEFAULT,
     service_account = ci.DEFAULT_SERVICE_ACCOUNT,
 )
 
@@ -36,7 +34,6 @@ consoles.console_view(
     category = category,
     short_name = short_name,
 ) for name, category, short_name in (
-    ("fuchsia-builder-perf-fyi", "p/chrome|arm64", "perf-bld"),
     ("fuchsia-builder-perf-x64", "p/chrome|x64", "perf-bld"),
     ("fuchsia-fyi-arm64-size", "p/chrome|arm64", "size"),
     ("fuchsia-x64", "p/chrome|x64", "rel"),
@@ -104,6 +101,7 @@ ci.builder(
             target_platform = builder_config.target_platform.FUCHSIA,
         ),
         build_gs_bucket = "chromium-fyi-archive",
+        run_tests_serially = True,
         test_results_config = builder_config.test_results_config(
             config = "staging_server",
         ),

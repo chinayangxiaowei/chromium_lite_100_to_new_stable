@@ -5,7 +5,7 @@
 
 load("//lib/branches.star", "branches")
 load("//lib/builder_config.star", "builder_config")
-load("//lib/builders.star", "goma", "os")
+load("//lib/builders.star", "goma", "os", "reclient")
 load("//lib/try.star", "try_")
 load("//lib/consoles.star", "consoles")
 
@@ -20,9 +20,6 @@ try_.defaults.set(
     compilator_goma_jobs = goma.jobs.J300,
     execution_timeout = try_.DEFAULT_EXECUTION_TIMEOUT,
     goma_backend = goma.backend.RBE_PROD,
-
-    # TODO(crbug.com/1362440): remove this.
-    omit_python2 = False,
     orchestrator_cores = 2,
     service_account = try_.DEFAULT_SERVICE_ACCOUNT,
 )
@@ -63,7 +60,47 @@ try_.builder(
     builderless = False,
     os = os.WINDOWS_ANY,
     main_list_view = "try",
+    reclient_instance = reclient.instance.DEFAULT_UNTRUSTED,
+    reclient_jobs = reclient.jobs.HIGH_JOBS_FOR_CQ,
     tryjob = try_.job(),
+)
+
+try_.orchestrator_builder(
+    name = "win-rel",
+    branch_selector = branches.selector.WINDOWS_BRANCHES,
+    mirrors = [
+        "ci/Win x64 Builder",
+        "ci/Win10 Tests x64",
+        "ci/GPU Win x64 Builder",
+        "ci/Win10 x64 Release (NVIDIA)",
+    ],
+    try_settings = builder_config.try_settings(
+        rts_config = builder_config.rts_config(
+            condition = builder_config.rts_condition.QUICK_RUN_ONLY,
+        ),
+    ),
+    check_for_flakiness = True,
+    compilator = "win-rel-compilator",
+    coverage_test_types = ["unit", "overall"],
+    # TODO(crbug.com/1381274): Make this a CQ blocker.
+    #tryjob = try_.job(),
+    experiments = {
+        "chromium_rts.inverted_rts": 100,
+    },
+    main_list_view = "try",
+    use_clang_coverage = True,
+    # TODO (crbug.com/1372179): Use orchestrator pool once overloaded test pools
+    # are addressed
+    #use_orchestrator_pool = True,
+)
+
+try_.compilator_builder(
+    name = "win-rel-compilator",
+    branch_selector = branches.selector.WINDOWS_BRANCHES,
+    check_for_flakiness = True,
+    # TODO (crbug.com/1245171): Revert when root issue is fixed
+    grace_period = 4 * time.minute,
+    main_list_view = "try",
 )
 
 try_.builder(
@@ -88,6 +125,8 @@ try_.builder(
     ssd = True,
     goma_jobs = goma.jobs.J150,
     main_list_view = "try",
+    reclient_instance = reclient.instance.DEFAULT_UNTRUSTED,
+    reclient_jobs = reclient.jobs.HIGH_JOBS_FOR_CQ,
     tryjob = try_.job(
         # TODO(crbug.com/1335555) Remove once cancelling doesn't wipe
         # out builder cache
@@ -171,6 +210,7 @@ try_.builder(
     os = os.WINDOWS_10,
 )
 
+# TODO(crbug.com/1381274): Remove this after it's been replaced with win-rel.
 try_.orchestrator_builder(
     name = "win10_chromium_x64_rel_ng",
     branch_selector = branches.selector.WINDOWS_BRANCHES,
@@ -189,14 +229,43 @@ try_.orchestrator_builder(
     compilator = "win10_chromium_x64_rel_ng-compilator",
     coverage_test_types = ["unit", "overall"],
     experiments = {
-        "remove_src_checkout_experiment": 100,
+        "chromium_rts.inverted_rts": 100,
     },
     main_list_view = "try",
+    reclient_instance = reclient.instance.DEFAULT_UNTRUSTED,
+    reclient_jobs = reclient.jobs.HIGH_JOBS_FOR_CQ,
     tryjob = try_.job(),
     use_clang_coverage = True,
     # TODO (crbug.com/1372179): Use orchestrator pool once overloaded test pools
     # are addressed
     #use_orchestrator_pool = True,
+)
+
+try_.orchestrator_builder(
+    name = "win10_chromium_x64_rel_ng-inverse-fyi",
+    mirrors = [
+        "ci/Win x64 Builder",
+        "ci/Win10 Tests x64",
+        "ci/GPU Win x64 Builder",
+        "ci/Win10 x64 Release (NVIDIA)",
+    ],
+    try_settings = builder_config.try_settings(
+        rts_config = builder_config.rts_config(
+            condition = builder_config.rts_condition.QUICK_RUN_ONLY,
+        ),
+    ),
+    check_for_flakiness = True,
+    compilator = "win10_chromium_x64_rel_ng-compilator",
+    coverage_test_types = ["unit", "overall"],
+    experiments = {
+        "chromium_rts.inverted_rts": 100,
+        "chromium_rts.inverted_rts_bail_early": 100,
+    },
+    main_list_view = "try",
+    reclient_instance = reclient.instance.DEFAULT_UNTRUSTED,
+    reclient_jobs = reclient.jobs.HIGH_JOBS_FOR_CQ,
+    use_clang_coverage = True,
+    use_orchestrator_pool = True,
 )
 
 try_.compilator_builder(
@@ -206,32 +275,43 @@ try_.compilator_builder(
     # TODO (crbug.com/1245171): Revert when root issue is fixed
     grace_period = 4 * time.minute,
     main_list_view = "try",
+    reclient_instance = reclient.instance.DEFAULT_UNTRUSTED,
+    reclient_jobs = reclient.jobs.HIGH_JOBS_FOR_CQ,
 )
 
-try_.builder(
-    name = "win10_chromium_x64_rel_ng_exp",
-    builderless = False,
-    os = os.WINDOWS_ANY,
-)
-
-try_.builder(
-    name = "win7-rel",
-    branch_selector = branches.selector.WINDOWS_BRANCHES,
+try_.orchestrator_builder(
+    name = "win10_chromium_x64_rel_ng-reclient",
+    description_html = "Experimental shadow builder to test reclient migration. <br/>The bot is shadowing <a href=\"https://ci.chromium.org/p/chromium/builders/try/win10_chromium_x64_rel_ng\">win10_chromium_x64_rel_ng</a>.",
     mirrors = [
-        "ci/Win Builder",
-        "ci/Win7 Tests (1)",
+        "ci/Win x64 Builder",
+        "ci/Win10 Tests x64",
+        "ci/GPU Win x64 Builder",
+        "ci/Win10 x64 Release (NVIDIA)",
     ],
-    cores = 16,
-    ssd = True,
-    execution_timeout = 4 * time.hour + 30 * time.minute,
-    goma_jobs = goma.jobs.J300,
-    main_list_view = "try",
-    tryjob = try_.job(
-        location_filters = [
-            "sandbox/win/.+",
-            "sandbox/policy/win/.+",
-        ],
+    try_settings = builder_config.try_settings(
+        is_compile_only = True,
+        rts_config = builder_config.rts_config(
+            condition = builder_config.rts_condition.QUICK_RUN_ONLY,
+        ),
     ),
+    builderless = True,
+    check_for_flakiness = True,
+    compilator = "win10_chromium_x64_rel_ng-reclient-compilator",
+    coverage_test_types = ["unit", "overall"],
+    tryjob = try_.job(
+        experiment_percentage = 3,
+    ),
+    use_clang_coverage = True,
+)
+
+try_.compilator_builder(
+    name = "win10_chromium_x64_rel_ng-reclient-compilator",
+    builderless = True,
+    check_for_flakiness = True,
+    # TODO (crbug.com/1245171): Revert when root issue is fixed
+    grace_period = 4 * time.minute,
+    reclient_instance = reclient.instance.DEFAULT_UNTRUSTED,
+    reclient_jobs = reclient.jobs.HIGH_JOBS_FOR_CQ,
 )
 
 try_.builder(
@@ -270,35 +350,36 @@ try_.gpu.optional_tests_builder(
     try_settings = builder_config.try_settings(
         retry_failed_shards = False,
     ),
-    builderless = True,
     os = os.WINDOWS_DEFAULT,
     main_list_view = "try",
+    reclient_instance = reclient.instance.DEFAULT_UNTRUSTED,
+    reclient_jobs = reclient.jobs.HIGH_JOBS_FOR_CQ,
     tryjob = try_.job(
         location_filters = [
-            "chrome/browser/vr/.+",
-            "content/browser/xr/.+",
-            "content/test/gpu/.+",
-            "device/vr/.+",
-            "gpu/.+",
-            "media/audio/.+",
-            "media/base/.+",
-            "media/capture/.+",
-            "media/filters/.+",
-            "media/gpu/.+",
-            "media/mojo/.+",
-            "media/renderers/.+",
-            "media/video/.+",
-            "testing/buildbot/tryserver.chromium.win.json",
-            "testing/trigger_scripts/.+",
-            "third_party/blink/renderer/modules/vr/.+",
-            "third_party/blink/renderer/modules/mediastream/.+",
-            "third_party/blink/renderer/modules/webcodecs/.+",
-            "third_party/blink/renderer/modules/webgl/.+",
-            "third_party/blink/renderer/modules/xr/.+",
-            "third_party/blink/renderer/platform/graphics/gpu/.+",
-            "tools/clang/scripts/update.py",
-            "tools/mb/mb_config_expectations/tryserver.chromium.win.json",
-            "ui/gl/.+",
+            cq.location_filter(path_regexp = "chrome/browser/vr/.+"),
+            cq.location_filter(path_regexp = "content/browser/xr/.+"),
+            cq.location_filter(path_regexp = "content/test/gpu/.+"),
+            cq.location_filter(path_regexp = "device/vr/.+"),
+            cq.location_filter(path_regexp = "gpu/.+"),
+            cq.location_filter(path_regexp = "media/audio/.+"),
+            cq.location_filter(path_regexp = "media/base/.+"),
+            cq.location_filter(path_regexp = "media/capture/.+"),
+            cq.location_filter(path_regexp = "media/filters/.+"),
+            cq.location_filter(path_regexp = "media/gpu/.+"),
+            cq.location_filter(path_regexp = "media/mojo/.+"),
+            cq.location_filter(path_regexp = "media/renderers/.+"),
+            cq.location_filter(path_regexp = "media/video/.+"),
+            cq.location_filter(path_regexp = "testing/buildbot/tryserver.chromium.win.json"),
+            cq.location_filter(path_regexp = "testing/trigger_scripts/.+"),
+            cq.location_filter(path_regexp = "third_party/blink/renderer/modules/vr/.+"),
+            cq.location_filter(path_regexp = "third_party/blink/renderer/modules/mediastream/.+"),
+            cq.location_filter(path_regexp = "third_party/blink/renderer/modules/webcodecs/.+"),
+            cq.location_filter(path_regexp = "third_party/blink/renderer/modules/webgl/.+"),
+            cq.location_filter(path_regexp = "third_party/blink/renderer/modules/xr/.+"),
+            cq.location_filter(path_regexp = "third_party/blink/renderer/platform/graphics/gpu/.+"),
+            cq.location_filter(path_regexp = "tools/clang/scripts/update.py"),
+            cq.location_filter(path_regexp = "tools/mb/mb_config_expectations/tryserver.chromium.win.json"),
+            cq.location_filter(path_regexp = "ui/gl/.+"),
         ],
     ),
 )

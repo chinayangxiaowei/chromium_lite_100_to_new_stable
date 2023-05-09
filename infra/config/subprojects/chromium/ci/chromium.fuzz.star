@@ -3,7 +3,7 @@
 # found in the LICENSE file.
 """Definitions of builders in the chromium.fuzz builder group."""
 
-load("//lib/builders.star", "goma", "os", "reclient", "sheriff_rotations", "xcode")
+load("//lib/builders.star", "os", "reclient", "sheriff_rotations", "xcode")
 load("//lib/ci.star", "ci")
 load("//lib/consoles.star", "consoles")
 
@@ -16,9 +16,6 @@ ci.defaults.set(
     sheriff_rotations = sheriff_rotations.CHROMIUM_FUZZ,
     execution_timeout = ci.DEFAULT_EXECUTION_TIMEOUT,
     notifies = ["chromesec-lkgr-failures"],
-
-    # TODO(crbug.com/1362440): remove this.
-    omit_python2 = False,
     reclient_instance = reclient.instance.DEFAULT_TRUSTED,
     reclient_jobs = reclient.jobs.DEFAULT,
     service_account = ci.DEFAULT_SERVICE_ACCOUNT,
@@ -120,6 +117,7 @@ ci.builder(
     triggering_policy = scheduler.greedy_batching(
         max_concurrent_invocations = 4,
     ),
+    cores = 16,
     console_view_entry = consoles.console_view_entry(
         category = "afl",
         short_name = "afl",
@@ -300,8 +298,6 @@ ci.builder(
         short_name = "ios",
     ),
     execution_timeout = 4 * time.hour,
-    goma_backend = goma.backend.RBE_PROD,
-    reclient_instance = None,
     xcode = xcode.x14main,
 )
 
@@ -447,8 +443,6 @@ ci.builder(
         short_name = "mac-asan",
     ),
     execution_timeout = 4 * time.hour,
-    goma_backend = goma.backend.RBE_PROD,
-    reclient_instance = None,
 )
 
 ci.builder(

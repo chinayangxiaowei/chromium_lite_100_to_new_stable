@@ -17,7 +17,7 @@ RequestHandlerBase::RequestHandlerBase(
     const std::string& user_action_id,
     uint64_t user_action_requests_count,
     safe_browsing::DeepScanAccessPoint access_point)
-    : upload_service_(upload_service ? upload_service->AsWeakPtr() : nullptr),
+    : upload_service_(upload_service),
       profile_(profile),
       analysis_settings_(analysis_settings),
       url_(url),
@@ -48,11 +48,11 @@ void RequestHandlerBase::AppendFinalActionsTo(
 void RequestHandlerBase::PrepareRequest(
     enterprise_connectors::AnalysisConnector connector,
     safe_browsing::BinaryUploadService::Request* request) {
-  if (analysis_settings_.cloud_or_local_settings.is_cloud_analysis()) {
+  if (analysis_settings_->cloud_or_local_settings.is_cloud_analysis()) {
     request->set_device_token(
-        analysis_settings_.cloud_or_local_settings.dm_token());
+        analysis_settings_->cloud_or_local_settings.dm_token());
   }
-  if (analysis_settings_.cloud_or_local_settings.is_local_analysis()) {
+  if (analysis_settings_->cloud_or_local_settings.is_local_analysis()) {
     request->set_user_action_id(user_action_id_);
     request->set_user_action_requests_count(user_action_requests_count_);
   }
@@ -63,16 +63,16 @@ void RequestHandlerBase::PrepareRequest(
   request->set_source(source_);
   request->set_destination(destination_);
   request->set_tab_url(url_);
-  request->set_per_profile_request(analysis_settings_.per_profile);
-  for (const auto& tag : analysis_settings_.tags)
+  request->set_per_profile_request(analysis_settings_->per_profile);
+  for (const auto& tag : analysis_settings_->tags)
     request->add_tag(tag.first);
-  if (analysis_settings_.client_metadata)
-    request->set_client_metadata(*analysis_settings_.client_metadata);
+  if (analysis_settings_->client_metadata)
+    request->set_client_metadata(*analysis_settings_->client_metadata);
 }
 
 safe_browsing::BinaryUploadService*
 RequestHandlerBase::GetBinaryUploadService() {
-  return upload_service_.get();
+  return upload_service_;
 }
 
 }  // namespace enterprise_connectors

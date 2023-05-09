@@ -5,7 +5,7 @@
 
 load("//lib/branches.star", "branches")
 load("//lib/builder_config.star", "builder_config")
-load("//lib/builders.star", "os", "reclient")
+load("//lib/builders.star", "goma", "os", "reclient")
 load("//lib/try.star", "try_")
 load("//lib/consoles.star", "consoles")
 load("//project.star", "settings")
@@ -16,13 +16,13 @@ try_.defaults.set(
     pool = try_.DEFAULT_POOL,
     cores = 8,
     os = os.LINUX_DEFAULT,
-    compilator_cores = 16,
+    compilator_cores = 32,
+    compilator_reclient_jobs = reclient.jobs.HIGH_JOBS_FOR_CQ,
     execution_timeout = try_.DEFAULT_EXECUTION_TIMEOUT,
-
-    # TODO(crbug.com/1362440): remove this.
-    omit_python2 = False,
+    goma_backend = goma.backend.RBE_PROD,
     orchestrator_cores = 2,
     reclient_instance = reclient.instance.DEFAULT_UNTRUSTED,
+    reclient_jobs = reclient.jobs.LOW_JOBS_FOR_CQ,
     service_account = try_.DEFAULT_SERVICE_ACCOUNT,
 )
 
@@ -58,9 +58,6 @@ try_.orchestrator_builder(
     branch_selector = branches.selector.CROS_LTS_BRANCHES,
     mirrors = ["ci/chromeos-amd64-generic-rel"],
     compilator = "chromeos-amd64-generic-rel-compilator",
-    experiments = {
-        "remove_src_checkout_experiment": 100,
-    },
     main_list_view = "try",
     tryjob = try_.job(),
     # TODO(crbug.com/1372179): Use orchestrator pool once overloaded test pools
@@ -115,9 +112,6 @@ try_.orchestrator_builder(
         "ci/lacros-amd64-generic-rel",
     ],
     compilator = "lacros-amd64-generic-rel-compilator",
-    experiments = {
-        "remove_src_checkout_experiment": 100,
-    },
     main_list_view = "try",
     use_orchestrator_pool = True,
 )
@@ -245,9 +239,6 @@ try_.orchestrator_builder(
     ],
     compilator = "linux-chromeos-rel-compilator",
     coverage_test_types = ["unit", "overall"],
-    experiments = {
-        "remove_src_checkout_experiment": 100,
-    },
     main_list_view = "try",
     tryjob = try_.job(),
     use_clang_coverage = True,
@@ -259,9 +250,8 @@ try_.orchestrator_builder(
 try_.compilator_builder(
     name = "linux-chromeos-rel-compilator",
     branch_selector = branches.selector.CROS_LTS_BRANCHES,
-    cores = 32,
+    goma_jobs = goma.jobs.J300,
     main_list_view = "try",
-    reclient_jobs = reclient.jobs.HIGH_JOBS_FOR_CQ,
 )
 
 try_.builder(
@@ -281,9 +271,6 @@ try_.orchestrator_builder(
     ],
     check_for_flakiness = True,
     compilator = "linux-lacros-rel-compilator",
-    experiments = {
-        "remove_src_checkout_experiment": 100,
-    },
     main_list_view = "try",
     tryjob = try_.job(),
     # TODO(crbug.com/1372179): Use orchestrator pool once overloaded test pools
@@ -294,8 +281,8 @@ try_.orchestrator_builder(
 try_.compilator_builder(
     name = "linux-lacros-rel-compilator",
     branch_selector = branches.selector.CROS_BRANCHES,
+    goma_jobs = goma.jobs.J300,
     main_list_view = "try",
-    reclient_jobs = reclient.jobs.HIGH_JOBS_FOR_CQ,
 )
 
 try_.builder(
@@ -317,6 +304,7 @@ try_.builder(
     mirrors = [
         "ci/linux-cfm-rel",
     ],
+    goma_backend = None,
     tryjob = try_.job(
         location_filters = [
             "chromeos/ash/components/chromebox_for_meetings/.+",

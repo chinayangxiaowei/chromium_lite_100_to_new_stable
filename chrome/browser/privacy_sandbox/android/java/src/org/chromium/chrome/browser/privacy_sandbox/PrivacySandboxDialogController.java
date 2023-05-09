@@ -27,8 +27,7 @@ public class PrivacySandboxDialogController {
     /**
      * Launches an appropriate dialog if necessary and returns whether that happened.
      */
-    public static boolean maybeLaunchPrivacySandboxDialog(
-            @PrivacySandboxDialogLaunchContext int launchContext, Context context,
+    public static boolean maybeLaunchPrivacySandboxDialog(Context context,
             @NonNull SettingsLauncher settingsLauncher, boolean isIncognito,
             @Nullable BottomSheetController bottomSheetController) {
         if (isIncognito) {

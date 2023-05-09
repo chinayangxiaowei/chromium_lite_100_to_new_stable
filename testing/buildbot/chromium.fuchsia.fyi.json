@@ -9,8 +9,7 @@
       {
         "args": [
           "--test-launcher-filter-file=../../testing/buildbot/filters/fuchsia.browser_tests.filter",
-          "--",
-          "--test-launcher-timeout=60000"
+          "--test-arg=--test-launcher-timeout=60000"
         ],
         "merge": {
           "args": [],
@@ -34,10 +33,9 @@
       },
       {
         "args": [
-          "--",
-          "--disable-gpu",
-          "--headless",
-          "--ozone-platform=headless"
+          "--test-arg=--disable-gpu",
+          "--test-arg=--headless",
+          "--test-arg=--ozone-platform=headless"
         ],
         "merge": {
           "args": [],
@@ -58,6 +56,26 @@
         },
         "test": "content_browsertests",
         "test_id_prefix": "ninja://content/test:content_browsertests/"
+      },
+      {
+        "merge": {
+          "args": [],
+          "script": "//testing/merge_scripts/standard_gtest_merge.py"
+        },
+        "swarming": {
+          "can_use_on_swarming_builders": true,
+          "dimension_sets": [
+            {
+              "cpu": "arm64",
+              "inside_docker": "1",
+              "os": "Ubuntu-20.04",
+              "pool": "chromium.tests.lifo"
+            }
+          ],
+          "service_account": "chromium-tester@chops-service-accounts.iam.gserviceaccount.com"
+        },
+        "test": "sync_integration_tests",
+        "test_id_prefix": "ninja://chrome/test:sync_integration_tests/"
       },
       {
         "args": [
@@ -842,8 +860,7 @@
       },
       {
         "args": [
-          "--",
-          "--ozone-platform=headless"
+          "--test-arg=--ozone-platform=headless"
         ],
         "merge": {
           "args": [],
@@ -1135,8 +1152,7 @@
       },
       {
         "args": [
-          "--",
-          "--vmodule=test_navigation_listener=1"
+          "--test-arg=--vmodule=test_navigation_listener=1"
         ],
         "merge": {
           "args": [],
@@ -1159,8 +1175,7 @@
       },
       {
         "args": [
-          "--",
-          "--vmodule=test_navigation_listener=1"
+          "--test-arg=--vmodule=test_navigation_listener=1"
         ],
         "merge": {
           "args": [],
@@ -2124,8 +2139,7 @@
       },
       {
         "args": [
-          "--",
-          "--ozone-platform=headless"
+          "--test-arg=--ozone-platform=headless"
         ],
         "merge": {
           "args": [],
@@ -2452,8 +2466,7 @@
       },
       {
         "args": [
-          "--",
-          "--vmodule=test_navigation_listener=1"
+          "--test-arg=--vmodule=test_navigation_listener=1"
         ],
         "merge": {
           "args": [],
@@ -2474,8 +2487,7 @@
       },
       {
         "args": [
-          "--",
-          "--vmodule=test_navigation_listener=1"
+          "--test-arg=--vmodule=test_navigation_listener=1"
         ],
         "merge": {
           "args": [],
@@ -3417,8 +3429,7 @@
       },
       {
         "args": [
-          "--",
-          "--ozone-platform=headless"
+          "--test-arg=--ozone-platform=headless"
         ],
         "merge": {
           "args": [],
@@ -3742,8 +3753,7 @@
       },
       {
         "args": [
-          "--",
-          "--vmodule=test_navigation_listener=1"
+          "--test-arg=--vmodule=test_navigation_listener=1"
         ],
         "merge": {
           "args": [],
@@ -3764,8 +3774,7 @@
       },
       {
         "args": [
-          "--",
-          "--vmodule=test_navigation_listener=1"
+          "--test-arg=--vmodule=test_navigation_listener=1"
         ],
         "merge": {
           "args": [],
@@ -3909,8 +3918,7 @@
       {
         "args": [
           "--test-launcher-filter-file=../../testing/buildbot/filters/fuchsia.browser_tests.filter",
-          "--",
-          "--test-launcher-timeout=60000"
+          "--test-arg=--test-launcher-timeout=60000"
         ],
         "merge": {
           "args": [],
@@ -3932,10 +3940,9 @@
       },
       {
         "args": [
-          "--",
-          "--disable-gpu",
-          "--headless",
-          "--ozone-platform=headless"
+          "--test-arg=--disable-gpu",
+          "--test-arg=--headless",
+          "--test-arg=--ozone-platform=headless"
         ],
         "merge": {
           "args": [],
@@ -3954,6 +3961,24 @@
         },
         "test": "content_browsertests",
         "test_id_prefix": "ninja://content/test:content_browsertests/"
+      },
+      {
+        "merge": {
+          "args": [],
+          "script": "//testing/merge_scripts/standard_gtest_merge.py"
+        },
+        "swarming": {
+          "can_use_on_swarming_builders": true,
+          "dimension_sets": [
+            {
+              "kvm": "1",
+              "os": "Ubuntu-18.04"
+            }
+          ],
+          "service_account": "chromium-tester@chops-service-accounts.iam.gserviceaccount.com"
+        },
+        "test": "sync_integration_tests",
+        "test_id_prefix": "ninja://chrome/test:sync_integration_tests/"
       },
       {
         "args": [
@@ -4207,8 +4232,7 @@
       {
         "args": [
           "--test-launcher-filter-file=../../testing/buildbot/filters/fuchsia.browser_tests.filter",
-          "--",
-          "--test-launcher-timeout=60000",
+          "--test-arg=--test-launcher-timeout=60000",
           "--custom-image=workstation_eng.qemu-x64-release"
         ],
         "merge": {
@@ -4231,10 +4255,9 @@
       },
       {
         "args": [
-          "--",
-          "--disable-gpu",
-          "--headless",
-          "--ozone-platform=headless",
+          "--test-arg=--disable-gpu",
+          "--test-arg=--headless",
+          "--test-arg=--ozone-platform=headless",
           "--custom-image=workstation_eng.qemu-x64-release"
         ],
         "merge": {
@@ -4254,6 +4277,27 @@
         },
         "test": "content_browsertests",
         "test_id_prefix": "ninja://content/test:content_browsertests/"
+      },
+      {
+        "args": [
+          "--custom-image=workstation_eng.qemu-x64-release"
+        ],
+        "merge": {
+          "args": [],
+          "script": "//testing/merge_scripts/standard_gtest_merge.py"
+        },
+        "swarming": {
+          "can_use_on_swarming_builders": true,
+          "dimension_sets": [
+            {
+              "kvm": "1",
+              "os": "Ubuntu-18.04"
+            }
+          ],
+          "service_account": "chromium-tester@chops-service-accounts.iam.gserviceaccount.com"
+        },
+        "test": "sync_integration_tests",
+        "test_id_prefix": "ninja://chrome/test:sync_integration_tests/"
       },
       {
         "args": [

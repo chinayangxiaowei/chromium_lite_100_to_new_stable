@@ -1,12 +1,13 @@
 {
-    "project": "chromium-m108",
-    "project_title": "Chromium M108",
-    "ref": "refs/branch-heads/5359",
-    "chrome_project": "chrome-m108",
+    "project": "chromium-m109",
+    "project_title": "Chromium M109",
+    "ref": "refs/branch-heads/5414",
+    "chrome_project": "chrome-m109",
     "is_main": false,
     "platforms": {
-        "cros-lts": {
-            "description": "CrOS LTS"
+        "windows": {
+            "description": "long-term support for Windows pre-10: crbug.com/1406951",
+            "sheriff_rotation": "chrome_browser_release"
         }
     }
 }

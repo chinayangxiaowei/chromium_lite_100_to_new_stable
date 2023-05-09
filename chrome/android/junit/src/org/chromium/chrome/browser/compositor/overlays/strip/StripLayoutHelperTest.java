@@ -24,7 +24,6 @@ import static org.mockito.Mockito.when;
 import android.app.Activity;
 import android.content.Context;
 import android.content.res.Resources;
-import android.os.Build;
 import android.text.TextUtils;
 import android.util.DisplayMetrics;
 import android.view.HapticFeedbackConstants;
@@ -51,7 +50,6 @@ import org.chromium.chrome.browser.compositor.layouts.LayoutUpdateHost;
 import org.chromium.chrome.browser.compositor.layouts.components.CompositorButton;
 import org.chromium.chrome.browser.compositor.overlays.strip.StripLayoutTab.StripLayoutTabDelegate;
 import org.chromium.chrome.browser.compositor.overlays.strip.TabLoadTracker.TabLoadTrackerCallback;
-import org.chromium.chrome.browser.flags.CachedFeatureFlags;
 import org.chromium.chrome.browser.flags.ChromeFeatureList;
 import org.chromium.chrome.browser.layouts.animation.CompositorAnimationHandler;
 import org.chromium.chrome.browser.layouts.animation.CompositorAnimator;
@@ -68,7 +66,7 @@ import java.util.List;
 @RunWith(BaseRobolectricTestRunner.class)
 @Features.EnableFeatures({ChromeFeatureList.TAB_STRIP_IMPROVEMENTS,
         ChromeFeatureList.GRID_TAB_SWITCHER_FOR_TABLETS, ChromeFeatureList.TAB_GROUPS_FOR_TABLETS})
-@Config(manifest = Config.NONE, sdk = Build.VERSION_CODES.M, qualifiers = "sw600dp")
+@Config(manifest = Config.NONE, qualifiers = "sw600dp")
 public class StripLayoutHelperTest {
     @Rule
     public TestRule mFeaturesProcessorRule = new Features.JUnitProcessor();
@@ -1629,7 +1627,7 @@ public class StripLayoutHelperTest {
     @Test
     public void testDrag_UpdatesScrollOffset_CascadingStrip() {
         // Arrange
-        CachedFeatureFlags.setForTesting(ChromeFeatureList.TAB_STRIP_IMPROVEMENTS, false);
+        ChromeFeatureList.sTabStripImprovements.setForTesting(false);
         initializeTest(false, false, false, 0, 10);
         mStripLayoutHelper.onSizeChanged(SCREEN_WIDTH, SCREEN_HEIGHT, false, TIMESTAMP);
         // When updateLayout is called for the first time, bringSelectedTabToVisibleArea() method is
@@ -1654,7 +1652,7 @@ public class StripLayoutHelperTest {
     @Test
     public void testDrag_ReorderMode_CascadingStrip() {
         // Arrange
-        CachedFeatureFlags.setForTesting(ChromeFeatureList.TAB_STRIP_IMPROVEMENTS, false);
+        ChromeFeatureList.sTabStripImprovements.setForTesting(false);
         initializeTest(false, false, false, 5, 10);
         mStripLayoutHelper.onSizeChanged(SCREEN_WIDTH, SCREEN_HEIGHT, false, TIMESTAMP);
         // When updateLayout is called for the first time, bringSelectedTabToVisibleArea() method is

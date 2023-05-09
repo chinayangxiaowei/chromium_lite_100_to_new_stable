@@ -1165,10 +1165,6 @@ void OverviewSession::UpdateAccessibilityFocus() {
   }
 }
 
-void OverviewSession::OnDeskAdded(const Desk* desk) {}
-void OverviewSession::OnDeskRemoved(const Desk* desk) {}
-void OverviewSession::OnDeskReordered(int old_index, int new_index) {}
-
 void OverviewSession::OnDeskActivationChanged(const Desk* activated,
                                               const Desk* deactivated) {
   observing_desk_ = activated;
@@ -1181,11 +1177,6 @@ void OverviewSession::OnDeskActivationChanged(const Desk* activated,
       overview_grid->UpdateSaveDeskButtons();
   }
 }
-
-void OverviewSession::OnDeskSwitchAnimationLaunching() {}
-void OverviewSession::OnDeskSwitchAnimationFinished() {}
-void OverviewSession::OnDeskNameChanged(const Desk* desk,
-                                        const std::u16string& new_name) {}
 
 void OverviewSession::OnDisplayAdded(const display::Display& display) {
   if (EndOverview(OverviewEndAction::kDisplayAdded))

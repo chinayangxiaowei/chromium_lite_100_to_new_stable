@@ -27,8 +27,6 @@ try_.defaults.set(
     # out: http://shortn/_8PaHsdYmlq. Keep this in sync.
     expiration_timeout = 2 * time.hour,
     goma_backend = goma.backend.RBE_PROD,
-    # TODO(crbug.com/1362440): remove this.
-    omit_python2 = False,
     service_account = "chromium-try-gpu-builder@chops-service-accounts.iam.gserviceaccount.com",
     subproject_list_view = "luci.chromium.try",
     task_template_canary_percentage = 5,

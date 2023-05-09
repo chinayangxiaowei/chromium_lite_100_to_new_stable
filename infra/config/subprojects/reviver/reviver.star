@@ -5,6 +5,7 @@
 load("//lib/builders.star", "builder", "cpu", "defaults", "free_space", "os")
 load("//lib/ci.star", "ci")
 load("//lib/consoles.star", "consoles")
+load("//lib/polymorphic.star", "polymorphic")
 
 luci.bucket(
     name = "reviver",
@@ -36,72 +37,37 @@ consoles.list_view(
 defaults.set(
     bucket = "reviver",
     list_view = "reviver",
-
-    # TODO(crbug.com/1362440): remove this.
-    omit_python2 = False,
     service_account = "reviver-builder@chops-service-accounts.iam.gserviceaccount.com",
 )
 
-def target_builder(*, name):
-    return {
-        "builder_id": {
-            "project": "chromium",
-            "bucket": "ci",
-            "builder": name,
-        },
-    }
-
-builder(
+polymorphic.launcher(
     name = "android-launcher",
-    executable = "recipe:chromium_polymorphic/launcher",
     # To avoid peak hours, we run it at 1 AM, 4 AM, 7 AM, 10AM, 1 PM UTC.
     schedule = "0 1,4,7,10,13 * * *",
-    pool = "luci.chromium.ci",
+    pool = ci.DEFAULT_POOL,
     os = os.LINUX_DEFAULT,
-    properties = {
-        "runner_builder": {
-            "project": "chromium",
-            "bucket": "reviver",
-            "builder": "runner",
-        },
-        "target_builders": [
-            target_builder(
-                name = "android-nougat-x86-rel",
-            ),
-            target_builder(
-                name = "android-12-x64-rel",
-            ),
-        ],
-    },
+    runner = "reviver/runner",
+    target_builders = [
+        "ci/android-nougat-x86-rel",
+        "ci/android-pie-x86-rel",
+        "ci/android-12-x64-rel",
+    ],
 )
 
 # A coordinator of slightly aggressive scheduling with effectively unlimited
 # test bot capacity for fuchsia.
-builder(
+polymorphic.launcher(
     name = "fuchsia-coordinator",
-    executable = "recipe:chromium_polymorphic/launcher",
     # Avoid peak hours.
     schedule = "0 1,3,5,7,9,11,13 * * *",
-    pool = "luci.chromium.ci",
+    pool = ci.DEFAULT_POOL,
     os = os.LINUX_DEFAULT,
-    properties = {
-        "runner_builder": {
-            "project": "chromium",
-            "bucket": "reviver",
-            "builder": "runner",
-        },
-        "target_builders": [
-            target_builder(
-                name = "fuchsia-fyi-x64-rel",
-            ),
-            target_builder(
-                name = "fuchsia-fyi-arm64-dbg",
-            ),
-            target_builder(
-                name = "fuchsia-fyi-x64-asan",
-            ),
-        ],
-    },
+    runner = "reviver/runner",
+    target_builders = [
+        "ci/fuchsia-fyi-arm64-dbg",
+        "ci/fuchsia-fyi-x64-asan",
+        "ci/fuchsia-x64-rel",
+    ],
 )
 
 builder(

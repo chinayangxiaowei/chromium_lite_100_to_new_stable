@@ -231,17 +231,14 @@ bool StructTraits<media::mojom::VideoFrameDataView,
 
     auto layout = media::VideoFrameLayout::CreateWithPlanes(format, coded_size,
                                                             std::move(planes));
-    if (!layout || !layout->FitsInContiguousBufferOfSize(mapping.size())) {
+    if (!layout) {
       DLOG(ERROR) << "Invalid layout";
       return false;
     }
-
     frame = media::VideoFrame::WrapExternalYuvDataWithLayout(
         *layout, visible_rect, natural_size, addr[0], addr[1], addr[2],
         timestamp);
-    if (frame) {
-      frame->BackWithOwnedSharedMemory(std::move(region), std::move(mapping));
-    }
+    frame->BackWithOwnedSharedMemory(std::move(region), std::move(mapping));
   } else if (data.is_gpu_memory_buffer_data()) {
     media::mojom::GpuMemoryBufferVideoFrameDataDataView gpu_memory_buffer_data;
     data.GetGpuMemoryBufferDataDataView(&gpu_memory_buffer_data);
@@ -316,9 +313,8 @@ bool StructTraits<media::mojom::VideoFrameDataView,
     return false;
   }
 
-  if (!frame) {
+  if (!frame)
     return false;
-  }
 
   media::VideoFrameMetadata metadata;
   if (!input.ReadMetadata(&metadata))

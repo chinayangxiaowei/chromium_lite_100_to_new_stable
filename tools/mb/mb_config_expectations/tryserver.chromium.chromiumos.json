@@ -2,6 +2,7 @@
   "chromeos-amd64-generic-cfi-thin-lto-rel": {
     "args_file": "//build/args/chromeos/amd64-generic.gni",
     "gn_args": {
+      "also_build_lacros_chrome_for_architecture": "amd64",
       "dcheck_always_on": false,
       "is_cfi": true,
       "is_chromeos_device": true,
@@ -35,6 +36,7 @@
   "chromeos-amd64-generic-rel-rts": {
     "args_file": "//build/args/chromeos/amd64-generic.gni",
     "gn_args": {
+      "also_build_lacros_chrome_for_architecture": "amd64",
       "dcheck_always_on": false,
       "is_chromeos_device": true,
       "ozone_platform_headless": true,
@@ -179,7 +181,7 @@
       "is_debug": false,
       "ozone_platform_headless": true,
       "target_os": "chromeos",
-      "use_remoteexec": true
+      "use_goma": true
     }
   },
   "lacros-amd64-generic-rel-skylab-fyi": {
@@ -192,7 +194,7 @@
       "is_skylab": true,
       "ozone_platform_headless": true,
       "target_os": "chromeos",
-      "use_remoteexec": true
+      "use_goma": true
     }
   },
   "lacros-arm-generic-rel": {
@@ -216,7 +218,7 @@
       "is_debug": false,
       "ozone_platform_headless": true,
       "target_os": "chromeos",
-      "use_remoteexec": true
+      "use_goma": true
     }
   },
   "lacros-arm64-generic-rel-skylab-fyi": {

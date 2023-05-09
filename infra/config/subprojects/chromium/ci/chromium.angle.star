@@ -4,7 +4,7 @@
 """Definitions of builders in the chromium.angle builder group."""
 
 load("//lib/args.star", "args")
-load("//lib/builders.star", "goma", "reclient", "sheriff_rotations", "xcode")
+load("//lib/builders.star", "reclient", "sheriff_rotations", "xcode")
 load("//lib/builder_config.star", "builder_config")
 load("//lib/ci.star", "ci")
 load("//lib/consoles.star", "consoles")
@@ -15,9 +15,6 @@ ci.defaults.set(
     pool = ci.gpu.POOL,
     sheriff_rotations = sheriff_rotations.ANGLE,
     execution_timeout = ci.DEFAULT_EXECUTION_TIMEOUT,
-
-    # TODO(crbug.com/1362440): remove this.
-    omit_python2 = False,
     properties = {
         "perf_dashboard_machine_group": "ChromiumANGLE",
     },
@@ -44,6 +41,24 @@ consoles.console_view(
 
 ci.gpu.linux_builder(
     name = "android-angle-chromium-arm64-builder",
+    builder_spec = builder_config.builder_spec(
+        gclient_config = builder_config.gclient_config(
+            config = "chromium",
+            apply_configs = [
+                "android",
+                "angle_top_of_tree",
+            ],
+        ),
+        chromium_config = builder_config.chromium_config(
+            config = "android",
+            build_config = builder_config.build_config.RELEASE,
+            target_bits = 64,
+        ),
+        android_config = builder_config.android_config(
+            config = "main_builder_mb",
+        ),
+        build_gs_bucket = "chromium-angle-archive",
+    ),
     console_view_entry = consoles.console_view_entry(
         category = "Android|Builder|Chromium",
         short_name = "arm64",
@@ -53,6 +68,26 @@ ci.gpu.linux_builder(
 ci.thin_tester(
     name = "android-angle-chromium-arm64-nexus5x",
     triggered_by = ["android-angle-chromium-arm64-builder"],
+    builder_spec = builder_config.builder_spec(
+        execution_mode = builder_config.execution_mode.TEST,
+        gclient_config = builder_config.gclient_config(
+            config = "chromium",
+            apply_configs = [
+                "android",
+                "angle_top_of_tree",
+            ],
+        ),
+        chromium_config = builder_config.chromium_config(
+            config = "android",
+            build_config = builder_config.build_config.RELEASE,
+            target_bits = 64,
+        ),
+        android_config = builder_config.android_config(
+            config = "main_builder_mb",
+        ),
+        build_gs_bucket = "chromium-angle-archive",
+        run_tests_serially = True,
+    ),
     sheriff_rotations = args.ignore_default(None),
     console_view_entry = consoles.console_view_entry(
         category = "Android|Nexus5X|Chromium",
@@ -62,16 +97,51 @@ ci.thin_tester(
 
 ci.gpu.linux_builder(
     name = "fuchsia-angle-builder",
+    builder_spec = builder_config.builder_spec(
+        gclient_config = builder_config.gclient_config(
+            config = "chromium",
+            apply_configs = [
+                "angle_internal",
+                "angle_top_of_tree",
+                "fuchsia",
+            ],
+        ),
+        chromium_config = builder_config.chromium_config(
+            config = "chromium",
+            apply_configs = [
+                "mb",
+            ],
+            build_config = builder_config.build_config.RELEASE,
+            target_bits = 64,
+        ),
+        build_gs_bucket = "chromium-angle-archive",
+    ),
     console_view_entry = consoles.console_view_entry(
         category = "Fuchsia|Builder|ANGLE",
         short_name = "x64",
     ),
-    goma_backend = goma.backend.RBE_PROD,
-    reclient_instance = None,
 )
 
 ci.gpu.linux_builder(
     name = "linux-angle-chromium-builder",
+    builder_spec = builder_config.builder_spec(
+        gclient_config = builder_config.gclient_config(
+            config = "chromium",
+            apply_configs = [
+                "angle_top_of_tree",
+            ],
+        ),
+        chromium_config = builder_config.chromium_config(
+            config = "chromium",
+            apply_configs = [
+                "mb",
+            ],
+            build_config = builder_config.build_config.RELEASE,
+            target_bits = 64,
+            target_platform = builder_config.target_platform.LINUX,
+        ),
+        build_gs_bucket = "chromium-angle-archive",
+    ),
     console_view_entry = consoles.console_view_entry(
         category = "Linux|Builder|Chromium",
         short_name = "x64",
@@ -81,6 +151,26 @@ ci.gpu.linux_builder(
 ci.thin_tester(
     name = "linux-angle-chromium-intel",
     triggered_by = ["linux-angle-chromium-builder"],
+    builder_spec = builder_config.builder_spec(
+        execution_mode = builder_config.execution_mode.TEST,
+        gclient_config = builder_config.gclient_config(
+            config = "chromium",
+            apply_configs = [
+                "angle_top_of_tree",
+            ],
+        ),
+        chromium_config = builder_config.chromium_config(
+            config = "chromium",
+            apply_configs = [
+                "mb",
+            ],
+            build_config = builder_config.build_config.RELEASE,
+            target_bits = 64,
+            target_platform = builder_config.target_platform.LINUX,
+        ),
+        build_gs_bucket = "chromium-angle-archive",
+        run_tests_serially = True,
+    ),
     console_view_entry = consoles.console_view_entry(
         category = "Linux|Intel|Chromium",
         short_name = "x64",
@@ -90,6 +180,26 @@ ci.thin_tester(
 ci.thin_tester(
     name = "linux-angle-chromium-nvidia",
     triggered_by = ["linux-angle-chromium-builder"],
+    builder_spec = builder_config.builder_spec(
+        execution_mode = builder_config.execution_mode.TEST,
+        gclient_config = builder_config.gclient_config(
+            config = "chromium",
+            apply_configs = [
+                "angle_top_of_tree",
+            ],
+        ),
+        chromium_config = builder_config.chromium_config(
+            config = "chromium",
+            apply_configs = [
+                "mb",
+            ],
+            build_config = builder_config.build_config.RELEASE,
+            target_bits = 64,
+            target_platform = builder_config.target_platform.LINUX,
+        ),
+        build_gs_bucket = "chromium-angle-archive",
+        run_tests_serially = True,
+    ),
     console_view_entry = consoles.console_view_entry(
         category = "Linux|NVIDIA|Chromium",
         short_name = "x64",
@@ -98,6 +208,24 @@ ci.thin_tester(
 
 ci.gpu.mac_builder(
     name = "mac-angle-chromium-builder",
+    builder_spec = builder_config.builder_spec(
+        gclient_config = builder_config.gclient_config(
+            config = "chromium",
+            apply_configs = [
+                "angle_top_of_tree",
+            ],
+        ),
+        chromium_config = builder_config.chromium_config(
+            config = "chromium",
+            apply_configs = [
+                "mb",
+            ],
+            build_config = builder_config.build_config.RELEASE,
+            target_bits = 64,
+            target_platform = builder_config.target_platform.MAC,
+        ),
+        build_gs_bucket = "chromium-angle-archive",
+    ),
     console_view_entry = consoles.console_view_entry(
         category = "Mac|Builder|Chromium",
         short_name = "x64",
@@ -107,6 +235,26 @@ ci.gpu.mac_builder(
 ci.thin_tester(
     name = "mac-angle-chromium-amd",
     triggered_by = ["mac-angle-chromium-builder"],
+    builder_spec = builder_config.builder_spec(
+        execution_mode = builder_config.execution_mode.TEST,
+        gclient_config = builder_config.gclient_config(
+            config = "chromium",
+            apply_configs = [
+                "angle_top_of_tree",
+            ],
+        ),
+        chromium_config = builder_config.chromium_config(
+            config = "chromium",
+            apply_configs = [
+                "mb",
+            ],
+            build_config = builder_config.build_config.RELEASE,
+            target_bits = 64,
+            target_platform = builder_config.target_platform.MAC,
+        ),
+        build_gs_bucket = "chromium-angle-archive",
+        run_tests_serially = True,
+    ),
     console_view_entry = consoles.console_view_entry(
         category = "Mac|AMD|Chromium",
         short_name = "x64",
@@ -116,6 +264,26 @@ ci.thin_tester(
 ci.thin_tester(
     name = "mac-angle-chromium-intel",
     triggered_by = ["mac-angle-chromium-builder"],
+    builder_spec = builder_config.builder_spec(
+        execution_mode = builder_config.execution_mode.TEST,
+        gclient_config = builder_config.gclient_config(
+            config = "chromium",
+            apply_configs = [
+                "angle_top_of_tree",
+            ],
+        ),
+        chromium_config = builder_config.chromium_config(
+            config = "chromium",
+            apply_configs = [
+                "mb",
+            ],
+            build_config = builder_config.build_config.RELEASE,
+            target_bits = 64,
+            target_platform = builder_config.target_platform.MAC,
+        ),
+        build_gs_bucket = "chromium-angle-archive",
+        run_tests_serially = True,
+    ),
     console_view_entry = consoles.console_view_entry(
         category = "Mac|Intel|Chromium",
         short_name = "x64",
@@ -184,6 +352,24 @@ ci.thin_tester(
 
 ci.gpu.windows_builder(
     name = "win-angle-chromium-x64-builder",
+    builder_spec = builder_config.builder_spec(
+        gclient_config = builder_config.gclient_config(
+            config = "chromium",
+            apply_configs = [
+                "angle_top_of_tree",
+            ],
+        ),
+        chromium_config = builder_config.chromium_config(
+            config = "chromium",
+            apply_configs = [
+                "mb",
+            ],
+            build_config = builder_config.build_config.RELEASE,
+            target_bits = 64,
+            target_platform = builder_config.target_platform.WIN,
+        ),
+        build_gs_bucket = "chromium-angle-archive",
+    ),
     console_view_entry = consoles.console_view_entry(
         category = "Windows|Builder|Chromium",
         short_name = "x64",
@@ -194,6 +380,26 @@ ci.gpu.windows_builder(
 ci.thin_tester(
     name = "win10-angle-chromium-x64-intel",
     triggered_by = ["win-angle-chromium-x64-builder"],
+    builder_spec = builder_config.builder_spec(
+        execution_mode = builder_config.execution_mode.TEST,
+        gclient_config = builder_config.gclient_config(
+            config = "chromium",
+            apply_configs = [
+                "angle_top_of_tree",
+            ],
+        ),
+        chromium_config = builder_config.chromium_config(
+            config = "chromium",
+            apply_configs = [
+                "mb",
+            ],
+            build_config = builder_config.build_config.RELEASE,
+            target_bits = 64,
+            target_platform = builder_config.target_platform.WIN,
+        ),
+        build_gs_bucket = "chromium-angle-archive",
+        run_tests_serially = True,
+    ),
     console_view_entry = consoles.console_view_entry(
         category = "Windows|Intel|Chromium",
         short_name = "x64",
@@ -203,6 +409,26 @@ ci.thin_tester(
 ci.thin_tester(
     name = "win10-angle-chromium-x64-nvidia",
     triggered_by = ["win-angle-chromium-x64-builder"],
+    builder_spec = builder_config.builder_spec(
+        execution_mode = builder_config.execution_mode.TEST,
+        gclient_config = builder_config.gclient_config(
+            config = "chromium",
+            apply_configs = [
+                "angle_top_of_tree",
+            ],
+        ),
+        chromium_config = builder_config.chromium_config(
+            config = "chromium",
+            apply_configs = [
+                "mb",
+            ],
+            build_config = builder_config.build_config.RELEASE,
+            target_bits = 64,
+            target_platform = builder_config.target_platform.WIN,
+        ),
+        build_gs_bucket = "chromium-angle-archive",
+        run_tests_serially = True,
+    ),
     console_view_entry = consoles.console_view_entry(
         category = "Windows|NVIDIA|Chromium",
         short_name = "x64",
@@ -211,6 +437,24 @@ ci.thin_tester(
 
 ci.gpu.windows_builder(
     name = "win-angle-chromium-x86-builder",
+    builder_spec = builder_config.builder_spec(
+        gclient_config = builder_config.gclient_config(
+            config = "chromium",
+            apply_configs = [
+                "angle_top_of_tree",
+            ],
+        ),
+        chromium_config = builder_config.chromium_config(
+            config = "chromium",
+            apply_configs = [
+                "mb",
+            ],
+            build_config = builder_config.build_config.RELEASE,
+            target_bits = 32,
+            target_platform = builder_config.target_platform.WIN,
+        ),
+        build_gs_bucket = "chromium-angle-archive",
+    ),
     console_view_entry = consoles.console_view_entry(
         category = "Windows|Builder|Chromium",
         short_name = "x86",

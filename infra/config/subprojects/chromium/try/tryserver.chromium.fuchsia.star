@@ -16,13 +16,10 @@ try_.defaults.set(
     pool = try_.DEFAULT_POOL,
     cores = 8,
     os = os.LINUX_DEFAULT,
-    compilator_cores = 16,
+    compilator_cores = 32,
     compilator_goma_jobs = goma.jobs.J150,
     execution_timeout = try_.DEFAULT_EXECUTION_TIMEOUT,
     goma_backend = goma.backend.RBE_PROD,
-
-    # TODO(crbug.com/1362440): remove this.
-    omit_python2 = False,
     orchestrator_cores = 2,
     service_account = try_.DEFAULT_SERVICE_ACCOUNT,
 )
@@ -30,16 +27,6 @@ try_.defaults.set(
 consoles.list_view(
     name = "tryserver.chromium.fuchsia",
     branch_selector = branches.selector.FUCHSIA_BRANCHES,
-)
-
-# TODO(crbug.com/1294938): Remove this bot after the soft CQ transition.
-try_.builder(
-    name = "fuchsia-arm64-cast",
-    branch_selector = branches.selector.FUCHSIA_BRANCHES,
-    mirrors = [
-        "ci/fuchsia-arm64-cast-receiver-rel",
-    ],
-    main_list_view = "try",
 )
 
 try_.builder(
@@ -134,22 +121,6 @@ try_.builder(
     mirrors = ["ci/fuchsia-fyi-x64-dbg"],
 )
 
-# TODO(crbug.com/1294938): Remove this bot after the soft CQ transition.
-try_.builder(
-    name = "fuchsia-x64-cast",
-    branch_selector = branches.selector.FUCHSIA_BRANCHES,
-    mirrors = [
-        "ci/fuchsia-x64-cast-receiver-rel",
-    ],
-    builderless = not settings.is_main,
-    experiments = {
-        "enable_weetbix_queries": 100,
-        "weetbix.retry_weak_exonerations": 100,
-        "weetbix.enable_weetbix_exonerations": 100,
-    },
-    main_list_view = "try",
-)
-
 try_.builder(
     name = "fuchsia-x64-cast-receiver-rel",
     branch_selector = branches.selector.FUCHSIA_BRANCHES,
@@ -164,6 +135,30 @@ try_.builder(
     },
     main_list_view = "try",
     tryjob = try_.job(),
+)
+
+# TODO(crbug.com/1298111): Replace real builder above once verified
+try_.orchestrator_builder(
+    name = "fuchsia-x64-cast-receiver-rel-orchestrator",
+    branch_selector = branches.selector.FUCHSIA_BRANCHES,
+    mirrors = [
+        "ci/fuchsia-x64-cast-receiver-rel",
+    ],
+    compilator = "fuchsia-x64-cast-receiver-rel-compilator",
+    experiments = {
+        "enable_weetbix_queries": 100,
+        "weetbix.retry_weak_exonerations": 100,
+        "weetbix.enable_weetbix_exonerations": 100,
+    },
+    main_list_view = "try",
+)
+
+try_.compilator_builder(
+    name = "fuchsia-x64-cast-receiver-rel-compilator",
+    branch_selector = branches.selector.FUCHSIA_BRANCHES,
+    # TODO(crbug.com/1298111): Change to 16
+    cores = 8,
+    main_list_view = "try",
 )
 
 try_.builder(
@@ -190,36 +185,4 @@ try_.builder(
 try_.builder(
     name = "fuchsia-x64-workstation",
     mirrors = ["ci/fuchsia-x64-workstation"],
-)
-
-# TODO(crbug.com/1294938): Remove this bot after the soft CQ transition.
-try_.builder(
-    name = "fuchsia_arm64",
-    branch_selector = branches.selector.FUCHSIA_BRANCHES,
-    mirrors = [
-        "ci/fuchsia-arm64-rel",
-    ],
-    builderless = not settings.is_main,
-    experiments = {
-        "enable_weetbix_queries": 100,
-        "weetbix.retry_weak_exonerations": 100,
-        "weetbix.enable_weetbix_exonerations": 100,
-    },
-    main_list_view = "try",
-)
-
-# TODO(crbug.com/1294938): Remove this bot after the soft CQ transition.
-try_.builder(
-    name = "fuchsia_x64",
-    branch_selector = branches.selector.FUCHSIA_BRANCHES,
-    mirrors = [
-        "ci/fuchsia-x64-rel",
-    ],
-    builderless = not settings.is_main,
-    experiments = {
-        "enable_weetbix_queries": 100,
-        "weetbix.retry_weak_exonerations": 100,
-        "weetbix.enable_weetbix_exonerations": 100,
-    },
-    main_list_view = "try",
 )

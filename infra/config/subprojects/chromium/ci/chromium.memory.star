@@ -20,9 +20,6 @@ ci.defaults.set(
     tree_closing = True,
     main_console_view = "main",
     execution_timeout = ci.DEFAULT_EXECUTION_TIMEOUT,
-
-    # TODO(crbug.com/1362440): remove this.
-    omit_python2 = False,
     reclient_instance = reclient.instance.DEFAULT_TRUSTED,
     reclient_jobs = reclient.jobs.HIGH_JOBS_FOR_CI,
     service_account = ci.DEFAULT_SERVICE_ACCOUNT,
@@ -639,61 +636,4 @@ ci.builder(
         short_name = "asn",
     ),
     xcode = xcode.x14main,
-)
-
-# TODO(crbug.com/1340327): Remove after experiment is over.
-linux_memory_builder(
-    name = "Linux ASan LSan Low Symbols FYI Builder",
-    branch_selector = branches.selector.MAIN,
-    builder_spec = builder_config.builder_spec(
-        gclient_config = builder_config.gclient_config(
-            config = "chromium",
-        ),
-        chromium_config = builder_config.chromium_config(
-            config = "chromium_asan",
-            apply_configs = [
-                "lsan",
-                "mb",
-            ],
-            build_config = builder_config.build_config.RELEASE,
-            target_bits = 64,
-        ),
-    ),
-    os = os.LINUX_BIONIC,
-    ssd = True,
-    sheriff_rotations = args.ignore_default(None),
-    tree_closing = False,
-    console_view_entry = consoles.console_view_entry(
-        category = "linux|asan lsan fyi",
-        short_name = "bld",
-    ),
-)
-
-linux_memory_builder(
-    name = "Linux ASan LSan Low Symbols FYI Tests (1)",
-    branch_selector = branches.selector.MAIN,
-    triggered_by = ["ci/Linux ASan LSan Low Symbols FYI Builder"],
-    builder_spec = builder_config.builder_spec(
-        execution_mode = builder_config.execution_mode.TEST,
-        gclient_config = builder_config.gclient_config(
-            config = "chromium",
-        ),
-        chromium_config = builder_config.chromium_config(
-            config = "chromium_asan",
-            apply_configs = [
-                "lsan",
-                "mb",
-            ],
-            build_config = builder_config.build_config.RELEASE,
-            target_bits = 64,
-        ),
-    ),
-    os = os.LINUX_BIONIC,
-    sheriff_rotations = args.ignore_default(None),
-    tree_closing = False,
-    console_view_entry = consoles.console_view_entry(
-        category = "linux|asan lsan fyi",
-        short_name = "tst",
-    ),
-    reclient_instance = None,
 )

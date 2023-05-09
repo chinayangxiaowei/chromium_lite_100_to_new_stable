@@ -16,6 +16,7 @@ import android.os.Message;
 import android.os.SystemClock;
 import android.text.TextUtils;
 import android.text.format.DateUtils;
+import android.util.FloatProperty;
 import android.view.HapticFeedbackConstants;
 import android.view.MotionEvent;
 import android.view.View;
@@ -43,7 +44,6 @@ import org.chromium.chrome.browser.compositor.layouts.phone.stack.StackScroller;
 import org.chromium.chrome.browser.compositor.overlays.strip.TabLoadTracker.TabLoadTrackerCallback;
 import org.chromium.chrome.browser.flags.ChromeFeatureList;
 import org.chromium.chrome.browser.layouts.animation.CompositorAnimator;
-import org.chromium.chrome.browser.layouts.animation.FloatProperty;
 import org.chromium.chrome.browser.layouts.components.VirtualView;
 import org.chromium.chrome.browser.tab.Tab;
 import org.chromium.chrome.browser.tabmodel.TabCreator;
@@ -105,12 +105,13 @@ public class StripLayoutHelper implements StripLayoutTab.StripLayoutTabDelegate 
     private static final int ANIM_TAB_CREATED_MS = 150;
     private static final int ANIM_TAB_CLOSED_MS = 150;
     private static final int ANIM_TAB_RESIZE_MS = 250;
-    private static final int NEW_TAB_BUTTON_OFFSET_MOVE_MS = 250;
     private static final int ANIM_TAB_DRAW_X_MS = 250;
     private static final int ANIM_TAB_SELECTION_DELAY = 150;
     private static final int ANIM_TAB_MOVE_MS = 125;
     private static final int ANIM_TAB_SLIDE_OUT_MS = 250;
     private static final int ANIM_TAB_DIM_MS = 150;
+    private static final int ANIM_BUTTONS_FADE_MS = 150;
+    private static final int NEW_TAB_BUTTON_OFFSET_MOVE_MS = 250;
     private static final long INVALID_TIME = 0L;
     static final long DROP_INTO_GROUP_MS = 300L;
 
@@ -1537,11 +1538,8 @@ public class StripLayoutHelper implements StripLayoutTab.StripLayoutTabDelegate 
     }
 
     private CompositorAnimator updateNewTabButtonState(boolean animate) {
-        // 1. Don't display the new tab button if we're in reorder mode.
-        if (mInReorderMode || mStripTabs.length == 0) {
-            mNewTabButton.setVisible(false);
-            return null;
-        }
+        // 1. The new tab button is faded out/in when entering/exiting reorder mode.
+        if (mInReorderMode || mStripTabs.length == 0) return null;
 
         // 2. Get offset from strip stacker.
         float offset = mStripStacker.computeNewTabButtonOffset(mStripTabs, mTabOverlapWidth,
@@ -1747,8 +1745,9 @@ public class StripLayoutHelper implements StripLayoutTab.StripLayoutTabDelegate 
         TabModelUtils.setIndex(
                 mModel, TabModelUtils.getTabIndexById(mModel, mInteractingTab.getId()), false);
 
-        // 5. Dim the background tabs.
+        // 5. Dim the background tabs and fade-out the new tab & model selector buttons.
         setBackgroundTabsDimmed(true);
+        setCompositorButtonsVisible(false);
 
         // 6. Fast expand to make sure this tab is visible. If tabs are not cascaded, the selected
         //    tab will already be visible, so there's no need to fast expand to make it visible.
@@ -1782,8 +1781,9 @@ public class StripLayoutHelper implements StripLayoutTab.StripLayoutTabDelegate 
                 ANIM_TAB_MOVE_MS);
         mRunningAnimator.start();
 
-        // 3. Un-dim the background tabs.
+        // 3. Un-dim the background tabs and fade-in the new tab & model selector buttons.
         setBackgroundTabsDimmed(false);
+        setCompositorButtonsVisible(true);
 
         // 4. Clear any tab group margins if they are enabled.
         if (TabUiFeatureUtilities.isTabletTabGroupsEnabled(mContext)) resetTabGroupMargins();
@@ -1945,6 +1945,21 @@ public class StripLayoutHelper implements StripLayoutTab.StripLayoutTabDelegate 
         startAnimationList(animationList, getTabGroupMarginAnimatorListener(true));
     }
 
+    private void setCompositorButtonsVisible(boolean visible) {
+        float endOpacity = visible ? 1.f : 0.f;
+
+        CompositorAnimator
+                .ofFloatProperty(mUpdateHost.getAnimationHandler(), mNewTabButton,
+                        CompositorButton.OPACITY, mNewTabButton.getOpacity(), endOpacity,
+                        ANIM_BUTTONS_FADE_MS)
+                .start();
+        CompositorAnimator
+                .ofFloatProperty(mUpdateHost.getAnimationHandler(), mModelSelectorButton,
+                        CompositorButton.OPACITY, mModelSelectorButton.getOpacity(), endOpacity,
+                        ANIM_BUTTONS_FADE_MS)
+                .start();
+    }
+
     private void setTabDimmed(StripLayoutTab tab, boolean dimmed) {
         if (tab != mInteractingTab) {
             float brightness =
@@ -1981,8 +1996,9 @@ public class StripLayoutHelper implements StripLayoutTab.StripLayoutTabDelegate 
     }
 
     /**
-     * This method determines the new index for the interacting tab, based on whether or not it has
-     * met the conditions to be moved out of its tab group.
+     * This method checks whether or not interacting tab has met the conditions to be moved out of 
+     * its tab group. It moves tab out of group if so and returns the new index for the interacting 
+     * tab.
      *
      * @param offset The distance the interacting tab has been dragged from its ideal x-position.
      * @param curIndex The index of the interacting tab.
@@ -1997,7 +2013,7 @@ public class StripLayoutHelper implements StripLayoutTab.StripLayoutTabDelegate 
 
             setTabGroupDimmed(mTabGroupModelFilter.getRootId(getTabById(tabId)), true);
             mTabGroupModelFilter.moveTabOutOfGroupInDirection(tabId, towardEnd);
-
+            RecordUserAction.record("MobileToolbarReorderTab.TabRemovedFromGroup");
             return curIndex;
         }
 
@@ -2005,8 +2021,9 @@ public class StripLayoutHelper implements StripLayoutTab.StripLayoutTabDelegate 
     }
 
     /**
-     * This method determines the new index for the interacting tab, based on whether or not it has
-     * met the conditions to be merged into a neighboring tab group.
+     * This method checks whether or not interacting tab has met the conditions to be merged into a 
+     * neighbouring tab group. It merges tab to group if so and returns the new index for the 
+     * interacting tab.
      *
      * @param offset The distance the interacting tab has been dragged from its ideal x-position.
      * @param curIndex The index of the interacting tab.

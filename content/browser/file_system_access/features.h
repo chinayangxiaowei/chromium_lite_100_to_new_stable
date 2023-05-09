@@ -15,6 +15,7 @@ namespace content::features {
 
 // Alphabetical:
 CONTENT_EXPORT BASE_DECLARE_FEATURE(kFileSystemAccessDragAndDropCheckBlocklist);
+CONTENT_EXPORT BASE_DECLARE_FEATURE(kFileSystemAccessDoNotOverwriteOnMove);
 
 }  // namespace content::features
 

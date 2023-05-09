@@ -14,9 +14,6 @@ try_.defaults.set(
     builderless = True,
     execution_timeout = try_.DEFAULT_EXECUTION_TIMEOUT,
     goma_backend = goma.backend.RBE_PROD,
-
-    # TODO(crbug.com/1362440): remove this.
-    omit_python2 = False,
     service_account = try_.DEFAULT_SERVICE_ACCOUNT,
 )
 

@@ -14,7 +14,7 @@
 #include "base/metrics/user_metrics.h"
 #include "base/metrics/user_metrics_action.h"
 #include "base/observer_list.h"
-#include "base/stl_util.h"
+#include "base/ranges/algorithm.h"
 #include "base/threading/sequenced_task_runner_handle.h"
 #include "components/autofill_assistant/browser/public/runtime_manager.h"
 #include "components/back_forward_cache/back_forward_cache_disable.h"
@@ -670,7 +670,10 @@ bool PermissionRequestManager::RecreateView() {
   if (!view_) {
     current_request_prompt_disposition_ =
         PermissionPromptDisposition::NONE_VISIBLE;
-    FinalizeCurrentRequests(PermissionAction::IGNORED);
+    if (ShouldDropCurrentRequestIfCannotShowQuietly()) {
+      FinalizeCurrentRequests(PermissionAction::IGNORED);
+    }
+    NotifyPromptRecreateFailed();
     return false;
   }
 
@@ -683,7 +686,6 @@ PermissionRequestManager::PermissionRequestManager(
     : content::WebContentsObserver(web_contents),
       content::WebContentsUserData<PermissionRequestManager>(*web_contents),
       view_factory_(base::BindRepeating(&PermissionPrompt::Create)),
-      view_(nullptr),
       tab_is_hidden_(web_contents->GetVisibility() ==
                      content::Visibility::HIDDEN),
       auto_response_for_test_(NONE),
@@ -788,8 +790,10 @@ void PermissionRequestManager::ShowPrompt() {
   DCHECK(web_contents()->IsDocumentOnLoadCompletedInPrimaryMainFrame());
   DCHECK(current_request_ui_to_use_);
 
-  if (tab_is_hidden_)
+  if (tab_is_hidden_) {
+    NotifyPromptCreationFailedHiddenTab();
     return;
+  }
 
   if (!ReprioritizeCurrentRequestIfNeeded())
     return;
@@ -978,7 +982,7 @@ PermissionRequest* PermissionRequestManager::GetExistingRequest(
 void PermissionRequestManager::PermissionGrantedIncludingDuplicates(
     PermissionRequest* request,
     bool is_one_time) {
-  DCHECK_EQ(1ul, base::STLCount(requests_, request) +
+  DCHECK_EQ(1ul, base::ranges::count(requests_, request) +
                      pending_permission_requests_.Count(request))
       << "Only requests in [pending_permission_]requests_ can have duplicates";
   request->PermissionGranted(is_one_time);
@@ -989,7 +993,7 @@ void PermissionRequestManager::PermissionGrantedIncludingDuplicates(
 
 void PermissionRequestManager::PermissionDeniedIncludingDuplicates(
     PermissionRequest* request) {
-  DCHECK_EQ(1ul, base::STLCount(requests_, request) +
+  DCHECK_EQ(1ul, base::ranges::count(requests_, request) +
                      pending_permission_requests_.Count(request))
       << "Only requests in [pending_permission_]requests_ can have duplicates";
   request->PermissionDenied();
@@ -1000,7 +1004,7 @@ void PermissionRequestManager::PermissionDeniedIncludingDuplicates(
 
 void PermissionRequestManager::CancelledIncludingDuplicates(
     PermissionRequest* request) {
-  DCHECK_EQ(1ul, base::STLCount(requests_, request) +
+  DCHECK_EQ(1ul, base::ranges::count(requests_, request) +
                      pending_permission_requests_.Count(request))
       << "Only requests in [pending_permission_]requests_ can have duplicates";
   request->Cancelled();
@@ -1011,7 +1015,7 @@ void PermissionRequestManager::CancelledIncludingDuplicates(
 
 void PermissionRequestManager::RequestFinishedIncludingDuplicates(
     PermissionRequest* request) {
-  DCHECK_EQ(1ul, base::STLCount(requests_, request) +
+  DCHECK_EQ(1ul, base::ranges::count(requests_, request) +
                      pending_permission_requests_.Count(request))
       << "Only requests in [pending_permission_]requests_ can have duplicates";
   request->RequestFinished();
@@ -1051,6 +1055,20 @@ bool PermissionRequestManager::IsRequestInProgress() const {
   return !requests_.empty();
 }
 
+bool PermissionRequestManager::CanRestorePrompt() {
+#if BUILDFLAG(IS_ANDROID)
+  return false;
+#else
+  return IsRequestInProgress() &&
+         current_request_prompt_disposition_.has_value() && !view_;
+#endif
+}
+
+void PermissionRequestManager::RestorePrompt() {
+  if (CanRestorePrompt())
+    ShowPrompt();
+}
+
 bool PermissionRequestManager::ShouldDropCurrentRequestIfCannotShowQuietly()
     const {
   absl::optional<QuietUiReason> quiet_ui_reason = ReasonForUsingQuietUi();
@@ -1079,6 +1097,16 @@ void PermissionRequestManager::NotifyPromptAdded() {
 void PermissionRequestManager::NotifyPromptRemoved() {
   for (Observer& observer : observer_list_)
     observer.OnPromptRemoved();
+}
+
+void PermissionRequestManager::NotifyPromptRecreateFailed() {
+  for (Observer& observer : observer_list_)
+    observer.OnPromptRecreateViewFailed();
+}
+
+void PermissionRequestManager::NotifyPromptCreationFailedHiddenTab() {
+  for (Observer& observer : observer_list_)
+    observer.OnPromptCreationFailedHiddenTab();
 }
 
 void PermissionRequestManager::NotifyRequestDecided(

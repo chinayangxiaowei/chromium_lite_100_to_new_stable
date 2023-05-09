@@ -9,7 +9,8 @@
 #include <vector>
 
 #include "base/memory/raw_ptr.h"
-#include "base/memory/weak_ptr.h"
+#include "base/memory/raw_ref.h"
+#include "base/time/time.h"
 #include "chrome/browser/enterprise/connectors/common.h"
 #include "chrome/browser/safe_browsing/cloud_content_scanning/binary_upload_service.h"
 #include "chrome/browser/safe_browsing/cloud_content_scanning/deep_scanning_utils.h"
@@ -81,9 +82,10 @@ class RequestHandlerBase {
   // Returns the BinaryUploadService used to upload content for deep scanning.
   safe_browsing::BinaryUploadService* GetBinaryUploadService();
 
-  base::WeakPtr<safe_browsing::BinaryUploadService> upload_service_ = nullptr;
+  base::raw_ptr<safe_browsing::BinaryUploadService> upload_service_ = nullptr;
   base::raw_ptr<Profile> profile_ = nullptr;
-  const enterprise_connectors::AnalysisSettings& analysis_settings_;
+  const raw_ref<const enterprise_connectors::AnalysisSettings>
+      analysis_settings_;
   GURL url_;
   std::string source_;
   std::string destination_;

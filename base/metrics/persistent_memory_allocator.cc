@@ -531,10 +531,7 @@ size_t PersistentMemoryAllocator::GetAllocSize(Reference ref) const {
   uint32_t size = block->size;
   // Header was verified by GetBlock() but a malicious actor could change
   // the value between there and here. Check it again.
-  uint32_t total_size;
-  if (size <= sizeof(BlockHeader) ||
-      !base::CheckAdd(ref, size).AssignIfValid(&total_size) ||
-      total_size > mem_size_) {
+  if (size <= sizeof(BlockHeader) || ref + size > mem_size_) {
     SetCorrupt();
     return 0;
   }
@@ -884,13 +881,8 @@ PersistentMemoryAllocator::GetBlock(Reference ref,
   if (ref % kAllocAlignment != 0)
     return nullptr;
   size += sizeof(BlockHeader);
-  uint32_t total_size;
-  if (!base::CheckAdd(ref, size).AssignIfValid(&total_size)) {
+  if (ref + size > mem_size_)
     return nullptr;
-  }
-  if (total_size > mem_size_) {
-    return nullptr;
-  }
 
   // Validation of referenced block-header.
   if (!free_ok) {
@@ -900,13 +892,8 @@ PersistentMemoryAllocator::GetBlock(Reference ref,
       return nullptr;
     if (block->size < size)
       return nullptr;
-    uint32_t block_size;
-    if (!base::CheckAdd(ref, block->size).AssignIfValid(&block_size)) {
+    if (ref + block->size > mem_size_)
       return nullptr;
-    }
-    if (block_size > mem_size_) {
-      return nullptr;
-    }
     if (type_id != 0 &&
         block->type_id.load(std::memory_order_relaxed) != type_id) {
       return nullptr;

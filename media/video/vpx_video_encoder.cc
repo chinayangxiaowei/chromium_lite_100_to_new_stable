@@ -11,7 +11,6 @@
 #include "base/system/sys_info.h"
 #include "base/time/time.h"
 #include "base/trace_event/trace_event.h"
-#include "media/base/bind_to_current_loop.h"
 #include "media/base/svc_scalability_mode.h"
 #include "media/base/timestamp_constants.h"
 #include "media/base/video_frame.h"
@@ -238,7 +237,7 @@ void VpxVideoEncoder::Initialize(VideoCodecProfile profile,
                                  const Options& options,
                                  OutputCB output_cb,
                                  EncoderStatusCB done_cb) {
-  done_cb = BindToCurrentLoop(std::move(done_cb));
+  done_cb = BindCallbackToCurrentLoopIfNeeded(std::move(done_cb));
   if (codec_) {
     std::move(done_cb).Run(EncoderStatus::Codes::kEncoderInitializeTwice);
     return;
@@ -380,7 +379,7 @@ void VpxVideoEncoder::Initialize(VideoCodecProfile profile,
 
   options_ = options;
   originally_configured_size_ = options.frame_size;
-  output_cb_ = BindToCurrentLoop(std::move(output_cb));
+  output_cb_ = BindCallbackToCurrentLoopIfNeeded(std::move(output_cb));
   codec_ = std::move(codec);
   std::move(done_cb).Run(EncoderStatus::Codes::kOk);
 }
@@ -388,7 +387,7 @@ void VpxVideoEncoder::Initialize(VideoCodecProfile profile,
 void VpxVideoEncoder::Encode(scoped_refptr<VideoFrame> frame,
                              bool key_frame,
                              EncoderStatusCB done_cb) {
-  done_cb = BindToCurrentLoop(std::move(done_cb));
+  done_cb = BindCallbackToCurrentLoopIfNeeded(std::move(done_cb));
   if (!codec_) {
     std::move(done_cb).Run(
         EncoderStatus::Codes::kEncoderInitializeNeverCompleted);
@@ -427,20 +426,12 @@ void VpxVideoEncoder::Encode(scoped_refptr<VideoFrame> frame,
     }
   }
 
-  // Unfortunately libyuv lacks direct NV12 to I010 conversion, and we
-  // have to do an extra conversion to I420.
-  // TODO(https://crbug.com/libyuv/954) Use NV12ToI010() when implemented
-  const bool vp9_p2_needs_nv12_to_i420 =
-      frame->format() == PIXEL_FORMAT_NV12 && profile_ == VP9PROFILE_PROFILE2;
-  const bool needs_conversion_to_i420 =
-      !IsYuvPlanar(frame->format()) || vp9_p2_needs_nv12_to_i420;
-  if (frame->visible_rect().size() != options_.frame_size ||
-      needs_conversion_to_i420) {
-    auto new_pixel_format =
-        needs_conversion_to_i420 ? PIXEL_FORMAT_I420 : frame->format();
+  const bool is_yuv = IsYuvPlanar(frame->format());
+  if (frame->visible_rect().size() != options_.frame_size || !is_yuv) {
     auto resized_frame = frame_pool_.CreateFrame(
-        new_pixel_format, options_.frame_size, gfx::Rect(options_.frame_size),
-        options_.frame_size, frame->timestamp());
+        is_yuv ? frame->format() : PIXEL_FORMAT_I420, options_.frame_size,
+        gfx::Rect(options_.frame_size), options_.frame_size,
+        frame->timestamp());
 
     if (!resized_frame) {
       std::move(done_cb).Run(
@@ -462,7 +453,6 @@ void VpxVideoEncoder::Encode(scoped_refptr<VideoFrame> frame,
 
   switch (profile_) {
     case VP9PROFILE_PROFILE2:
-      DCHECK_EQ(frame->format(), PIXEL_FORMAT_I420);
       // Profile 2 uses 10bit color,
       libyuv::I420ToI010(
           frame->visible_data(VideoFrame::kYPlane),
@@ -571,7 +561,7 @@ void VpxVideoEncoder::Encode(scoped_refptr<VideoFrame> frame,
 void VpxVideoEncoder::ChangeOptions(const Options& options,
                                     OutputCB output_cb,
                                     EncoderStatusCB done_cb) {
-  done_cb = BindToCurrentLoop(std::move(done_cb));
+  done_cb = BindCallbackToCurrentLoopIfNeeded(std::move(done_cb));
   if (!codec_) {
     std::move(done_cb).Run(
         EncoderStatus::Codes::kEncoderInitializeNeverCompleted);
@@ -642,7 +632,7 @@ void VpxVideoEncoder::ChangeOptions(const Options& options,
     codec_config_ = new_config;
     options_ = options;
     if (!output_cb.is_null())
-      output_cb_ = BindToCurrentLoop(std::move(output_cb));
+      output_cb_ = BindCallbackToCurrentLoopIfNeeded(std::move(output_cb));
   } else {
     status = EncoderStatus(EncoderStatus::Codes::kEncoderUnsupportedConfig,
                            "Failed to set new VPX config")
@@ -680,7 +670,7 @@ VpxVideoEncoder::~VpxVideoEncoder() {
 }
 
 void VpxVideoEncoder::Flush(EncoderStatusCB done_cb) {
-  done_cb = BindToCurrentLoop(std::move(done_cb));
+  done_cb = BindCallbackToCurrentLoopIfNeeded(std::move(done_cb));
   if (!codec_) {
     std::move(done_cb).Run(
         EncoderStatus::Codes::kEncoderInitializeNeverCompleted);

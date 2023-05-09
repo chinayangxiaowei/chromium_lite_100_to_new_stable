@@ -5,7 +5,7 @@
 
 load("//lib/branches.star", "branches")
 load("//lib/builder_config.star", "builder_config")
-load("//lib/builders.star", "cpu", "goma", "os", "reclient", "xcode")
+load("//lib/builders.star", "cpu", "goma", "os", "xcode")
 load("//lib/try.star", "try_")
 load("//lib/consoles.star", "consoles")
 
@@ -98,7 +98,9 @@ try_.orchestrator_builder(
         "ci/Mac12 Tests",
         "ci/GPU Mac Builder",
         "ci/Mac Release (Intel)",
-        "ci/Mac Retina Release (AMD)",
+        # TODO(crbug.com/1380184) Once the GPU test capacity situation is
+        # resolved, restore this mirror.
+        # "ci/Mac Retina Release (AMD)",
     ],
     try_settings = builder_config.try_settings(
         rts_config = builder_config.rts_config(
@@ -109,7 +111,7 @@ try_.orchestrator_builder(
     compilator = "mac-rel-compilator",
     coverage_test_types = ["overall", "unit"],
     experiments = {
-        "remove_src_checkout_experiment": 100,
+        "chromium_rts.inverted_rts": 100,
     },
     main_list_view = "try",
     tryjob = try_.job(),
@@ -117,6 +119,26 @@ try_.orchestrator_builder(
     # TODO (crbug.com/1372179): Use orchestrator pool once overloaded test pools
     # are addressed
     #use_orchestrator_pool = True,
+)
+
+try_.orchestrator_builder(
+    name = "mac-rel-inverse-fyi",
+    mirrors = builder_config.copy_from("try/mac-rel"),
+    try_settings = builder_config.try_settings(
+        rts_config = builder_config.rts_config(
+            condition = builder_config.rts_condition.QUICK_RUN_ONLY,
+        ),
+    ),
+    check_for_flakiness = True,
+    compilator = "mac-rel-compilator",
+    coverage_test_types = ["overall", "unit"],
+    experiments = {
+        "chromium_rts.inverted_rts": 100,
+        "chromium_rts.inverted_rts_bail_early": 100,
+    },
+    main_list_view = "try",
+    use_clang_coverage = True,
+    use_orchestrator_pool = True,
 )
 
 try_.compilator_builder(
@@ -303,8 +325,6 @@ ios_builder(
     mirrors = ["ci/ios-m1-simulator"],
     os = os.MAC_DEFAULT,
     cpu = cpu.ARM64,
-    reclient_instance = reclient.instance.DEFAULT_UNTRUSTED,
-    reclient_jobs = reclient.jobs.LOW_JOBS_FOR_CQ,
 )
 
 ios_builder(
@@ -329,9 +349,6 @@ try_.orchestrator_builder(
     compilator = "ios-simulator-compilator",
     coverage_exclude_sources = "ios_test_files_and_test_utils",
     coverage_test_types = ["overall", "unit"],
-    experiments = {
-        "remove_src_checkout_experiment": 100,
-    },
     main_list_view = "try",
     tryjob = try_.job(),
     use_clang_coverage = True,
@@ -399,9 +416,6 @@ ios_builder(
     mirrors = [
         "ci/ios-simulator-noncq",
     ],
-    experiments = {
-        "remove_src_checkout_experiment": 100,
-    },
     tryjob = try_.job(
         location_filters = [
             "third_party/crashpad/crashpad/.+",
@@ -459,28 +473,28 @@ try_.gpu.optional_tests_builder(
     main_list_view = "try",
     tryjob = try_.job(
         location_filters = [
-            "chrome/browser/vr/.+",
-            "content/browser/xr/.+",
-            "content/test/gpu/.+",
-            "gpu/.+",
-            "media/audio/.+",
-            "media/base/.+",
-            "media/capture/.+",
-            "media/filters/.+",
-            "media/gpu/.+",
-            "media/mojo/.+",
-            "media/renderers/.+",
-            "media/video/.+",
-            "services/shape_detection/.+",
-            "testing/buildbot/tryserver.chromium.mac.json",
-            "testing/trigger_scripts/.+",
-            "third_party/blink/renderer/modules/mediastream/.+",
-            "third_party/blink/renderer/modules/webcodecs/.+",
-            "third_party/blink/renderer/modules/webgl/.+",
-            "third_party/blink/renderer/platform/graphics/gpu/.+",
-            "tools/clang/scripts/update.py",
-            "tools/mb/mb_config_expectations/tryserver.chromium.mac.json",
-            "ui/gl/.+",
+            cq.location_filter(path_regexp = "chrome/browser/vr/.+"),
+            cq.location_filter(path_regexp = "content/browser/xr/.+"),
+            cq.location_filter(path_regexp = "content/test/gpu/.+"),
+            cq.location_filter(path_regexp = "gpu/.+"),
+            cq.location_filter(path_regexp = "media/audio/.+"),
+            cq.location_filter(path_regexp = "media/base/.+"),
+            cq.location_filter(path_regexp = "media/capture/.+"),
+            cq.location_filter(path_regexp = "media/filters/.+"),
+            cq.location_filter(path_regexp = "media/gpu/.+"),
+            cq.location_filter(path_regexp = "media/mojo/.+"),
+            cq.location_filter(path_regexp = "media/renderers/.+"),
+            cq.location_filter(path_regexp = "media/video/.+"),
+            cq.location_filter(path_regexp = "services/shape_detection/.+"),
+            cq.location_filter(path_regexp = "testing/buildbot/tryserver.chromium.mac.json"),
+            cq.location_filter(path_regexp = "testing/trigger_scripts/.+"),
+            cq.location_filter(path_regexp = "third_party/blink/renderer/modules/mediastream/.+"),
+            cq.location_filter(path_regexp = "third_party/blink/renderer/modules/webcodecs/.+"),
+            cq.location_filter(path_regexp = "third_party/blink/renderer/modules/webgl/.+"),
+            cq.location_filter(path_regexp = "third_party/blink/renderer/platform/graphics/gpu/.+"),
+            cq.location_filter(path_regexp = "tools/clang/scripts/update.py"),
+            cq.location_filter(path_regexp = "tools/mb/mb_config_expectations/tryserver.chromium.mac.json"),
+            cq.location_filter(path_regexp = "ui/gl/.+"),
         ],
     ),
 )

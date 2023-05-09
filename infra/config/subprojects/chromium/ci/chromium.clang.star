@@ -21,9 +21,6 @@ ci.defaults.set(
     # Naturally the runtime will be ~4-8h on average, depending on config.
     # CFI builds will take even longer - around 11h.
     execution_timeout = 14 * time.hour,
-
-    # TODO(crbug.com/1362440): remove this.
-    omit_python2 = False,
     properties = {
         "perf_dashboard_machine_group": "ChromiumClang",
     },

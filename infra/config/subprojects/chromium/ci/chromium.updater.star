@@ -5,7 +5,7 @@
 
 load("//lib/branches.star", "branches")
 load("//lib/builder_config.star", "builder_config")
-load("//lib/builders.star", "builders", "cpu", "goma", "os", "reclient")
+load("//lib/builders.star", "builders", "cpu", "os", "reclient")
 load("//lib/ci.star", "ci")
 load("//lib/consoles.star", "consoles")
 
@@ -16,10 +16,8 @@ ci.defaults.set(
     cores = 8,
     os = os.LINUX_DEFAULT,
     execution_timeout = ci.DEFAULT_EXECUTION_TIMEOUT,
-    goma_backend = goma.backend.RBE_PROD,
-
-    # TODO(crbug.com/1362440): remove this.
-    omit_python2 = False,
+    reclient_instance = reclient.instance.DEFAULT_TRUSTED,
+    reclient_jobs = reclient.jobs.DEFAULT,
     service_account = ci.DEFAULT_SERVICE_ACCOUNT,
 )
 
@@ -64,9 +62,6 @@ ci.builder(
         category = "debug|mac",
         short_name = "bld",
     ),
-    goma_backend = None,
-    reclient_instance = reclient.instance.DEFAULT_TRUSTED,
-    reclient_jobs = reclient.jobs.DEFAULT,
 )
 
 ci.builder(
@@ -92,9 +87,6 @@ ci.builder(
         category = "release|mac",
         short_name = "bld",
     ),
-    goma_backend = None,
-    reclient_instance = reclient.instance.DEFAULT_TRUSTED,
-    reclient_jobs = reclient.jobs.DEFAULT,
 )
 
 ci.builder(
@@ -342,7 +334,7 @@ ci.thin_tester(
 )
 
 ci.thin_tester(
-    name = "mac-arm64-updater-tester-dbg",
+    name = "mac11.0-arm64-updater-tester-dbg",
     triggered_by = ["mac-updater-builder-arm64-dbg"],
     builder_spec = builder_config.builder_spec(
         execution_mode = builder_config.execution_mode.TEST,
@@ -366,7 +358,7 @@ ci.thin_tester(
 )
 
 ci.thin_tester(
-    name = "mac-arm64-updater-tester-rel",
+    name = "mac11.0-arm64-updater-tester-rel",
     triggered_by = ["mac-updater-builder-arm64-rel"],
     builder_spec = builder_config.builder_spec(
         execution_mode = builder_config.execution_mode.TEST,
@@ -411,8 +403,6 @@ ci.builder(
         category = "debug|win (64)",
         short_name = "bld",
     ),
-    goma_backend = None,
-    reclient_instance = reclient.instance.DEFAULT_TRUSTED,
     reclient_jobs = reclient.jobs.LOW_JOBS_FOR_CI,
 )
 
@@ -440,8 +430,6 @@ ci.builder(
         short_name = "bld",
     ),
     execution_timeout = ci.DEFAULT_EXECUTION_TIMEOUT * 2,
-    goma_backend = None,
-    reclient_instance = reclient.instance.DEFAULT_TRUSTED,
     reclient_jobs = reclient.jobs.LOW_JOBS_FOR_CI,
 )
 
@@ -467,8 +455,6 @@ ci.builder(
         category = "release|win (64)",
         short_name = "bld",
     ),
-    goma_backend = None,
-    reclient_instance = reclient.instance.DEFAULT_TRUSTED,
     reclient_jobs = reclient.jobs.LOW_JOBS_FOR_CI,
 )
 
@@ -494,8 +480,6 @@ ci.builder(
         category = "release|win (32)",
         short_name = "bld",
     ),
-    goma_backend = None,
-    reclient_instance = reclient.instance.DEFAULT_TRUSTED,
     reclient_jobs = reclient.jobs.LOW_JOBS_FOR_CI,
 )
 

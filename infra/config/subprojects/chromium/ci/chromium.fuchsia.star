@@ -5,7 +5,7 @@
 
 load("//lib/branches.star", "branches")
 load("//lib/builder_config.star", "builder_config")
-load("//lib/builders.star", "goma", "os", "reclient", "sheriff_rotations")
+load("//lib/builders.star", "os", "reclient", "sheriff_rotations")
 load("//lib/ci.star", "ci")
 load("//lib/consoles.star", "consoles")
 
@@ -20,13 +20,9 @@ ci.defaults.set(
     main_console_view = "main",
     cq_mirrors_console_view = "mirrors",
     execution_timeout = ci.DEFAULT_EXECUTION_TIMEOUT,
-    goma_backend = goma.backend.RBE_PROD,
-    goma_jobs = goma.jobs.MANY_JOBS_FOR_CI,
     notifies = ["cr-fuchsia"],
-
-    # TODO(crbug.com/1362440): remove this.
-    omit_python2 = False,
-    reclient_instance = None,
+    reclient_instance = reclient.instance.DEFAULT_TRUSTED,
+    reclient_jobs = reclient.jobs.HIGH_JOBS_FOR_CI,
     service_account = ci.DEFAULT_SERVICE_ACCOUNT,
 )
 
@@ -54,7 +50,6 @@ ci.builder(
         ),
     ],
     execution_timeout = 6 * time.hour,
-    goma_jobs = None,
 )
 
 ci.builder(
@@ -198,10 +193,6 @@ ci.builder(
             short_name = "dbg",
         ),
     ],
-    goma_backend = None,
-    goma_jobs = None,
-    reclient_instance = reclient.instance.DEFAULT_TRUSTED,
-    reclient_jobs = reclient.jobs.HIGH_JOBS_FOR_CI,
 )
 
 ci.builder(

@@ -3,7 +3,6 @@
 # found in the LICENSE file.
 
 load("//lib/builders.star", "builders", "os")
-load("//lib/try.star", "try_")
 load("//lib/consoles.star", "consoles")
 
 luci.bucket(
@@ -37,5 +36,5 @@ builders.builder(
     ),
     build_numbers = False,
     execution_timeout = 2 * time.hour,
-    service_account = try_.DEFAULT_SERVICE_ACCOUNT,
+    service_account = "flaky-reproducer-builder@chops-service-accounts.iam.gserviceaccount.com",
 )

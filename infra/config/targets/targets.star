@@ -135,8 +135,8 @@ targets.windowed_test_launcher(
 )
 
 targets.windowed_test_launcher(
-    name = "ash_crosapi_browsertests",
-    label = "//chrome/test:ash_crosapi_browsertests",
+    name = "ash_crosapi_tests",
+    label = "//chrome/test:ash_crosapi_tests",
 )
 
 targets.windowed_test_launcher(
@@ -426,14 +426,6 @@ targets.generated_script(
     ],
 )
 
-targets.generated_script(
-    name = "chrome_all_tast_tests_with_lacros",
-    label = "//chromeos:chrome_all_tast_tests_with_lacros",
-    args = [
-        "--logs-dir=${ISOLATED_OUTDIR}",
-    ],
-)
-
 targets.console_test_launcher(
     name = "chrome_app_unittests",
     label = "//chrome/test:chrome_app_unittests",
@@ -545,7 +537,7 @@ targets.console_test_launcher(
 
 targets.compile_target(
     name = "chromedriver",
-    label = "//chrome/test/chromedriver:chromedriver",
+    label = "//chrome/test/chromedriver:chromedriver_server",
 )
 
 targets.script(
@@ -1342,6 +1334,22 @@ targets.console_test_launcher(
 )
 
 targets.generated_script(
+    name = "lacros_cq_tast_tests_eve",
+    label = "//chromeos/lacros:lacros_cq_tast_tests_eve",
+    args = [
+        "--logs-dir=${ISOLATED_OUTDIR}",
+    ],
+)
+
+targets.generated_script(
+    name = "lacros_cq_tast_tests_jacuzzi",
+    label = "//chromeos/lacros:lacros_cq_tast_tests_jacuzzi",
+    args = [
+        "--logs-dir=${ISOLATED_OUTDIR}",
+    ],
+)
+
+targets.generated_script(
     name = "lacros_fyi_tast_tests",
     label = "//chromeos/lacros:lacros_fyi_tast_tests",
     args = [
@@ -1565,11 +1573,6 @@ targets.console_test_launcher(
 targets.generated_script(
     name = "build_rust_tests",
     label = "//build/rust/tests:build_rust_tests",
-)
-
-targets.generated_script(
-    name = "autocxx_tests",
-    label = "//third_party/rust/autocxx/chromium_integration/tests:autocxx_tests",
 )
 
 targets.windowed_test_launcher(
@@ -1844,11 +1847,6 @@ targets.compile_target(
     label = "//build/rust/tests",
 )
 
-targets.compile_target(
-    name = "rust_autocxx_tests",
-    label = "//third_party/rust/autocxx/chromium_integration/tests",
-)
-
 targets.console_test_launcher(
     name = "rust_gtest_interop_unittests",
     label = "//testing/rust_gtest_interop:rust_gtest_interop_unittests",
@@ -1929,8 +1927,8 @@ targets.console_test_launcher(
 )
 
 targets.compile_target(
-    name = "strip_chrome_binary",
-    label = "//chrome:strip_chrome_binary",
+    name = "strip_lacros_files",
+    label = "//chrome:strip_lacros_files",
 )
 
 targets.console_test_launcher(

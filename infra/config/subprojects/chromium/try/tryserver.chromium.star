@@ -4,7 +4,7 @@
 """Definitions of builders in the tryserver.chromium builder group."""
 
 load("//lib/branches.star", "branches")
-load("//lib/builders.star", "goma", "os")
+load("//lib/builders.star", "goma", "os", "reclient")
 load("//lib/try.star", "try_")
 load("//lib/consoles.star", "consoles")
 
@@ -17,9 +17,6 @@ try_.defaults.set(
     os = os.LINUX_DEFAULT,
     execution_timeout = try_.DEFAULT_EXECUTION_TIMEOUT,
     goma_backend = goma.backend.RBE_PROD,
-
-    # TODO(crbug.com/1362440): remove this.
-    omit_python2 = False,
     service_account = try_.DEFAULT_SERVICE_ACCOUNT,
 )
 
@@ -38,6 +35,9 @@ try_.builder(
     mirrors = [
         "ci/android-official",
     ],
+    goma_backend = None,
+    reclient_instance = reclient.instance.DEFAULT_UNTRUSTED,
+    reclient_jobs = reclient.jobs.HIGH_JOBS_FOR_CQ,
 )
 
 try_.builder(
@@ -54,6 +54,9 @@ try_.builder(
     mirrors = [
         "ci/linux-official",
     ],
+    goma_backend = None,
+    reclient_instance = reclient.instance.DEFAULT_UNTRUSTED,
+    reclient_jobs = reclient.jobs.HIGH_JOBS_FOR_CQ,
 )
 
 try_.builder(
@@ -66,7 +69,7 @@ try_.builder(
     os = os.MAC_ANY,
     # TODO(crbug.com/1279290) builds with PGO change take long time.
     # Keep in sync with mac-official in ci/chromium.star.
-    execution_timeout = 7 * time.hour,
+    execution_timeout = 9 * time.hour,
 )
 
 try_.builder(

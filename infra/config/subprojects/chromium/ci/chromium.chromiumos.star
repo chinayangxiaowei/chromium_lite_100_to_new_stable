@@ -6,7 +6,7 @@
 load("//lib/args.star", "args")
 load("//lib/branches.star", "branches")
 load("//lib/builder_config.star", "builder_config")
-load("//lib/builders.star", "os", "reclient", "sheriff_rotations")
+load("//lib/builders.star", "goma", "os", "reclient", "sheriff_rotations")
 load("//lib/ci.star", "ci")
 load("//lib/consoles.star", "consoles")
 
@@ -19,9 +19,6 @@ ci.defaults.set(
     sheriff_rotations = sheriff_rotations.CHROMIUM,
     tree_closing = True,
     execution_timeout = ci.DEFAULT_EXECUTION_TIMEOUT,
-
-    # TODO(crbug.com/1362440): remove this.
-    omit_python2 = False,
     reclient_instance = reclient.instance.DEFAULT_TRUSTED,
     reclient_jobs = reclient.jobs.DEFAULT,
     service_account = ci.DEFAULT_SERVICE_ACCOUNT,
@@ -50,6 +47,9 @@ ci.builder(
     # This builder gets triggered against multiple branches, so it shouldn't be
     # bootstrapped
     bootstrap = False,
+    # This should NOT be removed because the builder gets triggered
+    # against multiple branches. Some of the branches are running on Goma
+    goma_backend = goma.backend.RBE_PROD,
     notifies = ["chrome-lacros-engprod-alerts"],
     properties = {
         # The format of these properties is defined at archive/properties.proto
@@ -151,6 +151,7 @@ ci.builder(
             config = "chromium",
             apply_configs = [
                 "chromeos",
+                "checkout_lacros_sdk",
             ],
         ),
         chromium_config = builder_config.chromium_config(

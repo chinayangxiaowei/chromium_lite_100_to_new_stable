@@ -3,7 +3,7 @@
 # found in the LICENSE file.
 
 load("//lib/builder_config.star", "builder_config")
-load("//lib/builders.star", "builders", "cpu", "os", "xcode")
+load("//lib/builders.star", "builders", "cpu", "os", "reclient", "xcode")
 load("//lib/ci.star", "ci")
 load("//lib/consoles.star", "consoles")
 load("//lib/structs.star", "structs")
@@ -39,9 +39,6 @@ ci.defaults.set(
     build_numbers = True,
     execution_timeout = 3 * time.hour,
     goma_backend = None,
-
-    # TODO(crbug.com/1362440): remove this.
-    omit_python2 = False,
     service_account = (
         "chromium-ci-builder@chops-service-accounts.iam.gserviceaccount.com"
     ),
@@ -66,6 +63,16 @@ def fyi_reclient_staging_builder(
         **kwargs):
     trusted_instance = reclient_instance % "trusted"
     unstrusted_instance = reclient_instance % "untrusted"
+    reclient_bootstrap_env = kwargs.pop("reclient_bootstrap_env", {})
+
+    # TODO(b/233275188) remove once reproxy 0.83.0 is rolled out
+    reclient_bootstrap_env.update({
+        "RBE_experimental_goma_deps_cache": "True",
+        "RBE_ip_reset_min_delay": "-1s",
+        "RBE_deps_cache_mode": "reproxy",
+        # TODO(b/258210757) remove once long term breakpad plans are dertermined
+        "GOMA_COMPILER_PROXY_ENABLE_CRASH_DUMP": "false",
+    })
     return [
         ci.builder(
             name = name,
@@ -76,6 +83,7 @@ def fyi_reclient_staging_builder(
                 category = "rbe|" + console_view_category,
                 short_name = "rcs",
             ),
+            reclient_bootstrap_env = reclient_bootstrap_env,
             **kwargs
         ),
         ci.builder(
@@ -88,6 +96,7 @@ def fyi_reclient_staging_builder(
                 short_name = "rcs",
             ),
             service_account = untrusted_service_account,
+            reclient_bootstrap_env = reclient_bootstrap_env,
             **kwargs
         ),
     ]
@@ -190,7 +199,6 @@ fyi_reclient_test_builder(
     console_view_category = "mac",
     priority = 35,
     reclient_bootstrap_env = {
-        "RBE_ip_timeout": "-1s",
         "GLOG_vmodule": "bridge*=2",
     },
     reclient_profiler_service = "reclient-mac",
@@ -302,7 +310,10 @@ fyi_reclient_test_builder(
     os = os.MAC_DEFAULT,
     console_view_category = "ios",
     priority = 35,
-    xcode = xcode.x13main,
+    reclient_bootstrap_env = {
+        "GLOG_vmodule": "bridge*=2",
+    },
+    xcode = xcode.x14main,
 )
 
 fyi_reclient_staging_builder(
@@ -325,7 +336,10 @@ fyi_reclient_staging_builder(
     os = os.MAC_DEFAULT,
     console_view_category = "ios",
     priority = 35,
-    xcode = xcode.x13main,
+    reclient_bootstrap_env = {
+        "GLOG_vmodule": "bridge*=2",
+    },
+    xcode = xcode.x14main,
 )
 
 fyi_reclient_staging_builder(
@@ -348,6 +362,9 @@ fyi_reclient_staging_builder(
     os = os.MAC_DEFAULT,
     console_view_category = "mac",
     priority = 35,
+    reclient_bootstrap_env = {
+        "GLOG_vmodule": "bridge*=2",
+    },
 )
 
 fyi_reclient_test_builder(
@@ -370,4 +387,27 @@ fyi_reclient_test_builder(
     os = os.MAC_DEFAULT,
     console_view_category = "mac",
     priority = 35,
+    reclient_bootstrap_env = {
+        "GLOG_vmodule": "bridge*=2",
+    },
+)
+
+ci.builder(
+    name = "Comparison Linux (reclient vs reclient remote links)",
+    executable = "recipe:reclient_reclient_comparison",
+    os = os.LINUX_DEFAULT,
+    console_view_entry = consoles.console_view_entry(
+        category = "linux",
+        short_name = "cmp",
+    ),
+    execution_timeout = 6 * time.hour,
+    reclient_bootstrap_env = {
+        "RBE_ip_reset_min_delay": "-1s",
+        "RBE_experimental_goma_deps_cache": "true",
+        "RBE_deps_cache_mode": "reproxy",
+        "RBE_clang_depscan_archive": "true",
+    },
+    reclient_cache_silo = "Comparison Linux remote links - cache siloed",
+    reclient_instance = reclient.instance.DEFAULT_TRUSTED,
+    reclient_jobs = reclient.jobs.DEFAULT,
 )

@@ -26,7 +26,13 @@ luci.bucket(
         ),
         acl.entry(
             roles = acl.BUILDBUCKET_TRIGGERER,
-            groups = "project-chromium-ci-schedulers",
+            groups = [
+                "project-chromium-ci-schedulers",
+                # Allow currently-oncall sheriffs to cancel builds. Useful when
+                # a tree-closer is behind and hasn't picked up a needed revert
+                # or fix yet.
+                "mdb/chrome-active-sheriffs",
+            ],
             users = [
                 # Allow chrome-release/branch builders on luci.chrome.official.infra
                 # to schedule builds

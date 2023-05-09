@@ -68,6 +68,7 @@ void AnnotationAgentImpl::Bind(
 
 void AnnotationAgentImpl::Attach() {
   DCHECK(!IsRemoved());
+  did_try_attach_ = true;
   Document& document = *owning_container_->GetSupplementable();
   selector_->FindRange(document, AnnotationSelector::kSynchronous,
                        WTF::BindOnce(&AnnotationAgentImpl::DidFinishAttach,
@@ -117,11 +118,7 @@ void AnnotationAgentImpl::ScrollIntoView() const {
 
   EphemeralRangeInFlatTree range = attached_range_->ToEphemeralRange();
 
-  // TODO(bokan): This should be checked in IsAttached.
-  bool range_has_nodes = range.Nodes().begin() != range.Nodes().end();
-  if (!range_has_nodes) {
-    return;
-  }
+  DCHECK(range.Nodes().begin() != range.Nodes().end());
 
   Node& first_node = *range.Nodes().begin();
 

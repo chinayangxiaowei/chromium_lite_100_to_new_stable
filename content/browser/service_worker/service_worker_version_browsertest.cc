@@ -976,29 +976,6 @@ IN_PROC_BROWSER_TEST_F(ServiceWorkerVersionBrowserTest,
             version_->fetch_handler_type());
 }
 
-IN_PROC_BROWSER_TEST_F(ServiceWorkerVersionBrowserTest,
-                       NonFunctionFetchHandlerWithHandleEventProperty) {
-  StartServerAndNavigateToSetup();
-  ASSERT_EQ(
-      Install("/service_worker/fetch_event_with_handle_event_property.js"),
-      blink::ServiceWorkerStatusCode::kOk);
-  EXPECT_EQ(ServiceWorkerVersion::FetchHandlerExistence::EXISTS,
-            version_->fetch_handler_existence());
-  EXPECT_EQ(ServiceWorkerVersion::FetchHandlerType::kNotSkippable,
-            version_->fetch_handler_type());
-}
-
-IN_PROC_BROWSER_TEST_F(ServiceWorkerVersionBrowserTest,
-                       RemoveFetchEventListenersInGet) {
-  StartServerAndNavigateToSetup();
-  ASSERT_EQ(Install("/service_worker/fetch_event_object_removing_itself.js"),
-            blink::ServiceWorkerStatusCode::kOk);
-  EXPECT_EQ(ServiceWorkerVersion::FetchHandlerExistence::EXISTS,
-            version_->fetch_handler_existence());
-  EXPECT_EQ(ServiceWorkerVersion::FetchHandlerType::kNotSkippable,
-            version_->fetch_handler_type());
-}
-
 // Check that fetch event handler added in the install event should result in a
 // service worker that doesn't count as having a fetch event handler.
 IN_PROC_BROWSER_TEST_F(ServiceWorkerVersionBrowserTest,
@@ -1200,9 +1177,14 @@ IN_PROC_BROWSER_TEST_F(ServiceWorkerVersionBrowserTest, FetchEvent_Response) {
             storage::BlobToString(blob.get()));
 }
 
+#if BUILDFLAG(IS_ANDROID)
+#define MAYBE_FetchEvent_ResponseNetwork DISABLED_FetchEvent_ResponseNetwork
+#else
+#define MAYBE_FetchEvent_ResponseNetwork FetchEvent_ResponseNetwork
+#endif
 // Tests for response type when a service worker does respondWith(fetch()).
 IN_PROC_BROWSER_TEST_F(ServiceWorkerVersionBrowserTest,
-                       FetchEvent_ResponseNetwork) {
+                       MAYBE_FetchEvent_ResponseNetwork) {
   const char* kPath = "/service_worker/http_cache.html";
 
   StartServerAndNavigateToSetup();

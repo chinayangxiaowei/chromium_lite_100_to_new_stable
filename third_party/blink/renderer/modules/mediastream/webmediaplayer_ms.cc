@@ -13,6 +13,7 @@
 
 #include "base/bind.h"
 #include "base/callback.h"
+#include "base/task/sequenced_task_runner.h"
 #include "base/threading/thread_task_runner_handle.h"
 #include "base/time/time.h"
 #include "build/build_config.h"
@@ -158,7 +159,7 @@ class WebMediaPlayerMS::FrameDeliverer {
       void(scoped_refptr<media::VideoFrame> frame, bool is_copy)>;
   FrameDeliverer(const base::WeakPtr<WebMediaPlayerMS>& player,
                  RepaintCB enqueue_frame_cb,
-                 scoped_refptr<base::SingleThreadTaskRunner> media_task_runner,
+                 scoped_refptr<base::SequencedTaskRunner> media_task_runner,
                  scoped_refptr<base::TaskRunner> worker_task_runner,
                  media::GpuVideoAcceleratorFactories* gpu_factories)
       : main_task_runner_(base::ThreadTaskRunnerHandle::Get()),
@@ -190,7 +191,7 @@ class WebMediaPlayerMS::FrameDeliverer {
 #endif  // BUILDFLAG(IS_ANDROID)
 
     if (!gpu_memory_buffer_pool_) {
-      int original_frame_id = frame->unique_id();
+      const media::VideoFrame::ID original_frame_id = frame->unique_id();
       EnqueueFrame(original_frame_id, std::move(frame));
       return;
     }
@@ -210,7 +211,7 @@ class WebMediaPlayerMS::FrameDeliverer {
 #endif  // BUILDFLAG(IS_WIN)
 
     if (skip_creating_gpu_memory_buffer) {
-      int original_frame_id = frame->unique_id();
+      media::VideoFrame::ID original_frame_id = frame->unique_id();
       EnqueueFrame(original_frame_id, std::move(frame));
       // If there are any existing MaybeCreateHardwareFrame() calls, we do not
       // want those frames to be placed after the current one, so just drop
@@ -219,7 +220,7 @@ class WebMediaPlayerMS::FrameDeliverer {
       return;
     }
 
-    int original_frame_id = frame->unique_id();
+    const media::VideoFrame::ID original_frame_id = frame->unique_id();
 
     // |gpu_memory_buffer_pool_| deletion is going to be posted to
     // |media_task_runner_|. base::Unretained() usage is fine since
@@ -278,7 +279,7 @@ class WebMediaPlayerMS::FrameDeliverer {
     }
   }
 
-  void EnqueueFrame(int original_frame_id,
+  void EnqueueFrame(media::VideoFrame::ID original_frame_id,
                     scoped_refptr<media::VideoFrame> frame) {
     DCHECK_CALLED_ON_VALID_THREAD(io_thread_checker_);
 
@@ -325,7 +326,7 @@ class WebMediaPlayerMS::FrameDeliverer {
 
   // Pool of GpuMemoryBuffers and resources used to create hardware frames.
   std::unique_ptr<media::GpuMemoryBufferVideoFramePool> gpu_memory_buffer_pool_;
-  const scoped_refptr<base::SingleThreadTaskRunner> media_task_runner_;
+  const scoped_refptr<base::SequencedTaskRunner> media_task_runner_;
   const scoped_refptr<base::TaskRunner> worker_task_runner_;
 
   media::GpuVideoAcceleratorFactories* const gpu_factories_;
@@ -343,9 +344,9 @@ WebMediaPlayerMS::WebMediaPlayerMS(
     WebMediaPlayerDelegate* delegate,
     std::unique_ptr<media::MediaLog> media_log,
     scoped_refptr<base::SingleThreadTaskRunner> main_render_task_runner,
-    scoped_refptr<base::SingleThreadTaskRunner> io_task_runner,
+    scoped_refptr<base::SequencedTaskRunner> io_task_runner,
     scoped_refptr<base::SingleThreadTaskRunner> compositor_task_runner,
-    scoped_refptr<base::SingleThreadTaskRunner> media_task_runner,
+    scoped_refptr<base::SequencedTaskRunner> media_task_runner,
     scoped_refptr<base::TaskRunner> worker_task_runner,
     media::GpuVideoAcceleratorFactories* gpu_factories,
     const WebString& sink_id,
@@ -399,9 +400,8 @@ WebMediaPlayerMS::~WebMediaPlayerMS() {
   SendLogMessage(
       String::Format("%s() [delegate_id=%d]", __func__, delegate_id_));
 
-  if (!web_stream_.IsNull()) {
+  if (!web_stream_.IsNull())
     web_stream_.RemoveObserver(this);
-  }
 
   // Destruct compositor resources in the proper order.
   get_client()->SetCcLayer(nullptr);
@@ -410,35 +410,17 @@ WebMediaPlayerMS::~WebMediaPlayerMS() {
     video_layer_->StopUsingProvider();
   }
 
-  if (frame_deliverer_) {
-    io_task_runner_->DeleteSoon(FROM_HERE, std::move(frame_deliverer_));
-  }
+  if (frame_deliverer_)
+    io_task_runner_->DeleteSoon(FROM_HERE, frame_deliverer_.release());
 
-  if (video_frame_provider_) {
+  if (compositor_)
+    compositor_->StopUsingProvider();
+
+  if (video_frame_provider_)
     video_frame_provider_->Stop();
-  }
 
-  // This must be destroyed before `compositor_` since it will grab a couple of
-  // final metrics during destruction.
-  watch_time_reporter_.reset();
-
-  if (compositor_) {
-    // `compositor_` receives frames on `io_task_runner_` from
-    // `frame_deliverer_` and operates on the `compositor_task_runner_`, so
-    // must trampoline through both to ensure a safe destruction.
-    PostCrossThreadTask(
-        *io_task_runner_, FROM_HERE,
-        WTF::CrossThreadBindOnce(
-            [](scoped_refptr<base::SingleThreadTaskRunner> task_runner,
-               std::unique_ptr<WebMediaPlayerMSCompositor> compositor) {
-              task_runner->DeleteSoon(FROM_HERE, std::move(compositor));
-            },
-            compositor_task_runner_, std::move(compositor_)));
-  }
-
-  if (audio_renderer_) {
+  if (audio_renderer_)
     audio_renderer_->Stop();
-  }
 
   media_log_->AddEvent<media::MediaLogEvent::kWebMediaPlayerDestroyed>();
 
@@ -479,7 +461,7 @@ WebMediaPlayer::LoadTiming WebMediaPlayerMS::Load(
 
   watch_time_reporter_.reset();
 
-  compositor_ = std::make_unique<WebMediaPlayerMSCompositor>(
+  compositor_ = base::MakeRefCounted<WebMediaPlayerMSCompositor>(
       compositor_task_runner_, io_task_runner_, web_stream_,
       std::move(submitter_), use_surface_layer_, weak_this_);
 
@@ -502,7 +484,7 @@ WebMediaPlayer::LoadTiming WebMediaPlayerMS::Load(
   frame_deliverer_ = std::make_unique<WebMediaPlayerMS::FrameDeliverer>(
       weak_this_,
       CrossThreadBindRepeating(&WebMediaPlayerMSCompositor::EnqueueFrame,
-                               CrossThreadUnretained(compositor_.get())),
+                               compositor_),
       media_task_runner_, worker_task_runner_, gpu_factories_);
   video_frame_provider_ = renderer_factory_->GetVideoRenderer(
       web_stream_,
@@ -848,19 +830,7 @@ void WebMediaPlayerMS::Pause() {
     video_frame_provider_->Pause();
 
   compositor_->StopRendering();
-
-  // Bounce this call off of video task runner to since there might still be
-  // frames passed on video task runner.
-  PostCrossThreadTask(
-      *io_task_runner_, FROM_HERE,
-      WTF::CrossThreadBindOnce(
-          [](scoped_refptr<base::SingleThreadTaskRunner> task_runner,
-             WTF::CrossThreadOnceClosure copy_cb) {
-            PostCrossThreadTask(*task_runner, FROM_HERE, std::move(copy_cb));
-          },
-          main_render_task_runner_,
-          WTF::CrossThreadBindOnce(
-              &WebMediaPlayerMS::ReplaceCurrentFrameWithACopy, weak_this_)));
+  compositor_->ReplaceCurrentFrameWithACopy();
 
   if (audio_renderer_)
     audio_renderer_->Pause();
@@ -873,11 +843,6 @@ void WebMediaPlayerMS::Pause() {
   delegate_->SetIdle(delegate_id_, true);
 
   paused_ = true;
-}
-
-void WebMediaPlayerMS::ReplaceCurrentFrameWithACopy() {
-  DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
-  compositor_->ReplaceCurrentFrameWithACopy();
 }
 
 void WebMediaPlayerMS::Seek(double seconds) {
@@ -1083,7 +1048,7 @@ scoped_refptr<media::VideoFrame> WebMediaPlayerMS::GetCurrentFrameThenUpdate() {
   return compositor_->GetCurrentFrame();
 }
 
-absl::optional<int> WebMediaPlayerMS::CurrentFrameId() const {
+absl::optional<media::VideoFrame::ID> WebMediaPlayerMS::CurrentFrameId() const {
   DVLOG(3) << __func__;
   DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
   return compositor_->GetCurrentFrame()->unique_id();
@@ -1231,8 +1196,7 @@ void WebMediaPlayerMS::ActivateSurfaceLayerForVideo(
   PostCrossThreadTask(
       *compositor_task_runner_, FROM_HERE,
       CrossThreadBindOnce(&WebMediaPlayerMSCompositor::EnableSubmission,
-                          CrossThreadUnretained(compositor_.get()),
-                          bridge_->GetSurfaceId(), video_transform,
+                          compositor_, bridge_->GetSurfaceId(), video_transform,
                           IsInPictureInPicture()));
 
   // If the element is already in Picture-in-Picture mode, it means that it

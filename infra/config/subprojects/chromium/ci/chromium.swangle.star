@@ -4,6 +4,7 @@
 """Definitions of builders in the chromium.swangle builder group."""
 
 load("//lib/builders.star", "reclient", "sheriff_rotations")
+load("//lib/builder_config.star", "builder_config")
 load("//lib/ci.star", "ci")
 load("//lib/consoles.star", "consoles")
 
@@ -13,9 +14,6 @@ ci.defaults.set(
     pool = ci.gpu.POOL,
     sheriff_rotations = sheriff_rotations.CHROMIUM_GPU,
     execution_timeout = ci.DEFAULT_EXECUTION_TIMEOUT,
-
-    # TODO(crbug.com/1362440): remove this.
-    omit_python2 = False,
     reclient_instance = reclient.instance.DEFAULT_TRUSTED,
     reclient_jobs = reclient.jobs.DEFAULT,
     service_account = ci.gpu.SERVICE_ACCOUNT,
@@ -40,6 +38,25 @@ consoles.console_view(
 ci.gpu.linux_builder(
     name = "linux-swangle-chromium-x64",
     executable = ci.DEFAULT_EXECUTABLE,
+    builder_spec = builder_config.builder_spec(
+        gclient_config = builder_config.gclient_config(
+            config = "chromium",
+            apply_configs = [
+                "angle_top_of_tree",
+                "swiftshader_top_of_tree",
+            ],
+        ),
+        chromium_config = builder_config.chromium_config(
+            config = "chromium",
+            apply_configs = [
+                "mb",
+            ],
+            build_config = builder_config.build_config.RELEASE,
+            target_bits = 64,
+        ),
+        build_gs_bucket = "chromium-swangle-archive",
+        run_tests_serially = True,
+    ),
     console_view_entry = consoles.console_view_entry(
         category = "Chromium|Linux",
         short_name = "x64",
@@ -49,6 +66,24 @@ ci.gpu.linux_builder(
 
 ci.gpu.linux_builder(
     name = "linux-swangle-tot-swiftshader-x64",
+    builder_spec = builder_config.builder_spec(
+        gclient_config = builder_config.gclient_config(
+            config = "chromium",
+            apply_configs = [
+                "swiftshader_top_of_tree",
+            ],
+        ),
+        chromium_config = builder_config.chromium_config(
+            config = "chromium",
+            apply_configs = [
+                "mb",
+            ],
+            build_config = builder_config.build_config.RELEASE,
+            target_bits = 64,
+        ),
+        build_gs_bucket = "chromium-swangle-archive",
+        run_tests_serially = True,
+    ),
     console_view_entry = consoles.console_view_entry(
         category = "ToT SwiftShader|Linux",
         short_name = "x64",
@@ -59,6 +94,21 @@ ci.gpu.linux_builder(
 ci.gpu.linux_builder(
     name = "linux-swangle-x64",
     executable = ci.DEFAULT_EXECUTABLE,
+    builder_spec = builder_config.builder_spec(
+        gclient_config = builder_config.gclient_config(
+            config = "chromium",
+        ),
+        chromium_config = builder_config.chromium_config(
+            config = "chromium",
+            apply_configs = [
+                "mb",
+            ],
+            build_config = builder_config.build_config.RELEASE,
+            target_bits = 64,
+        ),
+        build_gs_bucket = "chromium-swangle-archive",
+        run_tests_serially = True,
+    ),
     console_view_entry = consoles.console_view_entry(
         category = "DEPS|Linux",
         short_name = "x64",
@@ -69,6 +119,25 @@ ci.gpu.linux_builder(
 ci.gpu.mac_builder(
     name = "mac-swangle-chromium-x64",
     executable = ci.DEFAULT_EXECUTABLE,
+    builder_spec = builder_config.builder_spec(
+        gclient_config = builder_config.gclient_config(
+            config = "chromium",
+            apply_configs = [
+                "angle_top_of_tree",
+                "swiftshader_top_of_tree",
+            ],
+        ),
+        chromium_config = builder_config.chromium_config(
+            config = "chromium",
+            apply_configs = [
+                "mb",
+            ],
+            build_config = builder_config.build_config.RELEASE,
+            target_bits = 64,
+        ),
+        build_gs_bucket = "chromium-swangle-archive",
+        run_tests_serially = True,
+    ),
     console_view_entry = consoles.console_view_entry(
         category = "Chromium|Mac",
         short_name = "x64",
@@ -78,6 +147,25 @@ ci.gpu.mac_builder(
 ci.gpu.windows_builder(
     name = "win-swangle-chromium-x86",
     executable = ci.DEFAULT_EXECUTABLE,
+    builder_spec = builder_config.builder_spec(
+        gclient_config = builder_config.gclient_config(
+            config = "chromium",
+            apply_configs = [
+                "angle_top_of_tree",
+                "swiftshader_top_of_tree",
+            ],
+        ),
+        chromium_config = builder_config.chromium_config(
+            config = "chromium",
+            apply_configs = [
+                "mb",
+            ],
+            build_config = builder_config.build_config.RELEASE,
+            target_bits = 32,
+        ),
+        build_gs_bucket = "chromium-swangle-archive",
+        run_tests_serially = True,
+    ),
     console_view_entry = consoles.console_view_entry(
         category = "Chromium|Windows",
         short_name = "x86",
@@ -87,6 +175,24 @@ ci.gpu.windows_builder(
 
 ci.gpu.windows_builder(
     name = "win-swangle-tot-swiftshader-x64",
+    builder_spec = builder_config.builder_spec(
+        gclient_config = builder_config.gclient_config(
+            config = "chromium",
+            apply_configs = [
+                "swiftshader_top_of_tree",
+            ],
+        ),
+        chromium_config = builder_config.chromium_config(
+            config = "chromium",
+            apply_configs = [
+                "mb",
+            ],
+            build_config = builder_config.build_config.RELEASE,
+            target_bits = 64,
+        ),
+        build_gs_bucket = "chromium-swangle-archive",
+        run_tests_serially = True,
+    ),
     console_view_entry = consoles.console_view_entry(
         category = "ToT SwiftShader|Windows",
         short_name = "x64",
@@ -96,6 +202,24 @@ ci.gpu.windows_builder(
 
 ci.gpu.windows_builder(
     name = "win-swangle-tot-swiftshader-x86",
+    builder_spec = builder_config.builder_spec(
+        gclient_config = builder_config.gclient_config(
+            config = "chromium",
+            apply_configs = [
+                "swiftshader_top_of_tree",
+            ],
+        ),
+        chromium_config = builder_config.chromium_config(
+            config = "chromium",
+            apply_configs = [
+                "mb",
+            ],
+            build_config = builder_config.build_config.RELEASE,
+            target_bits = 32,
+        ),
+        build_gs_bucket = "chromium-swangle-archive",
+        run_tests_serially = True,
+    ),
     console_view_entry = consoles.console_view_entry(
         category = "ToT SwiftShader|Windows",
         short_name = "x86",
@@ -106,6 +230,21 @@ ci.gpu.windows_builder(
 ci.gpu.windows_builder(
     name = "win-swangle-x64",
     executable = ci.DEFAULT_EXECUTABLE,
+    builder_spec = builder_config.builder_spec(
+        gclient_config = builder_config.gclient_config(
+            config = "chromium",
+        ),
+        chromium_config = builder_config.chromium_config(
+            config = "chromium",
+            apply_configs = [
+                "mb",
+            ],
+            build_config = builder_config.build_config.RELEASE,
+            target_bits = 64,
+        ),
+        build_gs_bucket = "chromium-swangle-archive",
+        run_tests_serially = True,
+    ),
     console_view_entry = consoles.console_view_entry(
         category = "DEPS|Windows",
         short_name = "x64",
@@ -116,6 +255,21 @@ ci.gpu.windows_builder(
 ci.gpu.windows_builder(
     name = "win-swangle-x86",
     executable = ci.DEFAULT_EXECUTABLE,
+    builder_spec = builder_config.builder_spec(
+        gclient_config = builder_config.gclient_config(
+            config = "chromium",
+        ),
+        chromium_config = builder_config.chromium_config(
+            config = "chromium",
+            apply_configs = [
+                "mb",
+            ],
+            build_config = builder_config.build_config.RELEASE,
+            target_bits = 32,
+        ),
+        build_gs_bucket = "chromium-swangle-archive",
+        run_tests_serially = True,
+    ),
     console_view_entry = consoles.console_view_entry(
         category = "DEPS|Windows",
         short_name = "x86",

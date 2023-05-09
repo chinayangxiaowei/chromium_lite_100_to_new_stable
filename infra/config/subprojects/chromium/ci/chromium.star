@@ -5,7 +5,7 @@
 
 load("//lib/args.star", "args")
 load("//lib/builder_config.star", "builder_config")
-load("//lib/builders.star", "goma", "os", "reclient", "sheriff_rotations")
+load("//lib/builders.star", "os", "reclient", "sheriff_rotations")
 load("//lib/branches.star", "branches")
 load("//lib/ci.star", "ci")
 load("//lib/consoles.star", "consoles")
@@ -18,7 +18,8 @@ ci.defaults.set(
     sheriff_rotations = sheriff_rotations.CHROMIUM,
     main_console_view = "main",
     execution_timeout = ci.DEFAULT_EXECUTION_TIMEOUT,
-    goma_backend = goma.backend.RBE_PROD,
+    reclient_instance = reclient.instance.DEFAULT_TRUSTED,
+    reclient_jobs = reclient.jobs.DEFAULT,
     service_account = ci.DEFAULT_SERVICE_ACCOUNT,
 )
 
@@ -71,8 +72,6 @@ ci.builder(
         short_name = "dbg",
     ),
     execution_timeout = 4 * time.hour,
-    goma_backend = None,
-    reclient_instance = reclient.instance.DEFAULT_TRUSTED,
     reclient_jobs = reclient.jobs.HIGH_JOBS_FOR_CI,
 )
 
@@ -105,7 +104,6 @@ ci.builder(
         category = "android",
         short_name = "rel",
     ),
-    goma_backend = None,
     properties = {
         # The format of these properties is defined at archive/properties.proto
         "$build/archive": {
@@ -117,7 +115,50 @@ ci.builder(
             ],
         },
     },
-    reclient_instance = reclient.instance.DEFAULT_TRUSTED,
+    reclient_jobs = reclient.jobs.HIGH_JOBS_FOR_CI,
+)
+
+ci.builder(
+    name = "android-arm64-archive-rel",
+    builder_spec = builder_config.builder_spec(
+        gclient_config = builder_config.gclient_config(
+            config = "chromium",
+            apply_configs = [
+                "android",
+            ],
+        ),
+        chromium_config = builder_config.chromium_config(
+            config = "android",
+            apply_configs = [
+                "clobber",
+                "mb",
+            ],
+            build_config = builder_config.build_config.RELEASE,
+            target_arch = builder_config.target_arch.ARM,
+            target_bits = 64,
+            target_platform = builder_config.target_platform.ANDROID,
+        ),
+        android_config = builder_config.android_config(
+            config = "main_builder",
+        ),
+    ),
+    cores = 32,
+    tree_closing = True,
+    console_view_entry = consoles.console_view_entry(
+        category = "android|arm",
+        short_name = "arm64",
+    ),
+    properties = {
+        # The format of these properties is defined at archive/properties.proto
+        "$build/archive": {
+            "source_side_spec_path": [
+                "src",
+                "infra",
+                "archive_config",
+                "android-arm64-archive-rel.json",
+            ],
+        },
+    },
     reclient_jobs = reclient.jobs.HIGH_JOBS_FOR_CI,
 )
 
@@ -153,8 +194,6 @@ ci.builder(
     # See https://crbug.com/1153349#c22, as we update symbol_level=2, build
     # needs longer time to complete.
     execution_timeout = 7 * time.hour,
-    goma_backend = None,
-    reclient_instance = reclient.instance.DEFAULT_TRUSTED,
     reclient_jobs = reclient.jobs.HIGH_JOBS_FOR_CI,
 )
 
@@ -195,6 +234,7 @@ ci.builder(
     # TODO: Change this back down to something reasonable once these builders
     # have populated their cached by getting through the compile step
     execution_timeout = 10 * time.hour,
+    reclient_jobs = reclient.jobs.HIGH_JOBS_FOR_CI,
 )
 
 ci.builder(
@@ -238,6 +278,7 @@ ci.builder(
             ],
         },
     },
+    reclient_jobs = reclient.jobs.HIGH_JOBS_FOR_CI,
 )
 
 ci.builder(
@@ -270,7 +311,6 @@ ci.builder(
         category = "lacros",
         short_name = "arm",
     ),
-    goma_backend = None,
     properties = {
         # The format of these properties is defined at archive/properties.proto
         "$build/archive": {
@@ -282,7 +322,6 @@ ci.builder(
             ],
         },
     },
-    reclient_instance = reclient.instance.DEFAULT_TRUSTED,
     reclient_jobs = reclient.jobs.HIGH_JOBS_FOR_CI,
 )
 
@@ -318,7 +357,6 @@ ci.builder(
         category = "lacros",
         short_name = "arm64",
     ),
-    goma_backend = None,
     properties = {
         # The format of these properties is defined at archive/properties.proto
         "$build/archive": {
@@ -330,7 +368,6 @@ ci.builder(
             ],
         },
     },
-    reclient_instance = reclient.instance.DEFAULT_TRUSTED,
     reclient_jobs = reclient.jobs.HIGH_JOBS_FOR_CI,
 )
 
@@ -359,8 +396,6 @@ ci.builder(
         category = "linux",
         short_name = "dbg",
     ),
-    goma_backend = None,
-    reclient_instance = reclient.instance.DEFAULT_TRUSTED,
     reclient_jobs = reclient.jobs.HIGH_JOBS_FOR_CI,
 )
 
@@ -388,7 +423,6 @@ ci.builder(
         category = "linux",
         short_name = "rel",
     ),
-    goma_backend = None,
     notifies = ["linux-archive-rel"],
     properties = {
         # The format of these properties is defined at archive/properties.proto
@@ -401,8 +435,6 @@ ci.builder(
             ],
         },
     },
-    reclient_instance = reclient.instance.DEFAULT_TRUSTED,
-    reclient_jobs = reclient.jobs.DEFAULT,
 )
 
 ci.builder(
@@ -431,9 +463,6 @@ ci.builder(
         short_name = "off",
     ),
     execution_timeout = 7 * time.hour,
-    goma_backend = None,
-    reclient_instance = reclient.instance.DEFAULT_TRUSTED,
-    reclient_jobs = reclient.jobs.DEFAULT,
 )
 
 ci.builder(
@@ -460,9 +489,6 @@ ci.builder(
         category = "mac",
         short_name = "dbg",
     ),
-    goma_backend = None,
-    reclient_instance = reclient.instance.DEFAULT_TRUSTED,
-    reclient_jobs = reclient.jobs.DEFAULT,
 )
 
 ci.builder(
@@ -489,7 +515,6 @@ ci.builder(
         category = "mac",
         short_name = "rel",
     ),
-    goma_backend = None,
     properties = {
         # The format of these properties is defined at archive/properties.proto
         "$build/archive": {
@@ -501,8 +526,6 @@ ci.builder(
             ],
         },
     },
-    reclient_instance = reclient.instance.DEFAULT_TRUSTED,
-    reclient_jobs = reclient.jobs.DEFAULT,
 )
 
 ci.builder(
@@ -528,9 +551,6 @@ ci.builder(
         category = "mac|arm",
         short_name = "dbg",
     ),
-    goma_backend = None,
-    reclient_instance = reclient.instance.DEFAULT_TRUSTED,
-    reclient_jobs = reclient.jobs.DEFAULT,
 )
 
 ci.builder(
@@ -557,7 +577,6 @@ ci.builder(
         category = "mac|arm",
         short_name = "rel",
     ),
-    goma_backend = None,
     properties = {
         # The format of these properties is defined at archive/properties.proto
         "$build/archive": {
@@ -569,8 +588,6 @@ ci.builder(
             ],
         },
     },
-    reclient_instance = reclient.instance.DEFAULT_TRUSTED,
-    reclient_jobs = reclient.jobs.DEFAULT,
 )
 
 ci.builder(
@@ -599,10 +616,7 @@ ci.builder(
     ),
     # TODO(crbug.com/1279290) builds with PGO change take long time.
     # Keep in sync with mac-official in try/chromium.star.
-    execution_timeout = 7 * time.hour,
-    goma_backend = None,
-    reclient_instance = reclient.instance.DEFAULT_TRUSTED,
-    reclient_jobs = reclient.jobs.DEFAULT,
+    execution_timeout = 9 * time.hour,
 )
 
 ci.builder(
@@ -613,9 +627,6 @@ ci.builder(
         category = "win|dbg",
         short_name = "64",
     ),
-    goma_backend = None,
-    reclient_instance = reclient.instance.DEFAULT_TRUSTED,
-    reclient_jobs = reclient.jobs.DEFAULT,
 )
 
 ci.builder(
@@ -641,7 +652,6 @@ ci.builder(
         category = "win|rel",
         short_name = "64",
     ),
-    goma_backend = None,
     properties = {
         # The format of these properties is defined at archive/properties.proto
         "$build/archive": {
@@ -653,8 +663,6 @@ ci.builder(
             ],
         },
     },
-    reclient_instance = reclient.instance.DEFAULT_TRUSTED,
-    reclient_jobs = reclient.jobs.DEFAULT,
 )
 
 ci.builder(
@@ -683,6 +691,7 @@ ci.builder(
     ),
     # TODO(crbug.com/1155416) builds with PGO change take long time.
     execution_timeout = 7 * time.hour,
+    reclient_jobs = reclient.jobs.HIGH_JOBS_FOR_CI,
 )
 
 ci.builder(
@@ -707,9 +716,6 @@ ci.builder(
         category = "win|dbg",
         short_name = "32",
     ),
-    goma_backend = None,
-    reclient_instance = reclient.instance.DEFAULT_TRUSTED,
-    reclient_jobs = reclient.jobs.DEFAULT,
 )
 
 ci.builder(
@@ -735,7 +741,6 @@ ci.builder(
         category = "win|rel",
         short_name = "32",
     ),
-    goma_backend = None,
     properties = {
         # The format of these properties is defined at archive/properties.proto
         "$build/archive": {
@@ -747,8 +752,6 @@ ci.builder(
             ],
         },
     },
-    reclient_instance = reclient.instance.DEFAULT_TRUSTED,
-    reclient_jobs = reclient.jobs.DEFAULT,
 )
 
 ci.builder(
@@ -777,4 +780,5 @@ ci.builder(
     ),
     # TODO(crbug.com/1155416) builds with PGO change take long time.
     execution_timeout = 7 * time.hour,
+    reclient_jobs = reclient.jobs.HIGH_JOBS_FOR_CI,
 )

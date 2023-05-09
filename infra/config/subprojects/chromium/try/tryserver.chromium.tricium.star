@@ -16,16 +16,13 @@ try_.defaults.set(
     execution_timeout = try_.DEFAULT_EXECUTION_TIMEOUT,
     goma_backend = goma.backend.RBE_PROD,
     goma_jobs = goma.jobs.J150,
-
-    # Make each bot specify its own OS, since we have a variety of these in this
-    # file.
-
-    # TODO(crbug.com/1362440): remove this.
-    omit_python2 = False,
     orchestrator_cores = 2,
     reclient_instance = reclient.instance.DEFAULT_UNTRUSTED,
     reclient_jobs = reclient.jobs.LOW_JOBS_FOR_CQ,
     service_account = try_.DEFAULT_SERVICE_ACCOUNT,
+
+    # Make each bot specify its own OS, since we have a variety of these in this
+    # file.
 )
 
 consoles.list_view(
@@ -57,6 +54,7 @@ try_.builder(
     name = "android-clang-tidy-rel",
     executable = "recipe:tricium_clang_tidy_wrapper",
     os = os.LINUX_DEFAULT,
+    goma_backend = None,
 )
 
 try_.builder(
@@ -84,6 +82,7 @@ try_.builder(
     name = "linux-clang-tidy-dbg",
     executable = "recipe:tricium_clang_tidy_wrapper",
     os = os.LINUX_DEFAULT,
+    goma_backend = None,
 )
 
 try_.builder(
