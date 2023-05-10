@@ -90,7 +90,6 @@ class COMPONENT_EXPORT(UI_BASE_IME_ASH) TextInputMethod {
     SpellcheckMode spellcheck_mode = SpellcheckMode::kUnspecified;
     AutocapitalizationMode autocapitalization_mode =
         AutocapitalizationMode::kUnspecified;
-    bool has_been_password = false;
     // How this input field was focused.
     ui::TextInputClient::FocusReason focus_reason =
         ui::TextInputClient::FOCUS_REASON_NONE;
@@ -125,14 +124,13 @@ class COMPONENT_EXPORT(UI_BASE_IME_ASH) TextInputMethod {
   virtual void ProcessKeyEvent(const ui::KeyEvent& key_event,
                                KeyEventDoneCallback callback) = 0;
 
-  // Called when a new surrounding text is set. The |text| is surrounding text
-  // and |cursor_pos| is 0 based index of cursor position in |text|. If there is
-  // selection range, |anchor_pos| represents opposite index from |cursor_pos|.
-  // Otherwise |anchor_pos| is equal to |cursor_pos|. If not all surrounding
-  // text is given |offset_pos| indicates the starting offset of |text|.
+  // Called when the surrounding text has changed. The |text| is surrounding
+  // text and |selection_range| is the range of selection within |text|.
+  // |selection_range| has a direction: the start is also called the 'anchor`
+  // and the end is also called the 'focus'. If not all surrounding text is
+  // given, |offset_pos| indicates the starting offset of |text|.
   virtual void SetSurroundingText(const std::u16string& text,
-                                  uint32_t cursor_pos,
-                                  uint32_t anchor_pos,
+                                  gfx::Range selection_range,
                                   uint32_t offset_pos) = 0;
 
   // Called when caret bounds changed.

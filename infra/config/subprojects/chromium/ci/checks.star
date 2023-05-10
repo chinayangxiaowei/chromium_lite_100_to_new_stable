@@ -28,9 +28,6 @@ ci.builder(
         short_name = "linux",
     ),
     execution_timeout = ci.DEFAULT_EXECUTION_TIMEOUT,
-
-    # TODO(crbug.com/1370463): remove this.
-    omit_python2 = False,
     properties = {
         "$depot_tools/presubmit": {
             "runhooks": True,
@@ -55,10 +52,7 @@ ci.builder(
         category = "presubmit",
         short_name = "win",
     ),
-    execution_timeout = ci.DEFAULT_EXECUTION_TIMEOUT,
-
-    # TODO(crbug.com/1370463): remove this.
-    omit_python2 = False,
+    execution_timeout = 6 * time.hour,
     properties = {
         "$depot_tools/presubmit": {
             "runhooks": True,

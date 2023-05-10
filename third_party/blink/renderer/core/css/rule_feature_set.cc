@@ -180,7 +180,8 @@ bool SupportsInvalidation(CSSSelector::PseudoType type) {
     case CSSSelector::kPseudoXrOverlay:
     case CSSSelector::kPseudoIs:
     case CSSSelector::kPseudoWhere:
-    case CSSSelector::kPseudoParent:  // Same as kPseudoIs.
+    case CSSSelector::kPseudoParent:          // Same as kPseudoIs.
+    case CSSSelector::kPseudoParentUnparsed:  // Never invalidates.
     case CSSSelector::kPseudoTargetText:
     case CSSSelector::kPseudoHighlight:
     case CSSSelector::kPseudoSpellingError:
@@ -192,6 +193,7 @@ bool SupportsInvalidation(CSSSelector::PseudoType type) {
     case CSSSelector::kPseudoViewTransitionNew:
     case CSSSelector::kPseudoViewTransitionOld:
     case CSSSelector::kPseudoToggle:
+    case CSSSelector::kPseudoInitial:
       return true;
     case CSSSelector::kPseudoUnknown:
     case CSSSelector::kPseudoLeftPage:
@@ -584,7 +586,7 @@ void RuleFeatureSet::UpdateFeaturesFromStyleScope(
     if (!scope->From()) {
       continue;
     }
-    for (const CSSSelector* selector = scope->From()->First(); selector;
+    for (const CSSSelector* selector = scope->From(); selector;
          selector = CSSSelectorList::Next(*selector)) {
       InvalidationSetFeatures scope_features;
       ExtractInvalidationSetFeaturesFromCompound(
@@ -1558,9 +1560,9 @@ void RuleFeatureSet::AddFeaturesToInvalidationSetsForSelectorList(
 void RuleFeatureSet::AddFeaturesToInvalidationSetsForStyleScope(
     const StyleScope& style_scope,
     InvalidationSetFeatures& descendant_features) {
-  auto add_features = [this](const CSSSelectorList& selector_list,
+  auto add_features = [this](const CSSSelector& selector_list,
                              InvalidationSetFeatures& features) {
-    for (const CSSSelector* selector = selector_list.First(); selector;
+    for (const CSSSelector* selector = &selector_list; selector;
          selector = CSSSelectorList::Next(*selector)) {
       AddFeaturesToInvalidationSets(*selector, /*in_nth_child=*/false,
                                     nullptr /* sibling_features */, features);

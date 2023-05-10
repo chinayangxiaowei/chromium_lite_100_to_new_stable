@@ -34,16 +34,17 @@
 #include "base/time/time.h"
 #include "build/build_config.h"
 #include "build/buildflag.h"
-#include "chrome/browser/ash/system_web_apps/types/system_web_app_data.h"
 #include "chrome/browser/favicon/favicon_utils.h"
 #include "chrome/browser/ssl/security_state_tab_helper.h"
 #include "chrome/browser/web_applications/os_integration/os_integration_manager.h"
 #include "chrome/browser/web_applications/os_integration/web_app_file_handler_manager.h"
 #include "chrome/browser/web_applications/policy/pre_redirection_url_observer.h"
+#include "chrome/browser/web_applications/scope_extension_info.h"
 #include "chrome/browser/web_applications/web_app.h"
 #include "chrome/browser/web_applications/web_app_chromeos_data.h"
 #include "chrome/browser/web_applications/web_app_constants.h"
 #include "chrome/browser/web_applications/web_app_icon_generator.h"
+#include "chrome/browser/web_applications/web_app_install_info.h"
 #include "chrome/browser/web_applications/web_app_install_params.h"
 #include "chrome/browser/web_applications/web_app_sources.h"
 #include "chrome/browser/web_applications/web_app_utils.h"
@@ -71,6 +72,10 @@
 #include "ui/gfx/geometry/size.h"
 #include "url/gurl.h"
 #include "url/origin.h"
+
+#if BUILDFLAG(IS_CHROMEOS_ASH)
+#include "chrome/browser/ash/system_web_apps/types/system_web_app_data.h"
+#endif
 
 namespace web_app {
 
@@ -217,19 +222,32 @@ std::vector<SquareSizePx> GetSquareSizePxs(
 }
 
 std::vector<IconSizes> GetDownloadedShortcutsMenuIconsSizes(
+    const std::vector<WebAppShortcutsMenuItemInfo>& shortcuts_menu_items,
     const ShortcutsMenuIconBitmaps& shortcuts_menu_icon_bitmaps) {
+  // Due to the bitmaps possibly being not populated (see
+  // https://crbug.com/1427444), we create empty bitmaps in that case. We
+  // continue to check to make sure that there aren't MORE bitmaps than
+  // items.
+  CHECK_LE(shortcuts_menu_icon_bitmaps.size(), shortcuts_menu_items.size());
   std::vector<IconSizes> shortcuts_menu_icons_sizes;
-  shortcuts_menu_icons_sizes.reserve(shortcuts_menu_icon_bitmaps.size());
-  for (const auto& shortcut_icon_bitmaps : shortcuts_menu_icon_bitmaps) {
+  shortcuts_menu_icons_sizes.reserve(shortcuts_menu_items.size());
+  IconBitmaps empty_icon_bitmaps;
+  for (size_t i = 0; i < shortcuts_menu_items.size(); ++i) {
+    const IconBitmaps* shortcut_icon_bitmaps;
+    if (i < shortcuts_menu_icon_bitmaps.size()) {
+      shortcut_icon_bitmaps = &shortcuts_menu_icon_bitmaps[i];
+    } else {
+      shortcut_icon_bitmaps = &empty_icon_bitmaps;
+    }
     IconSizes icon_sizes;
     icon_sizes.SetSizesForPurpose(IconPurpose::ANY,
-                                  GetSquareSizePxs(shortcut_icon_bitmaps.any));
+                                  GetSquareSizePxs(shortcut_icon_bitmaps->any));
     icon_sizes.SetSizesForPurpose(
         IconPurpose::MASKABLE,
-        GetSquareSizePxs(shortcut_icon_bitmaps.maskable));
+        GetSquareSizePxs(shortcut_icon_bitmaps->maskable));
     icon_sizes.SetSizesForPurpose(
         IconPurpose::MONOCHROME,
-        GetSquareSizePxs(shortcut_icon_bitmaps.monochrome));
+        GetSquareSizePxs(shortcut_icon_bitmaps->monochrome));
     shortcuts_menu_icons_sizes.push_back(std::move(icon_sizes));
   }
   return shortcuts_menu_icons_sizes;
@@ -305,6 +323,18 @@ apps::UrlHandlers ToWebAppUrlHandlers(
   return apps_url_handlers;
 }
 
+std::vector<ScopeExtensionInfo> ToWebAppScopeExtensions(
+    const std::vector<blink::mojom::ManifestScopeExtensionPtr>&
+        scope_extensions) {
+  std::vector<ScopeExtensionInfo> apps_scope_extensions;
+  for (const auto& scope_extension : scope_extensions) {
+    DCHECK(scope_extension);
+    apps_scope_extensions.emplace_back(scope_extension->origin,
+                                       scope_extension->has_origin_wildcard);
+  }
+  return apps_scope_extensions;
+}
+
 std::vector<apps::ProtocolHandlerInfo> ToWebAppProtocolHandlers(
     const std::vector<blink::mojom::ManifestProtocolHandlerPtr>&
         manifest_protocol_handlers) {
@@ -346,6 +376,8 @@ void PopulateShortcutItemIcons(WebAppInstallInfo* web_app_info,
     web_app_info->shortcuts_menu_icon_bitmaps.emplace_back(
         std::move(shortcut_icon_bitmaps));
   }
+  CHECK_EQ(web_app_info->shortcuts_menu_icon_bitmaps.size(),
+           web_app_info->shortcuts_menu_item_infos.size());
 }
 
 // Reconcile the file handling icons that were specified in the manifest with
@@ -666,6 +698,9 @@ void UpdateWebAppInfoFromManifest(const blink::mojom::Manifest& manifest,
 
   web_app_info->url_handlers = ToWebAppUrlHandlers(manifest.url_handlers);
 
+  web_app_info->scope_extensions =
+      ToWebAppScopeExtensions(manifest.scope_extensions);
+
   GURL inferred_scope = web_app_info->scope.is_valid() ? web_app_info->scope
                         : web_app_info->start_url.is_valid()
                             ? web_app_info->start_url.GetWithoutFilename()
@@ -690,8 +725,6 @@ void UpdateWebAppInfoFromManifest(const blink::mojom::Manifest& manifest,
 
   if (manifest_url.is_valid())
     web_app_info->manifest_url = manifest_url;
-
-  web_app_info->is_storage_isolated = manifest.isolated_storage;
 
   web_app_info->launch_handler = manifest.launch_handler;
   if (manifest.description.has_value()) {
@@ -1163,10 +1196,10 @@ void SetWebAppManifestFields(const WebAppInstallInfo& web_app_info,
     web_app.SetShortcutsMenuItemInfos(web_app_info.shortcuts_menu_item_infos);
     web_app.SetDownloadedShortcutsMenuIconsSizes(
         GetDownloadedShortcutsMenuIconsSizes(
+            web_app_info.shortcuts_menu_item_infos,
             web_app_info.shortcuts_menu_icon_bitmaps));
   }
 
-  web_app.SetStorageIsolated(web_app_info.is_storage_isolated);
   web_app.SetPermissionsPolicy(web_app_info.permissions_policy);
 
   if (web_app.file_handler_approval_state() == ApiApprovalState::kAllowed &&
@@ -1178,6 +1211,7 @@ void SetWebAppManifestFields(const WebAppInstallInfo& web_app_info,
   web_app.SetShareTarget(web_app_info.share_target);
   web_app.SetProtocolHandlers(web_app_info.protocol_handlers);
   web_app.SetUrlHandlers(web_app_info.url_handlers);
+  web_app.SetScopeExtensions(web_app_info.scope_extensions);
 
   if (base::FeatureList::IsEnabled(features::kWebLockScreenApi))
     web_app.SetLockScreenStartUrl(web_app_info.lock_screen_start_url);
@@ -1274,11 +1308,13 @@ void ApplyParamsToFinalizeOptions(
   options.add_to_applications_menu = install_params.add_to_applications_menu;
   options.add_to_desktop = install_params.add_to_desktop;
   options.add_to_quick_launch_bar = install_params.add_to_quick_launch_bar;
+#if BUILDFLAG(IS_CHROMEOS_ASH)
   if (install_params.system_app_type.has_value()) {
     options.system_web_app_data.emplace();
     options.system_web_app_data->system_app_type =
         install_params.system_app_type.value();
   }
+#endif
 }
 
 }  // namespace web_app

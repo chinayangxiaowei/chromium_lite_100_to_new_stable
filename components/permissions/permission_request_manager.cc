@@ -382,6 +382,10 @@ void PermissionRequestManager::PreemptAndRequeueCurrentRequest() {
   for (auto* current_request : requests_) {
     pending_permission_requests_.Push(current_request);
   }
+
+  // Because the order of the requests is changed, we should not preignore it.
+  preignore_timer_.AbandonAndStop();
+
   requests_.clear();
 }
 
@@ -640,6 +644,11 @@ void PermissionRequestManager::PreIgnoreQuietPrompt() {
 void PermissionRequestManager::PreIgnoreQuietPromptInternal() {
   DCHECK(!requests_.empty());
 
+  if (requests_.empty()) {
+    // If `requests_` was cleared then there is nothing preignore.
+    return;
+  }
+
   std::vector<PermissionRequest*>::iterator requests_iter;
   for (requests_iter = requests_.begin(); requests_iter != requests_.end();
        requests_iter++) {
@@ -777,8 +786,9 @@ void PermissionRequestManager::DequeueRequestIfNeeded() {
        selector_index < permission_ui_selectors_.size(); ++selector_index) {
     // Skip if we have already made a decision due to a higher priority
     // selector
-    if (current_request_ui_to_use_.has_value())
+    if (current_request_ui_to_use_.has_value() || !IsRequestInProgress()) {
       break;
+    }
 
     if (permission_ui_selectors_[selector_index]->IsPermissionRequestSupported(
             requests_.front()->request_type())) {
@@ -991,6 +1001,11 @@ void PermissionRequestManager::FinalizeCurrentRequests(
     validated_requests_set_.erase(*requests_iter);
     request_sources_map_.erase(*requests_iter);
   }
+
+  // No need to execute the preignore logic as we canceling currently active
+  // requests anyway.
+  preignore_timer_.AbandonAndStop();
+
   requests_.clear();
 
   for (Observer& observer : observer_list_)

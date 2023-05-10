@@ -61,6 +61,7 @@
 <translation id="2573731672208488250">{HOURS,plural, =1{за 1 ч.}one{за # ч.}other{за # ч.}}</translation>
 <translation id="2583543531130364912">Калибрирање на екранот на допир</translation>
 <translation id="2586657967955657006">Табла со исечоци</translation>
+<translation id="2653844658857826081">НОВО</translation>
 <translation id="2666092431469916601">Горе</translation>
 <translation id="2701330563083355633">Споделено од <ph name="DEVICE_NAME" /></translation>
 <translation id="271033894570825754">Ново</translation>
@@ -105,7 +106,7 @@
 <translation id="4289540628985791613">Преглед</translation>
 <translation id="4306392492252714209">Отстранете од привремената меморија.</translation>
 <translation id="4491109536499578614">Слика</translation>
-<translation id="4565377596337484307">Сокриј ја лозинката</translation>
+<translation id="4565377596337484307">Скриј ја лозинката</translation>
 <translation id="4588090240171750605">Лизгај надесно</translation>
 <translation id="4724120544754982507">Центар за известувања, <ph name="UNREAD_NOTIFICATION_COUNT" /> непрочитани известувања</translation>
 <translation id="4746179598275229723">Екстензијата е откачена</translation>

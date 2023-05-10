@@ -215,7 +215,8 @@ void ValidateAndAddUsageFromPath(
     // a storage key yet. For now, fall back to creating the storage key
     // from the origin. Once enough time has passed it should be safe to treat
     // this case as an index validation error.
-    storage_key = blink::StorageKey(url::Origin::Create(GURL(index.origin())));
+    storage_key = blink::StorageKey::CreateFirstParty(
+        url::Origin::Create(GURL(index.origin())));
   }
   DCHECK(!storage_key.origin().GetURL().is_empty());
 
@@ -1058,6 +1059,8 @@ base::FilePath CacheStorageManager::ConstructBucketPath(
   // Non-default bucket & first/third-party partition:
   // {{storage_partition_path}}/WebStorage/{{bucket_id}}/CacheStorage/... and
   // {{storage_partition_path}}/WebStorage/{{bucket_id}}/BackgroundFetch/...
+  // TODO(estade): this ought to use
+  // `quota_manager_proxy_->GetClientBucketPath()`
   switch (owner) {
     case storage::mojom::CacheStorageOwner::kCacheAPI:
       return storage::CreateClientBucketPath(

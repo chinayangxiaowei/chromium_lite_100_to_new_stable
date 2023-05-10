@@ -20,7 +20,6 @@
 #include "base/strings/utf_string_conversions.h"
 #include "base/third_party/icu/icu_utf.h"
 #include "base/time/default_clock.h"
-#include "chromeos/ash/components/system/devicemode.h"
 #include "ui/base/ime/ash/ime_bridge.h"
 #include "ui/base/ime/ash/ime_keyboard.h"
 #include "ui/base/ime/ash/input_method_manager.h"
@@ -30,6 +29,7 @@
 #include "ui/base/ime/ime_key_event_dispatcher.h"
 #include "ui/base/ime/text_input_client.h"
 #include "ui/base/ime/text_input_flags.h"
+#include "ui/base/ime/text_input_type.h"
 #include "ui/events/event.h"
 #include "ui/events/keycodes/dom/keycode_converter.h"
 #include "ui/gfx/geometry/rect.h"
@@ -332,9 +332,14 @@ void InputMethodAsh::OnCaretBoundsChanged(const TextInputClient* client) {
   // we have to convert |selection_range| from node coordinates to
   // |surrounding_text| coordinates.
   if (GetEngine()) {
-    GetEngine()->SetSurroundingText(
-        surrounding_text, selection_range.start() - text_range.start(),
-        selection_range.end() - text_range.start(), text_range.start());
+    // TODO(b/245020074): Handle the case where selection is before the offset.
+    const uint32_t offset = text_range.start();
+    DCHECK_GE(selection_range.start(), offset);
+    DCHECK_GE(selection_range.end(), offset);
+    const gfx::Range relative_selection_range(selection_range.start() - offset,
+                                              selection_range.end() - offset);
+    GetEngine()->SetSurroundingText(surrounding_text, relative_selection_range,
+                                    offset);
   }
 }
 
@@ -882,9 +887,12 @@ TextInputMethod::InputContext InputMethodAsh::GetInputContext() const {
     return TextInputMethod::InputContext(ui::TEXT_INPUT_TYPE_NONE);
   }
 
-  TextInputMethod::InputContext input_context(client->GetTextInputType());
-  input_context.mode = client->GetTextInputMode();
   const int flags = client->GetTextInputFlags();
+  TextInputMethod::InputContext input_context(
+      flags & ui::TEXT_INPUT_FLAG_HAS_BEEN_PASSWORD
+          ? ui::TEXT_INPUT_TYPE_PASSWORD
+          : client->GetTextInputType());
+  input_context.mode = client->GetTextInputMode();
   input_context.autocompletion_mode =
       ConvertTextInputFlagToEnum<AutocompletionMode>(
           flags, ui::TEXT_INPUT_FLAG_AUTOCOMPLETE_ON,

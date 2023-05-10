@@ -896,6 +896,10 @@ std::vector<base::FilePath> IndexedDBContextImpl::GetStoragePaths(
 
 const base::FilePath IndexedDBContextImpl::GetDataPath(
     const storage::BucketLocator& bucket_locator) const {
+  if (is_incognito()) {
+    return base::FilePath();
+  }
+
   if (indexed_db::ShouldUseLegacyFilePath(bucket_locator)) {
     // First-party idb files for the default, for legacy reasons, are stored at:
     // {{storage_partition_path}}/IndexedDB/
@@ -1204,7 +1208,7 @@ IndexedDBContextImpl::FindLegacyIndexedDBFiles() {
                                        .RemoveExtension()
                                        .RemoveExtension()
                                        .MaybeAsASCII();
-      storage_key_to_file_path[blink::StorageKey(
+      storage_key_to_file_path[blink::StorageKey::CreateFirstParty(
           storage::GetOriginFromIdentifier(storage_key_id))] = file_path;
     }
   }
