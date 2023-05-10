@@ -59,23 +59,6 @@ enum class RestoreResult {
   kMaxValue = kNotFinish,
 };
 
-// This is usded for logging, so do not remove or reorder existing entries.
-enum class NoGhostWindowReason {
-  kNoHandler = 0,
-  kNoHandlerFromCrash = 1,
-  kNoRootBounds = 2,
-  kNoRootBoundsFromCrash = 3,
-  kNoScreenBounds = 4,
-  kNoScreenBoundsFromCrash = 5,
-  kFlagDisabled = 6,
-  kNotARCVM = 7,
-  kNoExoHelper = 8,
-
-  // Add any new values above this one, and update kMaxValue to the highest
-  // enumerator value.
-  kMaxValue = kNoExoHelper,
-};
-
 // This is used for logging, so do not remove or reorder existing entries.
 enum class ArcRestoreState {
   kSuccess = 0,
@@ -114,6 +97,10 @@ class ArcAppQueueRestoreHandler
   struct WindowInfo {
     std::string app_id;
     int32_t window_id;
+
+    bool operator==(const WindowInfo& rhs) const {
+      return app_id == rhs.app_id && window_id == rhs.window_id;
+    }
   };
 
   ArcAppQueueRestoreHandler();
@@ -228,7 +215,6 @@ class ArcAppQueueRestoreHandler
   void OnProbeServiceDisconnect();
 
   void RecordArcGhostWindowLaunch(bool is_arc_ghost_window);
-  void RecordLaunchBoundsState(bool has_root_bounds, bool has_screen_bounds);
   void RecordRestoreResult();
 
   SchedulerConfigurationManager* GetSchedulerConfigurationManager();
